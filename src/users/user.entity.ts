@@ -1,4 +1,7 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Coordinator } from '../coordinators/coordinator.entity';
+import { Student } from '../students/student.entity';
+import { Supervisor } from '../supervisors/supervisor.entity';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -6,12 +9,12 @@ export class User {
   id: number;
   @Column({
     type: 'varchar',
-    nullable: true,
+    nullable: false,
   })
   first_name: string;
   @Column({
     type: 'varchar',
-    nullable: true,
+    nullable: false,
   })
   last_name: string;
   @Column({
@@ -51,4 +54,10 @@ export class User {
     default: () => 'CURRENT_TIMESTAMP',
   })
   created_at: Date;
+  @OneToOne(() => Student, (student) => student.user)
+  student?: Student;
+  @OneToOne(() => Supervisor, (supervisor) => supervisor.user)
+  supervisor?: Supervisor;
+  @OneToOne(() => Coordinator, (coordinator) => coordinator.user)
+  coordinator?: Coordinator;
 }

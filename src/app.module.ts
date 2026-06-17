@@ -9,6 +9,8 @@ import * as redisStore from 'cache-manager-redis-store';
 import { AppController } from './app.controller';
 import { connectionSource } from './database/database.config';
 import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { APP_GUARD } from '@nestjs/core';
 
 const ENV = process.env.NODE_ENV;
 
@@ -19,7 +21,6 @@ const ENV = process.env.NODE_ENV;
       isGlobal: true,
     }),
     TypeOrmModule.forRoot(connectionSource.options),
-    JwtModule.registerAsync(jwtConfig.asProvider()),
     CacheModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -34,5 +35,11 @@ const ENV = process.env.NODE_ENV;
     AuthModule,
   ],
   controllers: [AppController],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AppModule {}

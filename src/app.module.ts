@@ -8,6 +8,7 @@ import jwtConfig from './config/jwt.config';
 import * as redisStore from 'cache-manager-redis-store';
 import { AppController } from './app.controller';
 import { connectionSource } from './database/database.config';
+import { AuthModule } from './auth/auth.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -30,6 +31,7 @@ const ENV = process.env.NODE_ENV;
         isGlobal: true,
       }),
     }),
+    AuthModule,
   ],
   controllers: [AppController],
 })

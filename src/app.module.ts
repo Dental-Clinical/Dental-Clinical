@@ -11,6 +11,7 @@ import { connectionSource } from './database/database.config';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
+import { SessionsModule } from './sessions/sessions.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -33,6 +34,7 @@ const ENV = process.env.NODE_ENV;
       }),
     }),
     AuthModule,
+    SessionsModule,
   ],
   controllers: [AppController],
   providers: [

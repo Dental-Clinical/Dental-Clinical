@@ -1,7 +1,14 @@
 import { Coordinator } from '../coordinators/coordinator.entity';
 import { Student } from '../students/student.entity';
 import { Supervisor } from '../supervisors/supervisor.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Session } from '../sessions/session.entity';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -60,4 +67,6 @@ export class User {
   supervisor?: Supervisor;
   @OneToOne(() => Coordinator, (coordinator) => coordinator.user)
   coordinator?: Coordinator;
+  @OneToMany(() => Session, (session) => session.user)
+  sessions: Session[];
 }

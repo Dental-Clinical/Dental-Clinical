@@ -1,10 +1,17 @@
-import { User } from 'src/users/user.entity';
-import { Column, JoinColumn, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from '../users/user.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
+@Entity('sessions')
 export class Session {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToMany(() => User, (user) => user.sessions)
+  @ManyToOne(() => User, (user) => user.sessions)
   @JoinColumn()
   user: User;
   @Column({

@@ -1,6 +1,7 @@
 import { Coordinator } from '../coordinators/coordinator.entity';
 import { Student } from '../students/student.entity';
 import { Supervisor } from '../supervisors/supervisor.entity';
+import { Session } from '../sessions/session.entity';
 import {
   Column,
   Entity,
@@ -8,7 +9,6 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Session } from '../sessions/session.entity';
 
 @Entity('users')
 export class User {

@@ -4,6 +4,8 @@ import type { Cache } from 'cache-manager';
 import { randomInt } from 'crypto';
 @Injectable()
 export class OtpService {
+  private readonly OTP_TTL = 1000 * 60 * 5; // 5 minutes in milliseconds
+  private readonly OTP_COOLDOWN = 1000 * 60; // 1 minute in milliseconds
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
   generateOtp(): string {
     const otp = randomInt(100000, 1000000).toString(); // generate a 6-digit OTP
@@ -13,7 +15,7 @@ export class OtpService {
     await this.cacheManager.set(
       `otp:${phone}`,
       { code: otp, attempts: 3, expiresAt: Date.now() + 300000 },
-      300,
+      this.OTP_TTL,
     ); // store for 5 minutes
   }
   async verifyOtp(phone: string, otp: string): Promise<boolean> {
@@ -22,6 +24,7 @@ export class OtpService {
       attempts: number;
       expiresAt: number;
     }>(`otp:${phone}`);
+
     if (!result) {
       return false; // OTP not found or expired
     }
@@ -49,11 +52,19 @@ export class OtpService {
           expiresAt: result.expiresAt,
         },
         remainingTtl,
-      ); // decrement attempts
-      return false; // OTP is incorrect
+      );
+      return false;
     }
   }
   async deleteOtp(phone: string): Promise<void> {
     await this.cacheManager.del(`otp:${phone}`);
+  }
+  async isCooldownActive(phone: string): Promise<boolean> {
+    const cooldown = await this.cacheManager.get(`cooldown:${phone}`);
+    // console.log(cooldown);
+    return !!cooldown; // returns true if cooldown is active, false otherwise
+  }
+  async setCooldown(phone: string): Promise<void> {
+    await this.cacheManager.set(`cooldown:${phone}`, true, this.OTP_COOLDOWN); // store for 1 minute
   }
 }

@@ -12,6 +12,8 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { SessionsModule } from './sessions/sessions.module';
+import { HttpModule } from '@nestjs/axios';
+import ultramsgConfig from './config/ultramsg.config';
 
 const ENV = process.env.NODE_ENV;
 
@@ -21,8 +23,10 @@ const ENV = process.env.NODE_ENV;
       envFilePath: !ENV ? '.env' : `.env.${ENV}`,
       isGlobal: true,
     }),
+    HttpModule.register({ global: true }),
     TypeOrmModule.forRoot(connectionSource.options),
     CacheModule.registerAsync({
+      isGlobal: true,
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({

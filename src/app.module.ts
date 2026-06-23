@@ -13,6 +13,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { SessionsModule } from './sessions/sessions.module';
 import { HttpModule } from '@nestjs/axios';
+import { UserModule } from './users/user.module';
+import { PatientsModule } from './patients/patients.module';
+import { StudentModule } from './students/student.module';
 import ultramsgConfig from './config/ultramsg.config';
 
 const ENV = process.env.NODE_ENV;
@@ -39,6 +42,9 @@ const ENV = process.env.NODE_ENV;
     }),
     AuthModule,
     SessionsModule,
+    UserModule,
+    PatientsModule,
+    StudentModule,
   ],
   controllers: [AppController],
   providers: [

@@ -6,7 +6,7 @@ import { JoinColumn } from 'typeorm/browser';
 export class Student {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => User, (user) => user.student)
+  @OneToOne(() => User, (user) => user.student, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
   @Column({

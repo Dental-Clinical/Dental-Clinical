@@ -28,16 +28,8 @@ export class SessionsService {
       throw error;
     }
   }
-  async findByJti(jti: string): Promise<Session> {
-    try {
-      const session = await this.sessionsRepository.findOneBy({ jti });
-      if (!session) {
-        throw new NotFoundException('Session not found');
-      }
-      return session;
-    } catch (error) {
-      throw error;
-    }
+  async findByJti(jti: string): Promise<Session | null> {
+    return await this.sessionsRepository.findOneBy({ jti });
   }
   async deleteSessionByJti(jti: string): Promise<void> {
     try {
@@ -49,16 +41,32 @@ export class SessionsService {
       throw error;
     }
   }
-  async deleteSessionsByUserId(userId: number): Promise<void> {
-    try {
-      await this.sessionsRepository
-        .createQueryBuilder()
-        .delete()
-        .from(Session)
-        .where('userId = :userId', { userId })
-        .execute();
-    } catch (error) {
-      throw error;
-    }
+  // async deleteSessionsByUserId(userId: number): Promise<void> {
+  //   try {
+  //     await this.sessionsRepository
+  //       .createQueryBuilder()
+  //       .delete()
+  //       .from(Session)
+  //       .where('userId = :userId', { userId })
+  //       .execute();
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
+  async deleteSessionsByUserId(
+    userId: number,
+  ): Promise<{ deletedCount: number }> {
+    const result = await this.sessionsRepository
+      .createQueryBuilder()
+      .delete()
+      .from(Session)
+      .where('userId = :userId', { userId })
+      .execute();
+
+    console.log(result.affected);
+
+    return {
+      deletedCount: result.affected ?? 0,
+    };
   }
 }

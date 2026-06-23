@@ -12,6 +12,7 @@ export class OtpService {
     return otp;
   }
   async storeOtp(phone: string, otp: string): Promise<void> {
+    phone = phone.replace(/\D/g, ''); // Normalize phone number
     await this.cacheManager.set(
       `otp:${phone}`,
       { code: otp, attempts: 3, expiresAt: Date.now() + 300000 },
@@ -19,6 +20,7 @@ export class OtpService {
     ); // store for 5 minutes
   }
   async verifyOtp(phone: string, otp: string): Promise<boolean> {
+    phone = phone.replace(/\D/g, ''); // Normalize phone number
     const result = await this.cacheManager.get<{
       code: string;
       attempts: number;
@@ -60,11 +62,13 @@ export class OtpService {
     await this.cacheManager.del(`otp:${phone}`);
   }
   async isCooldownActive(phone: string): Promise<boolean> {
+    phone = phone.replace(/\D/g, ''); // Normalize phone number
     const cooldown = await this.cacheManager.get(`cooldown:${phone}`);
     // console.log(cooldown);
     return !!cooldown; // returns true if cooldown is active, false otherwise
   }
   async setCooldown(phone: string): Promise<void> {
+    phone = phone.replace(/\D/g, ''); // Normalize phone number
     await this.cacheManager.set(`cooldown:${phone}`, true, this.OTP_COOLDOWN); // store for 1 minute
   }
 }

@@ -11,7 +11,7 @@ import {
 export class Coordinator {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => User, (user) => user.coordinator)
+  @OneToOne(() => User, (user) => user.coordinator, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
   @Column({

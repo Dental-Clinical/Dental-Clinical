@@ -11,7 +11,7 @@ import {
 export class Supervisor {
   @PrimaryGeneratedColumn()
   id: number;
-  @OneToOne(() => User, (user) => user.supervisor)
+  @OneToOne(() => User, (user) => user.supervisor, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
   @Column({

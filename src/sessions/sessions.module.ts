@@ -8,5 +8,6 @@ import { SessionsController } from './sessions.controller';
   providers: [SessionsService],
   imports: [TypeOrmModule.forFeature([Session])],
   controllers: [SessionsController],
+  exports: [SessionsService],
 })
 export class SessionsModule {}

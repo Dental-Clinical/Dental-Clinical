@@ -9,6 +9,7 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Patient } from '../patients/patient.entity';
 
 @Entity('users')
 export class User {
@@ -67,6 +68,8 @@ export class User {
   supervisor?: Supervisor;
   @OneToOne(() => Coordinator, (coordinator) => coordinator.user)
   coordinator?: Coordinator;
+  @OneToOne(() => Patient, (patient) => patient.user)
+  patient?: Patient;
   @OneToMany(() => Session, (session) => session.user)
   sessions: Session[];
 }

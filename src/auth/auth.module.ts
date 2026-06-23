@@ -10,6 +10,10 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { OtpService } from './services/otp.service';
 import { WhatsappService } from 'src/notifications/whatsapp.service';
 import { HttpModule } from '@nestjs/axios';
+import { UserModule } from 'src/users/user.module';
+import { PatientsModule } from 'src/patients/patients.module';
+import { SessionsModule } from 'src/sessions/sessions.module';
+import { StudentModule } from 'src/students/student.module';
 
 @Module({
   imports: [
@@ -18,6 +22,10 @@ import { HttpModule } from '@nestjs/axios';
     ConfigModule.forFeature(jwtConfig),
     ConfigModule.forFeature(ultramsgConfig),
     HttpModule,
+    UserModule,
+    PatientsModule,
+    SessionsModule,
+    StudentModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, OtpService, WhatsappService],

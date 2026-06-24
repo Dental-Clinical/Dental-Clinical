@@ -1,0 +1,53 @@
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { CreateSupervisorDto } from './dto/create-supervisor.dto';
+import { UserService } from 'src/users/user.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Supervisor } from './supervisor.entity';
+import { DataSource, Repository } from 'typeorm';
+import { PasswordService } from 'src/common/services/password.service';
+import { User } from 'src/users/user.entity';
+import { randomBytes } from 'crypto';
+import { UserRole } from 'src/constants/user-roles';
+
+@Injectable()
+export class SupervisorService {
+  constructor(
+    private readonly passwordService: PasswordService,
+    private readonly dataSource: DataSource,
+  ) {}
+  async createSupervisor(dto: CreateSupervisorDto) {
+    return await this.dataSource.transaction(async (manager) => {
+      dto.email = dto.email.trim().toLowerCase();
+
+      const existingUser = await manager.getRepository(User).findOne({
+        where: { email: dto.email },
+      });
+      if (existingUser) {
+        throw new HttpException('User already exists', HttpStatus.CONFLICT);
+      }
+
+      const tempPassword = randomBytes(8).toString('hex');
+
+      const passwordHash = await this.passwordService.hash(tempPassword);
+
+      const user = manager.getRepository(User).create({
+        first_name: dto.first_name,
+        last_name: dto.last_name,
+        role: UserRole.SUPERVISOR,
+        email: dto.email,
+        password_hash: passwordHash,
+      });
+
+      const savedUser = await manager.save(user);
+
+      const newSupervisor = manager.getRepository(Supervisor).create({
+        user: savedUser,
+      });
+      const savedSupervisor = await manager.save(newSupervisor);
+      return {
+        supervisorId: savedSupervisor.id,
+        tempPassword,
+      };
+    });
+  }
+}

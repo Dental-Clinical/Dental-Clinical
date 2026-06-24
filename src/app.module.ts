@@ -17,6 +17,9 @@ import { UserModule } from './users/user.module';
 import { PatientsModule } from './patients/patients.module';
 import { StudentModule } from './students/student.module';
 import ultramsgConfig from './config/ultramsg.config';
+import { RolesGuard } from './auth/guards/roles.guard';
+import { SupervisorModule } from './supervisors/supervisor.module';
+import { CoordinatorModule } from './coordinators/coordinator.module';
 
 const ENV = process.env.NODE_ENV;
 
@@ -45,12 +48,18 @@ const ENV = process.env.NODE_ENV;
     UserModule,
     PatientsModule,
     StudentModule,
+    SupervisorModule,
+    CoordinatorModule,
   ],
   controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

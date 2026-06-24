@@ -275,7 +275,7 @@ export class AuthService {
       return this.userService.findByEmail(identifier);
     }
 
-    const student = await this.studentService.findByUniId(identifier);
+    const student = await this.studentService.findByUniversityId(identifier);
 
     return student?.user ?? null;
   }

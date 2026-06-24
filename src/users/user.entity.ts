@@ -27,7 +27,7 @@ export class User {
   last_name: string;
   @Column({
     type: 'varchar',
-    nullable: false,
+    nullable: true,
     unique: true,
   })
   phone: string;

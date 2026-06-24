@@ -12,6 +12,7 @@ import {
 export class CreatePatientDto {
   @IsInt()
   userId?: number;
+
   @IsString()
   @MinLength(3)
   @MaxLength(100)
@@ -34,6 +35,7 @@ export class CreatePatientDto {
   @IsString()
   @MaxLength(5000)
   allergies?: string;
+
   @IsOptional()
   @IsBoolean()
   is_walkin?: boolean;

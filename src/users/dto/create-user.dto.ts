@@ -27,10 +27,11 @@ export class CreateUserDto {
   @IsString()
   role: UserRole;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @IsPhoneNumber('SY')
-  phone: string;
+  phone?: string;
+
   @IsOptional()
   @IsString()
   @IsEmail()

@@ -15,6 +15,7 @@ import { VerifyOtpDto } from './dto/verifyOtp.dto';
 import { RegisterDto } from './dto/register.dto';
 import type { JwtPayload } from './interfaces/jwt-payload.interface';
 import { StaffLoginDto } from './dto/staffLogin.dto';
+import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -65,13 +66,13 @@ export class AuthController {
   }
   @HttpCode(HttpStatus.OK)
   @Post('logout')
-  public async logout(@CurrentUser() user: JwtPayload) {
+  public async logout(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.logout(user);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('logout-all')
-  public async logoutAll(@CurrentUser() user: JwtPayload) {
-    return this.authService.logoutAll(user.sub);
+  public async logoutAll(@CurrentUser() user: AuthenticatedUser) {
+    return this.authService.logoutAll(user.userId);
   }
 }

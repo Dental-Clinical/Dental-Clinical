@@ -17,13 +17,13 @@ export class RegisterDto {
   @IsString()
   @MinLength(2)
   @MaxLength(55)
-  firstName: string;
+  full_name: string;
 
   @IsNotEmpty()
   @IsString()
   @MinLength(2)
   @MaxLength(55)
-  lastName: string;
+  father_name: string;
 
   @IsNotEmpty()
   @IsInt()

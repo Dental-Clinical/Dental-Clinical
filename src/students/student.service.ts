@@ -8,7 +8,7 @@ import { UserService } from 'src/users/user.service';
 import { UserRole } from 'src/constants/user-roles';
 import { randomBytes } from 'crypto';
 import { PasswordService } from 'src/common/services/password.service';
-// import { DataSource } from 'typeorm/browser';
+import * as xlsx from 'xlsx';
 
 @Injectable()
 export class StudentService {
@@ -42,8 +42,8 @@ export class StudentService {
       );
 
       const user = manager.getRepository(User).create({
-        first_name: student.first_name,
-        last_name: student.last_name,
+        full_name: student.full_name,
+        father_name: student.father_name,
         role: UserRole.STUDENT,
         password_hash: passwordHash,
       });
@@ -59,5 +59,30 @@ export class StudentService {
         studentId: savedStudent.id,
       };
     });
+  }
+  async importStudents(file: Express.Multer.File) {
+    const workbook = xlsx.read(file.buffer, {
+      type: 'buffer',
+    });
+
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+    const rows = xlsx.utils.sheet_to_json(worksheet, {
+      header: 1,
+    });
+
+    const students: any = rows.slice(3).filter((row: any) => row[1] && row[2]);
+
+    for (const row of students) {
+      const fatherName = row[0];
+      const fullName = row[1];
+      const universityId = String(row[2]);
+
+      await this.createStudent({
+        full_name: fullName,
+        father_name: fatherName,
+        university_id: universityId,
+      });
+    }
   }
 }

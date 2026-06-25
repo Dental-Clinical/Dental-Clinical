@@ -9,7 +9,9 @@ import { Patient } from './patient.entity';
 import { Repository } from 'typeorm';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
+import { UpdatePatientProfileDto } from './dto/update-patient-profile.dto';
 import { User } from 'src/users/user.entity';
+import { log } from 'console';
 
 @Injectable()
 export class PatientsService {
@@ -31,10 +33,13 @@ export class PatientsService {
     const newPatient = this.patientRepository.create({
       full_name: patient.full_name,
       phone: patient.phone,
-      user: {
-        id: patient.userId,
-      } as User,
+      user: patient.userId ? ({ id: patient.userId } as User) : undefined,
+      allergies: patient.allergies,
+      medical_history: patient.medical_history,
+      current_medications: patient.current_medications,
+      is_walkin: !patient.userId,
     });
+
     return await this.patientRepository.save(newPatient);
   }
   async updatePatient(id: number, updatePatientDto: UpdatePatientDto) {
@@ -70,6 +75,31 @@ export class PatientsService {
 
     return await this.patientRepository.save(patient);
   }
+  async updateMyProfile(
+    userId: number,
+    updatePatientDto: UpdatePatientProfileDto,
+  ) {
+    const patient = await this.patientRepository.findOne({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+    });
+
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    Object.assign(patient, updatePatientDto);
+
+    const savedPatient = await this.patientRepository.save(patient);
+
+    return {
+      message: 'Profile updated successfully',
+      patient: savedPatient,
+    };
+  }
   public async findPatientByPhone(phone: string): Promise<Patient | null> {
     phone = this.normalizePhoneNumber(phone);
     const patient = await this.patientRepository.findOneBy({
@@ -78,7 +108,24 @@ export class PatientsService {
 
     return patient;
   }
+  public async getPatientProfile(userId: number) {
+    const patient = await this.patientRepository.findOne({
+      where: {
+        user: {
+          id: userId,
+        },
+      },
+    });
 
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    return {
+      message: 'Patient profile retrieved successfully',
+      patient,
+    };
+  }
   private normalizePhoneNumber(phone: string): string {
     return phone.replace(/\D/g, ''); // Remove non-numeric characters
   }

@@ -31,8 +31,8 @@ export class SupervisorService {
       const passwordHash = await this.passwordService.hash(tempPassword);
 
       const user = manager.getRepository(User).create({
-        first_name: dto.first_name,
-        last_name: dto.last_name,
+        full_name: dto.full_name,
+        father_name: dto.father_name,
         role: UserRole.SUPERVISOR,
         email: dto.email,
         password_hash: passwordHash,

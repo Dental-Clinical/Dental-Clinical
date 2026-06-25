@@ -26,6 +26,7 @@ import { PatientsService } from 'src/patients/patients.service';
 import { SessionsService } from 'src/sessions/sessions.service';
 import { StaffLoginDto } from './dto/staffLogin.dto';
 import { StudentService } from 'src/students/student.service';
+import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 
 @Injectable()
 export class AuthService {
@@ -65,8 +66,8 @@ export class AuthService {
 
     const user = await this.userService.createUser({
       phone: registration.phone,
-      first_name: registerDto.firstName,
-      last_name: registerDto.lastName,
+      full_name: registerDto.full_name,
+      father_name: registerDto.father_name,
       role: UserRole.PATIENT,
     });
     if (existingPatient) {
@@ -77,7 +78,7 @@ export class AuthService {
     } else {
       await this.patientService.createPatient({
         phone: registration.phone,
-        full_name: `${registerDto.firstName} ${registerDto.lastName}`,
+        full_name: `${registerDto.full_name}`,
         userId: user.id,
       });
     }
@@ -240,15 +241,13 @@ export class AuthService {
       role: user.role,
       user: {
         id: user.id,
-        firstName: user.first_name,
-        lastName: user.last_name,
+        full_name: user.full_name,
+        father_name: user.father_name,
       },
     };
   }
   // logout
-  public async logout(currentUser: JwtPayload) {
-    console.log(currentUser);
-
+  public async logout(currentUser: AuthenticatedUser) {
     await this.sessionsService.deleteSessionByJti(currentUser.jti);
   }
   // logout all sessions

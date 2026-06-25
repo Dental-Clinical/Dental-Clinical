@@ -54,6 +54,7 @@ pids
 *.seed
 *.pid.lock
 project-phases.md
+clinical-*.md
 
 
 # Diagnostic reports (https://nodejs.org/api/report.html)

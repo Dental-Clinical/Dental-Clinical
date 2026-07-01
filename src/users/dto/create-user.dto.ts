@@ -12,10 +12,10 @@ import { UserRole } from 'src/constants/user-roles';
 export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
-  first_name: string;
+  full_name: string;
   @IsNotEmpty()
   @IsString()
-  last_name: string;
+  father_name: string;
 
   @IsOptional()
   @IsString()

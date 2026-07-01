@@ -3,11 +3,11 @@ import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 export class CreateCoordinatorDto {
   @IsNotEmpty()
   @IsString()
-  first_name: string;
+  full_name: string;
 
   @IsNotEmpty()
   @IsString()
-  last_name: string;
+  father_name: string;
 
   @IsNotEmpty()
   @IsEmail()

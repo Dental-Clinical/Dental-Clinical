@@ -10,6 +10,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Patient } from '../patients/patient.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity('users')
 export class User {
@@ -19,12 +20,12 @@ export class User {
     type: 'varchar',
     nullable: false,
   })
-  first_name: string;
+  full_name: string;
   @Column({
     type: 'varchar',
     nullable: false,
   })
-  last_name: string;
+  father_name: string;
   @Column({
     type: 'varchar',
     nullable: true,

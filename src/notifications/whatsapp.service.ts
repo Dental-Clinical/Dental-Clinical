@@ -47,6 +47,7 @@ export class WhatsappService {
       throw new InternalServerErrorException('Failed to send OTP via WhatsApp');
     }
   }
+
   private normalizePhoneNumber(phone: string): string {
     return phone.replace(/\D/g, ''); // Remove non-numeric characters
   }

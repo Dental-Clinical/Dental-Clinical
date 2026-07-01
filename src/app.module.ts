@@ -22,7 +22,6 @@ import { SupervisorModule } from './supervisors/supervisor.module';
 import { CoordinatorModule } from './coordinators/coordinator.module';
 
 const ENV = process.env.NODE_ENV;
-
 @Module({
   imports: [
     ConfigModule.forRoot({

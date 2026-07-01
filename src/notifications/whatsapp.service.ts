@@ -47,6 +47,39 @@ export class WhatsappService {
       throw new InternalServerErrorException('Failed to send OTP via WhatsApp');
     }
   }
+  async sendPassword(password: string, phone: any) {
+    try {
+      const normalizedPhone = this.normalizePhoneNumber(phone);
+      const message = `Your password is: ${password}\n`;
+      const data = qs.stringify({
+        token: this.ultramsgOptions.token,
+        to: normalizedPhone,
+        body: message,
+      });
+
+      const response = await this.httpService.axiosRef.post(
+        `${this.ultramsgOptions.apiUrl}/messages/chat`,
+        data,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        },
+      );
+      if (response.status < 200 || response.status >= 300) {
+        throw new InternalServerErrorException(
+          'Failed to send password via WhatsApp',
+        );
+      }
+      return {
+        message: 'Password sent successfully via WhatsApp',
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Failed to send password via WhatsApp',
+      );
+    }
+  }
 
   private normalizePhoneNumber(phone: string): string {
     return phone.replace(/\D/g, ''); // Remove non-numeric characters

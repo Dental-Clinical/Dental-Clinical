@@ -6,16 +6,19 @@ import { User } from 'src/users/user.entity';
 import { randomBytes } from 'crypto';
 import { UserRole } from 'src/constants/user-roles';
 import { Coordinator } from './coordinator.entity';
+import { WhatsappService } from 'src/notifications/whatsapp.service';
 
 @Injectable()
 export class CoordinatorService {
   constructor(
     private readonly passwordService: PasswordService,
     private readonly dataSource: DataSource,
+    private readonly whatsappService: WhatsappService,
   ) {}
   async createCoordinator(dto: CreateCoordinatorDto) {
     return await this.dataSource.transaction(async (manager) => {
       dto.email = dto.email.trim().toLowerCase();
+      dto.phone = dto.phone.replace(/\D/g, '');
 
       const existingUser = await manager.getRepository(User).findOne({
         where: { email: dto.email },
@@ -33,8 +36,11 @@ export class CoordinatorService {
         father_name: dto.father_name,
         role: UserRole.COORDINATOR,
         email: dto.email,
+        phone: dto.phone,
         password_hash: passwordHash,
       });
+      // this.whatsappService.sendPassword(tempPassword, dto.phone);
+      console.log(tempPassword);
 
       const savedUser = await manager.save(user);
 
@@ -44,7 +50,6 @@ export class CoordinatorService {
       const savedCoordinator = await manager.save(newCoordinator);
       return {
         coordinatorId: savedCoordinator.id,
-        tempPassword,
       };
     });
   }

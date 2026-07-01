@@ -24,6 +24,17 @@ async function bootstrap() {
     .setDescription('The dental clinical API description')
     .setVersion('1.0')
     .addTag('dental')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);

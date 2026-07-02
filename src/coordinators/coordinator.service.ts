@@ -1,12 +1,13 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateCoordinatorDto } from './dto/create-coordinator.dto';
 import { PasswordService } from 'src/common/services/password.service';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { User } from 'src/users/user.entity';
 import { randomBytes } from 'crypto';
 import { UserRole } from 'src/constants/user-roles';
 import { Coordinator } from './coordinator.entity';
 import { WhatsappService } from 'src/notifications/whatsapp.service';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class CoordinatorService {
@@ -14,6 +15,8 @@ export class CoordinatorService {
     private readonly passwordService: PasswordService,
     private readonly dataSource: DataSource,
     private readonly whatsappService: WhatsappService,
+    @InjectRepository(Coordinator)
+    private readonly coordinatorRepository: Repository<Coordinator>,
   ) {}
   async createCoordinator(dto: CreateCoordinatorDto) {
     return await this.dataSource.transaction(async (manager) => {
@@ -51,6 +54,11 @@ export class CoordinatorService {
       return {
         coordinatorId: savedCoordinator.id,
       };
+    });
+  }
+  async findByUserId(userId: number) {
+    return await this.coordinatorRepository.findOne({
+      where: { user: { id: userId } },
     });
   }
 }

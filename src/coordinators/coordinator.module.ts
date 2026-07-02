@@ -16,5 +16,6 @@ import ultramsgConfig from 'src/config/ultramsg.config';
     CommonModule,
     ConfigModule.forFeature(ultramsgConfig),
   ],
+  exports: [CoordinatorService],
 })
 export class CoordinatorModule {}

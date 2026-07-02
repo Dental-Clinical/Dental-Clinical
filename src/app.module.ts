@@ -2,9 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
-import { JwtModule } from '@nestjs/jwt';
-
-import jwtConfig from './config/jwt.config';
 import * as redisStore from 'cache-manager-redis-store';
 import { AppController } from './app.controller';
 import { connectionSource } from './database/database.config';
@@ -16,10 +13,10 @@ import { HttpModule } from '@nestjs/axios';
 import { UserModule } from './users/user.module';
 import { PatientsModule } from './patients/patients.module';
 import { StudentModule } from './students/student.module';
-import ultramsgConfig from './config/ultramsg.config';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { SupervisorModule } from './supervisors/supervisor.module';
 import { CoordinatorModule } from './coordinators/coordinator.module';
+import { CoordinatorScheduleModule } from './coordinator-schedules/coordinator-schedules.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -49,6 +46,7 @@ const ENV = process.env.NODE_ENV;
     StudentModule,
     SupervisorModule,
     CoordinatorModule,
+    CoordinatorScheduleModule,
   ],
   controllers: [AppController],
   providers: [

@@ -8,12 +8,8 @@ config({
 
 export const connectionSource = new DataSource({
   type: 'postgres',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  host: process.env.DB_HOST || 'localhost',
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD || 'password',
-  database: process.env.DB_NAME || 'dental-clinical',
+  url: process.env.DATABASE_URL,
+  ssl: true,
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
-  synchronize: false,
 });

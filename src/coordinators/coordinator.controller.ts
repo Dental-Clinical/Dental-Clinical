@@ -21,7 +21,10 @@ export class CoordinatorController {
   @Post()
   @Roles([UserRole.ADMIN])
   @ApiOperation({ summary: 'Create a new coordinator' })
-  @ApiCreatedResponse({ type: CreateCoordinatorResponseDto, description: 'Coordinator created' })
+  @ApiCreatedResponse({
+    type: CreateCoordinatorResponseDto,
+    description: 'Coordinator created',
+  })
   @ApiResponse({ status: 409, description: 'User already exists' })
   public async createCoordinator(
     @Body() createCoordinatorDto: CreateCoordinatorDto,

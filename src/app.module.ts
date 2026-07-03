@@ -17,6 +17,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
 import { SupervisorModule } from './supervisors/supervisor.module';
 import { CoordinatorModule } from './coordinators/coordinator.module';
 import { CoordinatorScheduleModule } from './coordinator-schedules/coordinator-schedules.module';
+import { ExaminationRequestsModule } from './examination-requests/examination-requests.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -47,6 +48,7 @@ const ENV = process.env.NODE_ENV;
     SupervisorModule,
     CoordinatorModule,
     CoordinatorScheduleModule,
+    ExaminationRequestsModule,
   ],
   controllers: [AppController],
   providers: [

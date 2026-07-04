@@ -20,6 +20,7 @@ import ultramsgConfig from './config/ultramsg.config';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { SupervisorModule } from './supervisors/supervisor.module';
 import { CoordinatorModule } from './coordinators/coordinator.module';
+import { ExaminationRequestsModule } from './examination-requests/examination-requests.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -49,6 +50,7 @@ const ENV = process.env.NODE_ENV;
     StudentModule,
     SupervisorModule,
     CoordinatorModule,
+    ExaminationRequestsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -24,7 +24,7 @@ import {
 @ApiBearerAuth('JWT-auth')
 @Controller('patients')
 export class PatientsController {
-  constructor(private readonly patientService: PatientsService) {}
+  constructor(private readonly patientService: PatientsService) { }
 
   @Post()
   @Roles([UserRole.STUDENT])
@@ -53,5 +53,10 @@ export class PatientsController {
     @Body() dto: UpdatePatientProfileDto,
   ) {
     return await this.patientService.updateMyProfile(user.userId, dto);
+  }
+
+  @Post('examination-requests')
+  async createExaminationRequest(@CurrentUser() user: AuthenticatedUser) {
+    //
   }
 }

@@ -1,45 +1,76 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, JoinColumn } from 'typeorm';
-import { ExaminationRequestsStatus } from '../Enums/examination-request.enum';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  JoinColumn,
+  CreateDateColumn,
+  OneToOne,
+} from 'typeorm';
+import { ExaminationRequestStatus } from '../Enums/examination-request.enum';
 import { ExaminationRequestAttachments } from './examination-request-attachment.entity';
 import { Patient } from '../../patients/patient.entity';
 import { User } from '../../users/user.entity';
+
+import { ExaminationRequestTeeth } from './examination-request-teeth.entity';
+import { Student } from 'src/students/student.entity';
+import { ExaminationAppointment } from '../../examination-appointments/examination-appointment.entity';
 
 @Entity()
 export class ExaminationRequest {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  patientId: number;
+  @Column({
+    name: 'patient_id',
+  })
+  patient_id: number;
 
-  @ManyToOne(() => Patient)
+  @ManyToOne(() => Patient, (patient) => patient.examination_requests, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'patient_id' })
   patient: Patient;
 
   @Column({ nullable: true })
   chief_complaint: string;
 
+  @Column({
+    type: 'enum',
+    enum: ExaminationRequestStatus,
+    default: ExaminationRequestStatus.PENDING,
+  })
+  status: ExaminationRequestStatus;
 
-  @Column({ type: 'enum', enum: ExaminationRequestsStatus, default: ExaminationRequestsStatus.PENDING })
-  status: ExaminationRequestsStatus;
-
+  @OneToOne(
+    () => ExaminationAppointment,
+    (appointment) => appointment.examination_request,
+  )
+  appointment: ExaminationAppointment;
 
   @Column()
-  symptoms: string
+  symptoms: string;
 
-  @Column({ default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   submitted_at: Date;
 
-  @Column({ nullable: true })
-  created_by_student: number;
+  // @Column({ nullable: true })
+  // created_by_student: number;
 
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'created_by_student' })
-  student: User;
+  // @ManyToOne(() => Student, { nullable: true })
+  // @JoinColumn({ name: 'created_by_student' })
+  // student: Student;
 
-  @OneToMany(() => ExaminationRequestAttachments, (attachment) => attachment.examination_request)
+  @OneToMany(
+    () => ExaminationRequestAttachments,
+    (attachment) => attachment.examination_request,
+  )
   attachments: ExaminationRequestAttachments[];
 
-  @Column({ type: 'date' })
-  appointment_datetime: Date;
+  @OneToMany(
+    () => ExaminationRequestTeeth,
+    (tooth) => tooth.examination_request,
+  )
+  teeth: ExaminationRequestTeeth[];
 }

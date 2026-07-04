@@ -1,8 +1,10 @@
+import { CoordinatorSchedule } from '../coordinator-schedules/coordniator-schedule.entity';
 import { User } from '../users/user.entity';
 import {
   Column,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -19,4 +21,6 @@ export class Coordinator {
     default: () => 'CURRENT_TIMESTAMP',
   })
   created_at: Date;
+  @OneToMany(() => CoordinatorSchedule, (schedule) => schedule.coordinator)
+  schedules: CoordinatorSchedule[];
 }

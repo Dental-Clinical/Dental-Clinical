@@ -1,4 +1,10 @@
-import { Injectable, NestInterceptor, mixin, BadRequestException, Type } from '@nestjs/common';
+import {
+  Injectable,
+  NestInterceptor,
+  mixin,
+  BadRequestException,
+  Type,
+} from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -24,7 +30,7 @@ export function ExaminationAttachmentsInterceptor(
       }
       cb(null, true);
     },
-  }) { }
+  }) {}
 
   return mixin(MixinInterceptor);
 }

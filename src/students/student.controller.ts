@@ -31,7 +31,10 @@ export class StudentController {
   @Post()
   @Roles([UserRole.ADMIN])
   @ApiOperation({ summary: 'Create a new student' })
-  @ApiCreatedResponse({ type: CreateStudentResponseDto, description: 'Student created' })
+  @ApiCreatedResponse({
+    type: CreateStudentResponseDto,
+    description: 'Student created',
+  })
   public async createStudent(@Body() createStudentDto: CreateStudentDto) {
     return await this.studentService.createStudent(createStudentDto);
   }

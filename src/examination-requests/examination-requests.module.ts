@@ -5,12 +5,22 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ExaminationRequest } from './entities/examination-request.entity';
 import { ExaminationRequestTeeth } from './entities/examination-request-teeth.entity';
 import { ExaminationRequestAttachments } from './entities/examination-request-attachment.entity';
-import { ExaminationAppointment } from './entities/examination-request-appointment.entity';
+import { ExaminationAppointment } from '../examination-appointments/examination-appointment.entity';
 import { Patient } from 'src/patients/patient.entity';
+import { ExaminationAppointmentsModule } from 'src/examination-appointments/examination-appointments.module';
 
 @Module({
   providers: [ExaminationRequestsService],
   controllers: [ExaminationRequestsController],
-  imports: [TypeOrmModule.forFeature([ExaminationRequest, ExaminationAppointment, Patient, ExaminationRequestTeeth, ExaminationRequestAttachments])]
+  imports: [
+    TypeOrmModule.forFeature([
+      ExaminationRequest,
+      ExaminationAppointment,
+      Patient,
+      ExaminationRequestTeeth,
+      ExaminationRequestAttachments,
+    ]),
+    ExaminationAppointmentsModule,
+  ],
 })
-export class ExaminationRequestsModule { }
+export class ExaminationRequestsModule {}

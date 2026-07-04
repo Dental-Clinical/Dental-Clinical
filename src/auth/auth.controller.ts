@@ -22,7 +22,10 @@ import { VerifyOtpDto } from './dto/verifyOtp.dto';
 import { RegisterDto } from './dto/register.dto';
 import { StaffLoginDto } from './dto/staffLogin.dto';
 import { VerifyOtpResponseDto } from './dto/verify-otp-response.dto';
-import { AuthResponseDto, StaffLoginResponseDto } from './dto/auth-response.dto';
+import {
+  AuthResponseDto,
+  StaffLoginResponseDto,
+} from './dto/auth-response.dto';
 import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
 
 @ApiTags('Auth')
@@ -34,7 +37,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get current user info' })
-  @ApiOkResponse({ description: 'Current user info', schema: { example: 'hello world' } })
+  @ApiOkResponse({
+    description: 'Current user info',
+    schema: { example: 'hello world' },
+  })
   public me() {
     return 'hello world';
   }
@@ -44,7 +50,10 @@ export class AuthController {
   @Post('register/send-otp')
   @ApiOperation({ summary: 'Send registration OTP' })
   @ApiOkResponse({ description: 'OTP sent successfully' })
-  @ApiResponse({ status: 429, description: 'Please wait before requesting another OTP' })
+  @ApiResponse({
+    status: 429,
+    description: 'Please wait before requesting another OTP',
+  })
   public async sendOtp(@Body() dto: SendOtpDto) {
     return this.authService.sendRegistrationOtp(dto);
   }
@@ -53,7 +62,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('register/verify-otp')
   @ApiOperation({ summary: 'Verify registration OTP' })
-  @ApiOkResponse({ type: VerifyOtpResponseDto, description: 'OTP verified successfully' })
+  @ApiOkResponse({
+    type: VerifyOtpResponseDto,
+    description: 'OTP verified successfully',
+  })
   @ApiResponse({ status: 400, description: 'Invalid OTP' })
   public async verifyOtp(@Body() dto: VerifyOtpDto) {
     return this.authService.verifyRegistrationOtp(dto);
@@ -63,8 +75,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('register')
   @ApiOperation({ summary: 'Complete patient registration' })
-  @ApiOkResponse({ type: AuthResponseDto, description: 'Registration successful' })
-  @ApiResponse({ status: 400, description: 'Invalid or expired registration token' })
+  @ApiOkResponse({
+    type: AuthResponseDto,
+    description: 'Registration successful',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid or expired registration token',
+  })
   @ApiResponse({ status: 409, description: 'Patient already registered' })
   public async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
@@ -75,8 +93,14 @@ export class AuthController {
   @Post('login/send-otp')
   @ApiOperation({ summary: 'Send login OTP' })
   @ApiOkResponse({ description: 'OTP sent successfully' })
-  @ApiResponse({ status: 404, description: 'Invalid phone number or account not found' })
-  @ApiResponse({ status: 429, description: 'Please wait before requesting another OTP' })
+  @ApiResponse({
+    status: 404,
+    description: 'Invalid phone number or account not found',
+  })
+  @ApiResponse({
+    status: 429,
+    description: 'Please wait before requesting another OTP',
+  })
   public async sendLoginOtp(@Body() dto: SendOtpDto) {
     return this.authService.sendLoginOtp(dto);
   }
@@ -95,8 +119,13 @@ export class AuthController {
   @AllowAnonymous()
   @HttpCode(HttpStatus.OK)
   @Post('staff/login')
-  @ApiOperation({ summary: 'Staff login with email/university ID and password' })
-  @ApiOkResponse({ type: StaffLoginResponseDto, description: 'Login successful' })
+  @ApiOperation({
+    summary: 'Staff login with email/university ID and password',
+  })
+  @ApiOkResponse({
+    type: StaffLoginResponseDto,
+    description: 'Login successful',
+  })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   public async staffLogin(@Body() dto: StaffLoginDto) {
     return this.authService.staffLogin(dto);

@@ -1,7 +1,15 @@
-import { Column, Entity, ManyToOne, JoinColumn, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  JoinColumn,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 import { ExaminationRequest } from './examination-request.entity';
 
 @Entity()
+@Unique(['request_id', 'tooth'])
 export class ExaminationRequestTeeth {
   @PrimaryGeneratedColumn()
   id: number;
@@ -9,7 +17,9 @@ export class ExaminationRequestTeeth {
   @Column()
   request_id: number;
 
-  @ManyToOne(() => ExaminationRequest)
+  @ManyToOne(() => ExaminationRequest, (request) => request.teeth, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'request_id' })
   examination_request: ExaminationRequest;
 

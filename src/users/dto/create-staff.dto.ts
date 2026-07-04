@@ -35,7 +35,12 @@ export class CreateStaffDto {
 
   @ApiProperty({
     description: 'Staff role',
-    enum: [UserRole.ADMIN, UserRole.STUDENT, UserRole.SUPERVISOR, UserRole.COORDINATOR],
+    enum: [
+      UserRole.ADMIN,
+      UserRole.STUDENT,
+      UserRole.SUPERVISOR,
+      UserRole.COORDINATOR,
+    ],
     example: UserRole.ADMIN,
   })
   @IsNotEmpty()

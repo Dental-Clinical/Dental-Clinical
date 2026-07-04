@@ -24,12 +24,15 @@ import {
 @ApiBearerAuth('JWT-auth')
 @Controller('patients')
 export class PatientsController {
-  constructor(private readonly patientService: PatientsService) { }
+  constructor(private readonly patientService: PatientsService) {}
 
   @Post()
   @Roles([UserRole.STUDENT])
   @ApiOperation({ summary: 'Create a walk-in patient' })
-  @ApiCreatedResponse({ type: PatientResponseDto, description: 'Walk-in patient created' })
+  @ApiCreatedResponse({
+    type: PatientResponseDto,
+    description: 'Walk-in patient created',
+  })
   async createWalkinPatient(@Body() dto: CreatePatientWalkinDto) {
     return await this.patientService.createPatient(dto);
   }
@@ -37,7 +40,10 @@ export class PatientsController {
   @Get('me')
   @Roles([UserRole.PATIENT])
   @ApiOperation({ summary: 'Get my patient profile' })
-  @ApiOkResponse({ type: PatientProfileResponseDto, description: 'Patient profile' })
+  @ApiOkResponse({
+    type: PatientProfileResponseDto,
+    description: 'Patient profile',
+  })
   @ApiResponse({ status: 404, description: 'Patient not found' })
   async getMyProfile(@CurrentUser() user: AuthenticatedUser) {
     return await this.patientService.getPatientProfile(user.userId);
@@ -46,17 +52,15 @@ export class PatientsController {
   @Patch('me')
   @Roles([UserRole.PATIENT])
   @ApiOperation({ summary: 'Update my patient profile' })
-  @ApiOkResponse({ type: UpdatePatientProfileResponseDto, description: 'Profile updated' })
+  @ApiOkResponse({
+    type: UpdatePatientProfileResponseDto,
+    description: 'Profile updated',
+  })
   @ApiResponse({ status: 404, description: 'Patient not found' })
   async updatePatientProfile(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdatePatientProfileDto,
   ) {
     return await this.patientService.updateMyProfile(user.userId, dto);
-  }
-
-  @Post('examination-requests')
-  async createExaminationRequest(@CurrentUser() user: AuthenticatedUser) {
-    //
   }
 }

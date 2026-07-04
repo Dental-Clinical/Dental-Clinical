@@ -33,7 +33,7 @@ export class PatientsService {
     const newPatient = this.patientRepository.create({
       full_name: patient.full_name,
       phone: patient.phone,
-      user: patient.userId ? ({ id: patient.userId } as User) : undefined,
+      user: patient.userId ? { id: patient.userId } : undefined,
       allergies: patient.allergies,
       medical_history: patient.medical_history,
       current_medications: patient.current_medications,

@@ -28,7 +28,10 @@ export class UserController {
   @Get()
   @Roles([UserRole.ADMIN])
   @ApiOperation({ summary: 'Get all users (paginated)' })
-  @ApiOkResponse({ type: PaginatedUsersResponseDto, description: 'Paginated list of users' })
+  @ApiOkResponse({
+    type: PaginatedUsersResponseDto,
+    description: 'Paginated list of users',
+  })
   async getUsers(@Query() query: GetUserQueryDto) {
     return await this.userService.getUsers(query);
   }
@@ -55,7 +58,10 @@ export class UserController {
       },
     },
   })
-  @ApiOkResponse({ type: UpdateUserStatusResponseDto, description: 'Status updated' })
+  @ApiOkResponse({
+    type: UpdateUserStatusResponseDto,
+    description: 'Status updated',
+  })
   @ApiResponse({ status: 404, description: 'User not found' })
   async updateUserStatus(
     @Param() param: { id: number },

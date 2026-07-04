@@ -18,6 +18,7 @@ import { SupervisorModule } from './supervisors/supervisor.module';
 import { CoordinatorModule } from './coordinators/coordinator.module';
 import { CoordinatorScheduleModule } from './coordinator-schedules/coordinator-schedules.module';
 import { ExaminationRequestsModule } from './examination-requests/examination-requests.module';
+import { ExaminationAppointmentsModule } from './examination-appointments/examination-appointments.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -49,6 +50,7 @@ const ENV = process.env.NODE_ENV;
     CoordinatorModule,
     CoordinatorScheduleModule,
     ExaminationRequestsModule,
+    ExaminationAppointmentsModule,
   ],
   controllers: [AppController],
   providers: [

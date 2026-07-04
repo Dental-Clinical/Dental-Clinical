@@ -25,7 +25,7 @@ export class CoordinatorSchedule {
   coordinator: Coordinator;
 
   @RelationId((schedule: CoordinatorSchedule) => schedule.coordinator)
-  coordinatorId: number;
+  coordinator_id: number;
 
   @Column({
     type: 'enum',

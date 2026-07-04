@@ -1,5 +1,6 @@
-export enum ExaminationRequestsStatus {
+export enum ExaminationRequestStatus {
   PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected'
+  EXAMINED = 'examined',
+  REJECTED = 'rejected',
+  CONVERTED_TO_CASE = 'converted_to_case',
 }

@@ -212,42 +212,6 @@ export class CoordinatorScheduleService {
       throw new ConflictException('Schedule for this day already exists');
     }
   }
-  private generateSlots(
-    startTime: string,
-    endTime: string,
-    slotDuration: number,
-  ): AppointmentSlot[] {
-    const slots: AppointmentSlot[] = [];
-
-    const current = this.timeToMinutes(startTime);
-    const end = this.timeToMinutes(endTime);
-
-    let cursor = current;
-
-    while (cursor + slotDuration <= end) {
-      slots.push({
-        startTime: this.minutesToTime(cursor),
-        endTime: this.minutesToTime(cursor + slotDuration),
-      });
-
-      cursor += slotDuration;
-    }
-
-    return slots;
-  }
-  private timeToMinutes(time: string): number {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
-  }
-
-  private minutesToTime(totalMinutes: number): string {
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-
-    return `${hours.toString().padStart(2, '0')}:${minutes
-      .toString()
-      .padStart(2, '0')}`;
-  }
   private calculateDuration(start_time: string, end_time: string) {
     const [startHours, startMinutes] = start_time.split(':').map(Number);
     const [endHours, endMinutes] = end_time.split(':').map(Number);
@@ -257,5 +221,13 @@ export class CoordinatorScheduleService {
 
     const durationInMilliseconds = endDate.getTime() - startDate.getTime();
     return durationInMilliseconds / (1000 * 60); // Convert to minutes
+  }
+  async getSchedulesByDay(day: string): Promise<CoordinatorSchedule[]> {
+    return this.coordinatorScheduleRepository.find({
+      where: { day_of_week: day, is_active: true },
+      relations: {
+        coordinator: true,
+      },
+    });
   }
 }

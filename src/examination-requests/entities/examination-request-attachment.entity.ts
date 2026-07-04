@@ -1,4 +1,10 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { ExaminationRequest } from './examination-request.entity';
 @Entity()
 export class ExaminationRequestAttachments {
@@ -8,7 +14,11 @@ export class ExaminationRequestAttachments {
   @Column()
   request_id: number;
 
-  @ManyToOne(() => ExaminationRequest, (examinationRequest) => examinationRequest.attachments)
+  @ManyToOne(
+    () => ExaminationRequest,
+    (examinationRequest) => examinationRequest.attachments,
+    { onDelete: 'CASCADE' },
+  )
   @JoinColumn({ name: 'request_id' })
   examination_request: ExaminationRequest;
 

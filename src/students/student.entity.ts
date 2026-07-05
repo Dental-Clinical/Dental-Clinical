@@ -1,5 +1,12 @@
+import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 import { User } from '../users/user.entity';
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { JoinColumn } from 'typeorm/browser';
 
 @Entity('students')
@@ -20,4 +27,7 @@ export class Student {
     default: () => 'CURRENT_TIMESTAMP',
   })
   created_at: Date;
+
+  @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.assignedStudent)
+  clinicalCases: ClinicalCase[];
 }

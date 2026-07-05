@@ -10,6 +10,7 @@ import { ExaminationRequest } from '../examination-requests/entities/examination
 import { User } from '../users/user.entity';
 import { ExaminationAppointmentStatus } from '../examination-requests/Enums/examination-appointment.enum';
 import { Coordinator } from '../coordinators/coordinator.entity';
+import { InitialExamination } from '../initial-examination/initial-examination.entity';
 
 @Entity('examination_appointments')
 export class ExaminationAppointment {
@@ -41,4 +42,10 @@ export class ExaminationAppointment {
 
   @Column({ type: 'time' })
   appointment_end: string;
+
+  @OneToOne(
+    () => InitialExamination,
+    (initialExamination) => initialExamination.appointment,
+  )
+  initialExamination: InitialExamination;
 }

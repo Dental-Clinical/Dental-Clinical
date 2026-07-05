@@ -16,6 +16,8 @@ import { User } from '../../users/user.entity';
 import { ExaminationRequestTeeth } from './examination-request-teeth.entity';
 import { Student } from 'src/students/student.entity';
 import { ExaminationAppointment } from '../../examination-appointments/examination-appointment.entity';
+import { InitialExamination } from 'src/initial-examination/initial-examination.entity';
+import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 
 @Entity()
 export class ExaminationRequest {
@@ -55,12 +57,14 @@ export class ExaminationRequest {
   @CreateDateColumn()
   submitted_at: Date;
 
-  // @Column({ nullable: true })
-  // created_by_student: number;
+  @OneToOne(
+    () => InitialExamination,
+    (initialExamination) => initialExamination.request,
+  )
+  initialExamination: InitialExamination;
 
-  // @ManyToOne(() => Student, { nullable: true })
-  // @JoinColumn({ name: 'created_by_student' })
-  // student: Student;
+  @OneToOne(() => ClinicalCase, (clinicalCase) => clinicalCase.request)
+  clinicalCase: ClinicalCase;
 
   @OneToMany(
     () => ExaminationRequestAttachments,

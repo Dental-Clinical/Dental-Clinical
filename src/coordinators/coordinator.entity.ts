@@ -1,3 +1,4 @@
+import { InitialExamination } from 'src/initial-examination/initial-examination.entity';
 import { CoordinatorSchedule } from '../coordinator-schedules/coordniator-schedule.entity';
 import { User } from '../users/user.entity';
 import {
@@ -23,4 +24,6 @@ export class Coordinator {
   created_at: Date;
   @OneToMany(() => CoordinatorSchedule, (schedule) => schedule.coordinator)
   schedules: CoordinatorSchedule[];
+  @OneToMany(() => InitialExamination, (examination) => examination.coordinator)
+  initialExaminations: InitialExamination[];
 }

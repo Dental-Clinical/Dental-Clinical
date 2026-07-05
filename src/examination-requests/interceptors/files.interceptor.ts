@@ -9,15 +9,19 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { v4 as uuid } from 'uuid';
+import { mkdirSync } from 'fs';
 
 export function ExaminationAttachmentsInterceptor(
   fieldName = 'attachments',
   maxCount = 5,
 ): Type<NestInterceptor> {
+  const uploadPath = './uploads/examination-requests';
+  mkdirSync(uploadPath, { recursive: true });
+
   @Injectable()
   class MixinInterceptor extends FilesInterceptor(fieldName, maxCount, {
     storage: diskStorage({
-      destination: './uploads/examination-requests',
+      destination: uploadPath,
       filename: (req, file, cb) => {
         cb(null, `${uuid()}${extname(file.originalname)}`);
       },
@@ -30,7 +34,7 @@ export function ExaminationAttachmentsInterceptor(
       }
       cb(null, true);
     },
-  }) {}
+  }) { }
 
   return mixin(MixinInterceptor);
 }

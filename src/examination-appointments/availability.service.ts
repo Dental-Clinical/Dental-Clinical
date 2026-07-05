@@ -21,7 +21,7 @@ export class AvailabilityService {
 
     @InjectRepository(ExaminationAppointment)
     private readonly appointmentRepository: Repository<ExaminationAppointment>,
-  ) {}
+  ) { }
   public async getAvailableSlots(date: Date) {
     this.validateDate(date);
     const day = this.getDayOfWeek(date);

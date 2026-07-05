@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDate,
@@ -19,6 +20,7 @@ export class CreateExaminationRequestDto {
   chiefComplaints: string;
 
   @ApiProperty({ description: 'Appointment date', example: '2025-12-25' })
+  @Type(() => Date)
   @IsDate()
   appointmentDate: Date;
 
@@ -27,10 +29,25 @@ export class CreateExaminationRequestDto {
   appointmentStart: string;
 
   @ApiProperty({ description: 'Coordinator ID', example: 1 })
+  @Type(() => Number)
   @IsInt()
   coordinatorId: number;
 
   @ApiProperty({ description: 'Array of tooth numbers', example: [11, 12, 13] })
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) {
+      return value.map(Number);
+    }
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed.map(Number) : parsed;
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  })
   @IsArray()
   @IsInt({ each: true })
   teeth: number[];

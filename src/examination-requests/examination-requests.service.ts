@@ -11,12 +11,8 @@ import { Patient } from 'src/patients/patient.entity';
 import { ExaminationRequestStatus } from './Enums/examination-request.enum';
 import { ExaminationRequestTeeth } from './entities/examination-request-teeth.entity';
 import { ExaminationRequestAttachments } from './entities/examination-request-attachment.entity';
-import { User } from 'src/users/user.entity';
 import { unlink } from 'fs/promises';
-import { ExaminationAppointment } from '../examination-appointments/examination-appointment.entity';
-import { ApproveExaminationAppointmentDto } from './dto/create-appointment.dto';
 import { AvailabilityService } from '../examination-appointments/availability.service';
-import { ExaminationAppointmentStatus } from './Enums/examination-appointment.enum';
 import { ExaminationAppointmentsService } from 'src/examination-appointments/examination-appointments.service';
 import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 
@@ -30,7 +26,7 @@ export class ExaminationRequestsService {
     private readonly availablityService: AvailabilityService,
     private readonly appointmentService: ExaminationAppointmentsService,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async createExaminationRequest(
     dto: CreateExaminationRequestDto,
@@ -121,7 +117,7 @@ export class ExaminationRequestsService {
       });
     } catch (err) {
       await Promise.all(
-        (files ?? []).map((f) => unlink(f.path).catch(() => {})),
+        (files ?? []).map((f) => unlink(f.path).catch(() => { })),
       );
       throw err;
     }

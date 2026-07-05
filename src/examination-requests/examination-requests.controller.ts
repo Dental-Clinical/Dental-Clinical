@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Post,
@@ -34,7 +35,7 @@ import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.i
 @Controller('examination-requests')
 @UseGuards(JwtAuthGuard)
 export class ExaminationRequestsController {
-  constructor(private examinationRequestsService: ExaminationRequestsService) {}
+  constructor(private examinationRequestsService: ExaminationRequestsService) { }
 
   @Post()
   @Roles([UserRole.PATIENT])

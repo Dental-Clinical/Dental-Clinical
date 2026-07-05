@@ -21,7 +21,7 @@ export class AvailabilityService {
 
     @InjectRepository(ExaminationAppointment)
     private readonly appointmentRepository: Repository<ExaminationAppointment>,
-  ) { }
+  ) {}
   public async getAvailableSlots(date: Date) {
     this.validateDate(date);
     const day = this.getDayOfWeek(date);
@@ -112,6 +112,7 @@ export class AvailabilityService {
         'The requested slot is not valid for this coordinator',
       );
     }
+    this.validateFutureSlot(date, slot.startTime);
     const bookedAppointments = await manager.find(ExaminationAppointment, {
       where: {
         appointment_date: date,
@@ -191,10 +192,31 @@ export class AvailabilityService {
     return daysOfWeek[date.getDay()];
   }
   private validateDate(date: Date) {
-    const now = new Date();
-    if (date < now) {
-      throw new Error('Cannot get available slots for past dates');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const selectedDate = new Date(date);
+    selectedDate.setHours(0, 0, 0, 0);
+    if (date < today) {
+      throw new BadRequestException(
+        'Cannot get available slots for past dates',
+      );
     }
     return true;
+  }
+  private validateFutureSlot(appointmentDate: Date, startTime: string): void {
+    const now = new Date();
+
+    const slotDate = new Date(appointmentDate);
+
+    const [hours, minutes] = startTime.split(':').map(Number);
+
+    slotDate.setHours(hours, minutes, 0, 0);
+
+    if (slotDate <= now) {
+      throw new BadRequestException(
+        'The selected appointment slot has already passed.',
+      );
+    }
   }
 }

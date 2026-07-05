@@ -24,7 +24,10 @@ export class CreateExaminationRequestDto {
   @IsDate()
   appointmentDate: Date;
 
-  @ApiProperty({ description: 'Appointment start time (HH:mm)', example: '09:00' })
+  @ApiProperty({
+    description: 'Appointment start time (HH:mm)',
+    example: '09:00',
+  })
   @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
   appointmentStart: string;
 
@@ -49,6 +52,5 @@ export class CreateExaminationRequestDto {
     return value;
   })
   @IsArray()
-  @IsInt({ each: true })
   teeth: number[];
 }

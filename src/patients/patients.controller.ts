@@ -29,7 +29,10 @@ export class PatientsController {
   @Post()
   @Roles([UserRole.STUDENT])
   @ApiOperation({ summary: 'Create a walk-in patient' })
-  @ApiCreatedResponse({ type: PatientResponseDto, description: 'Walk-in patient created' })
+  @ApiCreatedResponse({
+    type: PatientResponseDto,
+    description: 'Walk-in patient created',
+  })
   async createWalkinPatient(@Body() dto: CreatePatientWalkinDto) {
     return await this.patientService.createPatient(dto);
   }
@@ -37,7 +40,10 @@ export class PatientsController {
   @Get('me')
   @Roles([UserRole.PATIENT])
   @ApiOperation({ summary: 'Get my patient profile' })
-  @ApiOkResponse({ type: PatientProfileResponseDto, description: 'Patient profile' })
+  @ApiOkResponse({
+    type: PatientProfileResponseDto,
+    description: 'Patient profile',
+  })
   @ApiResponse({ status: 404, description: 'Patient not found' })
   async getMyProfile(@CurrentUser() user: AuthenticatedUser) {
     return await this.patientService.getPatientProfile(user.userId);
@@ -46,7 +52,10 @@ export class PatientsController {
   @Patch('me')
   @Roles([UserRole.PATIENT])
   @ApiOperation({ summary: 'Update my patient profile' })
-  @ApiOkResponse({ type: UpdatePatientProfileResponseDto, description: 'Profile updated' })
+  @ApiOkResponse({
+    type: UpdatePatientProfileResponseDto,
+    description: 'Profile updated',
+  })
   @ApiResponse({ status: 404, description: 'Patient not found' })
   async updatePatientProfile(
     @CurrentUser() user: AuthenticatedUser,

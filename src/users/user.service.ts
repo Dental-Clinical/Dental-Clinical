@@ -78,10 +78,10 @@ export class UserService {
   public async createUser(dto: CreateUserDto): Promise<User> {
     let existingUser: User | null = null;
     if (dto.phone) {
-      existingUser = await this.findByPhone(dto.phone!);
+      existingUser = await this.findByPhone(dto.phone);
     }
     if (dto.email) {
-      existingUser = await this.findByEmail(dto.email!);
+      existingUser = await this.findByEmail(dto.email);
     }
 
     if (existingUser) {

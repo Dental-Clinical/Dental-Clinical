@@ -1,8 +1,11 @@
+import { ExaminationRequest } from '../examination-requests/entities/examination-request.entity';
 import { User } from '../users/user.entity';
 import {
   Column,
   Entity,
   JoinColumn,
+  ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -53,4 +56,7 @@ export class Patient {
     default: () => 'CURRENT_TIMESTAMP',
   })
   created_at: Date;
+
+  @OneToMany(() => ExaminationRequest, (request) => request.patient)
+  examination_requests: ExaminationRequest[];
 }

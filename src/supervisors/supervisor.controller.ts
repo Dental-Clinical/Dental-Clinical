@@ -21,7 +21,10 @@ export class SupervisorController {
   @Post()
   @Roles([UserRole.ADMIN])
   @ApiOperation({ summary: 'Create a new supervisor' })
-  @ApiCreatedResponse({ type: CreateSupervisorResponseDto, description: 'Supervisor created' })
+  @ApiCreatedResponse({
+    type: CreateSupervisorResponseDto,
+    description: 'Supervisor created',
+  })
   @ApiResponse({ status: 409, description: 'User already exists' })
   public async createSupervisor(
     @Body() createSupervisorDto: CreateSupervisorDto,

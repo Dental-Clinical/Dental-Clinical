@@ -1,4 +1,4 @@
-import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
+import { ClinicalCase } from '../clinical-case/clinical-case.entity';
 import { User } from '../users/user.entity';
 import {
   Column,

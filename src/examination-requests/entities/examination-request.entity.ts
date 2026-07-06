@@ -16,8 +16,8 @@ import { User } from '../../users/user.entity';
 import { ExaminationRequestTeeth } from './examination-request-teeth.entity';
 import { Student } from 'src/students/student.entity';
 import { ExaminationAppointment } from '../../examination-appointments/examination-appointment.entity';
-import { InitialExamination } from 'src/initial-examination/initial-examination.entity';
-import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
+import { InitialExamination } from '../../initial-examination/initial-examination.entity';
+import { ClinicalCase } from '../../clinical-case/clinical-case.entity';
 
 @Entity()
 export class ExaminationRequest {

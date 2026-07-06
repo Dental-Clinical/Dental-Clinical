@@ -17,6 +17,7 @@ import { Subject } from '../subjects/subjects.entity';
 import { ClinicalCase } from '../clinical-case/clinical-case.entity';
 
 @Entity('initial_examinations')
+@Unique(['request'])
 export class InitialExamination {
   @PrimaryGeneratedColumn()
   id: number;

@@ -19,8 +19,9 @@ export class ClinicalCaseService {
   constructor(
     @InjectRepository(ClinicalCase)
     private readonly clinicalCaseRepository: Repository<ClinicalCase>,
+    @InjectRepository(InitialExamination)
     private readonly initialExaminationRepository: Repository<InitialExamination>,
-  ) {}
+  ) { }
   private async create(dto: CreateClinicalCaseDto) {
     const initialExamination = await this.initialExaminationRepository.findOne({
       where: { id: dto.initialExaminationId },
@@ -87,7 +88,7 @@ export class ClinicalCaseService {
     }
     return clinicalCase;
   }
-  async updateStatus() {}
+  async updateStatus() { }
   async findOpenCases() {
     const openCases = await this.clinicalCaseRepository.find({
       where: { status: ClinicalCaseStatus.OPEN, assignedStudent: IsNull() },

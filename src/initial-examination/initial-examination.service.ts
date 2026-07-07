@@ -12,6 +12,8 @@ import { InitialExaminationStatus } from './enums/initial-examination-status.enu
 import { request } from 'express';
 import { UpdateInitialExaminationDto } from './dto/update-initial-examination.dto';
 import { ExaminationRequestStatus } from 'src/examination-requests/Enums/examination-request.enum';
+import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
+import { ClinicalCaseService } from 'src/clinical-case/clinical-case.service';
 
 @Injectable()
 export class InitialExaminationService {
@@ -22,6 +24,7 @@ export class InitialExaminationService {
     @InjectRepository(ExaminationAppointment) private readonly examinationAppointmentRepository: Repository<ExaminationAppointment>,
     @InjectRepository(ExaminationRequest) private readonly examinationRequestRepository: Repository<ExaminationRequest>,
     private readonly dataSource: DataSource,
+    private readonly clinicalCaseService: ClinicalCaseService
   ) { }
 
 
@@ -62,9 +65,15 @@ export class InitialExaminationService {
         clinicalFindings: dto.clinical_findings,
         status: InitialExaminationStatus.IN_PROGRESS,
       })
+
       await manager.save(initialExamination)
 
+      await this.clinicalCaseService.createFromInitialExamination(initialExamination.id)
+
       request.status = ExaminationRequestStatus.CONVERTED_TO_CASE
+
+      await this.examinationRequestRepository.save(request)
+
     })
 
   }
@@ -78,14 +87,17 @@ export class InitialExaminationService {
     return initialExamination
   }
 
-  async editInitialExamination(id: number, dto: UpdateInitialExaminationDto) {
-    const initialExamination = await this.initialExaminationRepository.findOneBy({ id })
+  async updateInitialExamination(id: number, dto: UpdateInitialExaminationDto) {
+    const initialExamination = await this.initialExaminationRepository.existsBy({ id })
     if (!initialExamination) {
       throw new NotFoundException("Initial Examination not found")
     }
+    await this.initialExaminationRepository.update(id, dto)
+  }
 
-
-
+  async getAllInitialExamination() {
+    const initialExaminations = await this.initialExaminationRepository.find()
+    return initialExaminations
   }
 
 }

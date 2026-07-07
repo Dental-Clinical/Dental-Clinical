@@ -5,8 +5,11 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/constants/user-roles';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -29,23 +32,44 @@ export class InitialExaminationController {
     return this.initialExaminationService.createInitialExamination(dto)
   }
 
+  @Get('student/:id')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({ summary: 'Get initial examination for a student' })
+  @ApiParam({ name: 'id', type: Number, description: 'Student ID' })
+  @ApiResponse({ status: 404, description: 'Initial examination not found' })
+  async getInitialExaminationForStudent(@Param('id', ParseIntPipe) id: number) {
+    // TODO 
+  }
   @Get(':id')
   @Roles([UserRole.COORDINATOR, UserRole.SUPERVISOR])
+  @ApiOperation({ summary: 'Get an initial examination by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Initial examination ID' })
+  @ApiOkResponse({ description: 'Initial examination details retrieved' })
+  @ApiResponse({ status: 404, description: 'Initial examination not found' })
   async getInitialExamination(@Param('id', ParseIntPipe) id: number) {
     return await this.initialExaminationService.getInitialExamination(id)
   }
 
-  @Get(':id')
-  @Roles([UserRole.STUDENT])
-  async getInitialExaminationForStudent(@Param('id', ParseIntPipe) id: number) {
-    // TODO 
-  }
 
   @Patch(':id')
   @Roles([UserRole.COORDINATOR])
-  async editInitialExamination(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateInitialExaminationDto) {
-    //
+  @ApiOperation({ summary: 'Update an initial examination' })
+  @ApiParam({ name: 'id', type: Number, description: 'Initial examination ID' })
+  @ApiBody({ type: UpdateInitialExaminationDto })
+  @ApiOkResponse({ description: 'Initial examination updated successfully' })
+  @ApiResponse({ status: 404, description: 'Initial examination not found' })
+  async updateInitialExamination(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateInitialExaminationDto) {
+    return await this.initialExaminationService.updateInitialExamination(id, dto)
   }
+
+  @Get()
+  @Roles([UserRole.COORDINATOR])
+  @ApiOperation({ summary: 'Get all initial examinations' })
+  @ApiOkResponse({ description: 'List of initial examinations retrieved' })
+  async getAllInitialExamination() {
+    return await this.initialExaminationService.getAllInitialExamination()
+  }
+
 
 
 }

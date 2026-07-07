@@ -26,7 +26,7 @@ export class ExaminationRequestsService {
     private readonly availablityService: AvailabilityService,
     private readonly appointmentService: ExaminationAppointmentsService,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async createExaminationRequest(
     dto: CreateExaminationRequestDto,
@@ -117,7 +117,7 @@ export class ExaminationRequestsService {
       });
     } catch (err) {
       await Promise.all(
-        (files ?? []).map((f) => unlink(f.path).catch(() => {})),
+        (files ?? []).map((f) => unlink(f.path).catch(() => { })),
       );
       throw err;
     }
@@ -146,30 +146,7 @@ export class ExaminationRequestsService {
     return examinationRequest;
   }
 
-  // async approveExaminationRequestAppointment(
-  //   id: number,
-  //   user: User,
-  //   dto: ApproveExaminationAppointmentDto,
-  // ) {
-  //   const examinationRequest = await this.examinationRepository.findOne({
-  //     where: { id: id },
-  //   });
-  //   if (!examinationRequest) {
-  //     throw new NotFoundException('Examination request not found');
-  //   }
-
-  //   const appointment = examinationRequest?.appointment_datetime;
-  //   const result = this.examinationAppointmentRepository.create({
-  //     request_id: examinationRequest?.id,
-  //     coordinator_id: user.id,
-  //     appointment_datetime: appointment,
-  //     status: dto.status,
-  //   });
-  //   await this.examinationAppointmentRepository.save(result);
-  //   return result;
-  // }
-
-  async getAllExaminationRequests(user: AuthenticatedUser) {
+  async getAllExaminationRequestsForAUser(user: AuthenticatedUser) {
     const examinationRequest = await this.examinationRepository.findOne({
       where: {
         patient: {
@@ -185,5 +162,9 @@ export class ExaminationRequestsService {
     });
 
     return examinationRequest;
+  }
+
+  async getAllExaminationRequests() {
+    return await this.examinationRepository.find()
   }
 }

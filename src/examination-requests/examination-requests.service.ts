@@ -26,7 +26,7 @@ export class ExaminationRequestsService {
     private readonly availablityService: AvailabilityService,
     private readonly appointmentService: ExaminationAppointmentsService,
     private readonly dataSource: DataSource,
-  ) { }
+  ) {}
 
   async createExaminationRequest(
     dto: CreateExaminationRequestDto,
@@ -117,7 +117,7 @@ export class ExaminationRequestsService {
       });
     } catch (err) {
       await Promise.all(
-        (files ?? []).map((f) => unlink(f.path).catch(() => { })),
+        (files ?? []).map((f) => unlink(f.path).catch(() => {})),
       );
       throw err;
     }
@@ -158,6 +158,8 @@ export class ExaminationRequestsService {
       relations: {
         patient: true,
         attachments: true,
+        appointment: true,
+        teeth: true,
       },
     });
 
@@ -165,6 +167,6 @@ export class ExaminationRequestsService {
   }
 
   async getAllExaminationRequests() {
-    return await this.examinationRepository.find()
+    return await this.examinationRepository.find();
   }
 }

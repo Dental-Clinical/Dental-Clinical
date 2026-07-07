@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClinicalCase } from './clinical-case.entity';
-import { IsNull, Repository } from 'typeorm';
+import { EntityManager, IsNull, Repository } from 'typeorm';
 import { CreateClinicalCaseDto } from './dto/create-clinical-case.dto';
 import { InitialExamination } from 'src/initial-examination/initial-examination.entity';
 import { InitialExaminationStatus } from 'src/initial-examination/enums/initial-examination-status.enum';
@@ -19,11 +19,9 @@ export class ClinicalCaseService {
   constructor(
     @InjectRepository(ClinicalCase)
     private readonly clinicalCaseRepository: Repository<ClinicalCase>,
-    @InjectRepository(InitialExamination)
-    private readonly initialExaminationRepository: Repository<InitialExamination>,
-  ) { }
-  private async create(dto: CreateClinicalCaseDto) {
-    const initialExamination = await this.initialExaminationRepository.findOne({
+  ) {}
+  private async create(dto: CreateClinicalCaseDto, manager: EntityManager) {
+    const initialExamination = await manager.findOne(InitialExamination, {
       where: { id: dto.initialExaminationId },
       relations: {
         clinicalCase: true,
@@ -55,7 +53,7 @@ export class ClinicalCaseService {
       );
     }
 
-    const clinicalCase = this.clinicalCaseRepository.create({
+    const clinicalCase = manager.getRepository(ClinicalCase).create({
       initialExamination: initialExamination,
       patient: initialExamination.request.patient,
       request: initialExamination.request,
@@ -63,7 +61,7 @@ export class ClinicalCaseService {
       status: ClinicalCaseStatus.OPEN,
     });
 
-    return await this.clinicalCaseRepository.save(clinicalCase);
+    return await manager.save(clinicalCase);
   }
   async findAll() {
     return await this.clinicalCaseRepository.find({
@@ -88,7 +86,7 @@ export class ClinicalCaseService {
     }
     return clinicalCase;
   }
-  async updateStatus() { }
+  async updateStatus() {}
   async findOpenCases() {
     const openCases = await this.clinicalCaseRepository.find({
       where: { status: ClinicalCaseStatus.OPEN, assignedStudent: IsNull() },
@@ -127,7 +125,10 @@ export class ClinicalCaseService {
     });
     return assignedCases;
   }
-  public async createFromInitialExamination(initialExaminationId: number) {
-    return await this.create({ initialExaminationId });
+  public async createFromInitialExamination(
+    initialExaminationId: number,
+    manager: EntityManager,
+  ) {
+    return await this.create({ initialExaminationId }, manager);
   }
 }

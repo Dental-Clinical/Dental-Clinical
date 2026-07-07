@@ -8,6 +8,7 @@ import { User } from 'src/users/user.entity';
 import { ExaminationRequest } from 'src/examination-requests/entities/examination-request.entity';
 import { ClinicalCaseModule } from 'src/clinical-case/clinical-case.module';
 import { ExaminationAppointment } from 'src/examination-appointments/examination-appointment.entity';
+import { Subject } from 'src/subjects/subjects.entity';
 
 @Module({
   providers: [InitialExaminationService],
@@ -18,10 +19,11 @@ import { ExaminationAppointment } from 'src/examination-appointments/examination
       Coordinator,
       User,
       ExaminationRequest,
-      ExaminationAppointment
+      ExaminationAppointment,
+      Subject,
     ]),
-    ClinicalCaseModule
+    ClinicalCaseModule,
   ],
-  exports: [InitialExaminationService]
+  exports: [InitialExaminationService],
 })
-export class InitialExaminationModule { }
+export class InitialExaminationModule {}

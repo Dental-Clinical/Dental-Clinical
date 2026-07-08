@@ -1,3 +1,4 @@
+import { ClinicalCase } from '../clinical-case/clinical-case.entity';
 import { ExaminationRequest } from '../examination-requests/entities/examination-request.entity';
 import { User } from '../users/user.entity';
 import {
@@ -59,4 +60,6 @@ export class Patient {
 
   @OneToMany(() => ExaminationRequest, (request) => request.patient)
   examination_requests: ExaminationRequest[];
+  @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.patient)
+  clinical_cases: ClinicalCase[];
 }

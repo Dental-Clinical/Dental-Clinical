@@ -19,6 +19,12 @@ import { CoordinatorModule } from './coordinators/coordinator.module';
 import { CoordinatorScheduleModule } from './coordinator-schedules/coordinator-schedules.module';
 import { ExaminationRequestsModule } from './examination-requests/examination-requests.module';
 import { ExaminationAppointmentsModule } from './examination-appointments/examination-appointments.module';
+import { AcademicYearsModule } from './academic-years/academic-years.module';
+import { StudyYearsModule } from './study-years/study-years.module';
+import { SubjectsModule } from './subjects/subjects.module';
+import { InitialExaminationModule } from './initial-examination/initial-examination.module';
+import { ClinicalCaseModule } from './clinical-case/clinical-case.module';
+import { StudentAcademicYearsModule } from './student-academic-years/student-academic-years.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -51,6 +57,12 @@ const ENV = process.env.NODE_ENV;
     CoordinatorScheduleModule,
     ExaminationRequestsModule,
     ExaminationAppointmentsModule,
+    AcademicYearsModule,
+    StudyYearsModule,
+    SubjectsModule,
+    InitialExaminationModule,
+    ClinicalCaseModule,
+    StudentAcademicYearsModule,
   ],
   controllers: [AppController],
   providers: [

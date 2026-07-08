@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from './student.entity';
 import { DataSource, Repository } from 'typeorm';
@@ -26,6 +31,39 @@ export class StudentService {
         user: true,
       },
     });
+  }
+  public async findByUserId(id: number) {
+    return await this.studentRepository.findOne({
+      where: {
+        user: { id },
+        studentAcademicYears: { isCurrent: true },
+      },
+      relations: {
+        user: true,
+        studentAcademicYears: { studyYear: true },
+      },
+    });
+  }
+  public async getCurrentStudyYear(userId: number) {
+    const student = await this.studentRepository.findOne({
+      where: {
+        user: { id: userId },
+        studentAcademicYears: { isCurrent: true },
+      },
+      relations: {
+        studentAcademicYears: { studyYear: true },
+      },
+    });
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    const currentEnrollment = student.studentAcademicYears.find(
+      (enrollment) => enrollment.isCurrent,
+    );
+    if (!currentEnrollment) {
+      throw new NotFoundException('Current enrollment not found for student');
+    }
+    return currentEnrollment.studyYear;
   }
   public async createStudent(student: CreateStudentDto) {
     return await this.dataSource.transaction(async (manager) => {

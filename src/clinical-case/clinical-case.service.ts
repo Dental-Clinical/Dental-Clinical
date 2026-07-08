@@ -13,12 +13,18 @@ import { CreateClinicalCaseDto } from './dto/create-clinical-case.dto';
 import { InitialExamination } from 'src/initial-examination/initial-examination.entity';
 import { InitialExaminationStatus } from 'src/initial-examination/enums/initial-examination-status.enum';
 import { ClinicalCaseStatus } from './enums/clinical-case-status.enum';
+import { ClinicalCaseStateMachine } from './state-machine/clinical-case-state-machine';
+import { UpdateClinicalCaseStatusDto } from './dto/update-clinical-case-status.dto';
+import { ClinicalCaseSummaryDto } from './dto/clinical-case-summary.dto';
+import { ClinicalCaseDetailsDto } from './dto/clinical-case-details.sto';
+import { StudentService } from 'src/students/student.service';
 
 @Injectable()
 export class ClinicalCaseService {
   constructor(
     @InjectRepository(ClinicalCase)
     private readonly clinicalCaseRepository: Repository<ClinicalCase>,
+    private readonly studentService: StudentService,
   ) {}
   private async create(dto: CreateClinicalCaseDto, manager: EntityManager) {
     const initialExamination = await manager.findOne(InitialExamination, {
@@ -63,40 +69,133 @@ export class ClinicalCaseService {
 
     return await manager.save(clinicalCase);
   }
-  async findAll() {
-    return await this.clinicalCaseRepository.find({
+  async findAll(): Promise<ClinicalCaseSummaryDto[]> {
+    const clinicalCases = await this.clinicalCaseRepository.find({
       relations: {
         patient: true,
         subject: true,
-        assignedStudent: true,
+        assignedStudent: {
+          user: true,
+        },
+      },
+      order: {
+        createdAt: 'DESC',
       },
     });
+
+    return clinicalCases.map((clinicalCase) => ({
+      id: clinicalCase.id,
+      status: clinicalCase.status,
+      createdAt: clinicalCase.createdAt,
+
+      patient: {
+        id: clinicalCase.patient.id,
+        fullName: clinicalCase.patient.full_name,
+        phone: clinicalCase.patient.phone,
+      },
+
+      subject: {
+        id: clinicalCase.subject.id,
+        name: clinicalCase.subject.name,
+      },
+
+      assignedStudent: clinicalCase.assignedStudent
+        ? {
+            id: clinicalCase.assignedStudent.id,
+            name: clinicalCase.assignedStudent.user.full_name,
+          }
+        : null,
+    }));
   }
-  async findOne(id: number) {
+  async findOne(id: number): Promise<ClinicalCaseDetailsDto> {
     const clinicalCase = await this.clinicalCaseRepository.findOne({
       where: { id },
       relations: {
         patient: true,
+        request: true,
         subject: true,
-        assignedStudent: true,
+        assignedStudent: {
+          user: true,
+        },
       },
     });
     if (!clinicalCase) {
       throw new NotFoundException('Clinical Case not found');
     }
-    return clinicalCase;
+    return {
+      id: clinicalCase.id,
+      status: clinicalCase.status,
+      createdAt: clinicalCase.createdAt,
+
+      patient: {
+        id: clinicalCase.patient.id,
+        fullName: clinicalCase.patient.full_name,
+        phone: clinicalCase.patient.phone,
+        medicalHistory: clinicalCase.patient.medical_history,
+        allergies: clinicalCase.patient.allergies,
+        currentMedications: clinicalCase.patient.current_medications,
+      },
+
+      request: {
+        id: clinicalCase.request.id,
+        chiefComplaint: clinicalCase.request.chief_complaint,
+        symptoms: clinicalCase.request.symptoms,
+      },
+
+      subject: {
+        id: clinicalCase.subject.id,
+        name: clinicalCase.subject.name,
+      },
+
+      assignedStudent: clinicalCase.assignedStudent
+        ? {
+            id: clinicalCase.assignedStudent.id,
+            name: clinicalCase.assignedStudent.user.full_name,
+          }
+        : null,
+    };
   }
-  async updateStatus() {}
-  async findOpenCases() {
+  async updateStatus(id: number, dto: UpdateClinicalCaseStatusDto) {
+    const clinicalCase = await this.clinicalCaseRepository.findOne({
+      where: { id },
+    });
+    if (!clinicalCase) {
+      throw new NotFoundException('Clinical Case not found');
+    }
+    this.validateTransition(clinicalCase.status, dto.status);
+    clinicalCase.status = dto.status;
+    return await this.clinicalCaseRepository.save(clinicalCase);
+  }
+  async findOpenCases(userId: number) {
+    const studyYear = await this.studentService.getCurrentStudyYear(userId);
+
     const openCases = await this.clinicalCaseRepository.find({
-      where: { status: ClinicalCaseStatus.OPEN, assignedStudent: IsNull() },
+      where: {
+        status: ClinicalCaseStatus.OPEN,
+        assignedStudent: IsNull(),
+        subject: {
+          is_active: true,
+          studyYear: {
+            id: studyYear.id,
+          },
+        },
+      },
       relations: {
         patient: true,
-        subject: true,
-        assignedStudent: true,
-        initialExamination: true,
+        subject: {
+          studyYear: true,
+        },
         request: true,
       },
+    });
+    openCases.map((clinicalCase) => {
+      return {
+        id: clinicalCase.id,
+        patient: clinicalCase.patient.full_name,
+        subject: clinicalCase.subject.name,
+        chiefComplaint: clinicalCase.request.chief_complaint,
+        status: clinicalCase.status,
+      };
     });
     return openCases;
   }
@@ -130,5 +229,16 @@ export class ClinicalCaseService {
     manager: EntityManager,
   ) {
     return await this.create({ initialExaminationId }, manager);
+  }
+  private validateTransition(
+    current: ClinicalCaseStatus,
+    next: ClinicalCaseStatus,
+  ) {
+    const validTransitions = ClinicalCaseStateMachine[current];
+    if (!validTransitions.includes(next)) {
+      throw new BadRequestException(
+        `Invalid status transition from ${current} to ${next}`,
+      );
+    }
   }
 }

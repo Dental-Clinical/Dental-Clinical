@@ -1,3 +1,4 @@
+import { StudentAcademicYear } from 'src/student-academic-years/student-academic-years.entity';
 import { ClinicalCase } from '../clinical-case/clinical-case.entity';
 import { User } from '../users/user.entity';
 import {
@@ -30,4 +31,10 @@ export class Student {
 
   @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.assignedStudent)
   clinicalCases: ClinicalCase[];
+
+  @OneToMany(
+    () => StudentAcademicYear,
+    (studentAcademicYear) => studentAcademicYear.student,
+  )
+  studentAcademicYears: StudentAcademicYear[];
 }

@@ -1,3 +1,4 @@
+import { StudentAcademicYear } from 'src/student-academic-years/student-academic-years.entity';
 import { Subject } from '../subjects/subjects.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
@@ -11,4 +12,9 @@ export class StudyYear {
   level: number;
   @OneToMany(() => Subject, (subject) => subject.studyYear)
   subjects: Subject[];
+  @OneToMany(
+    () => StudentAcademicYear,
+    (studentAcademicYear) => studentAcademicYear.studyYear,
+  )
+  studentAcademicYears: StudentAcademicYear[];
 }

@@ -6,15 +6,16 @@ import {
 } from '@nestjs/common';
 import { AppointmentSlot } from 'src/coordinator-schedules/dto/appointment-slot.interface';
 import { EntityManager, Not, Repository } from 'typeorm';
-import { SlotGenerator } from './utils/slot-generator';
+import { SlotGenerator } from '../utils/slot-generator';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CoordinatorSchedule } from 'src/coordinator-schedules/coordniator-schedule.entity';
 import { ExaminationAppointment } from 'src/examination-appointments/examination-appointment.entity';
 import { ExaminationAppointmentStatus } from 'src/examination-requests/Enums/examination-appointment.enum';
 import type { AvailableSlot } from './dto/available-slot.interface';
+import { SchedulingValidation } from 'src/utils/scheduling-validation.utils';
 
 @Injectable()
-export class AvailabilityService {
+export class CoordinatorAvailabilityService {
   constructor(
     @InjectRepository(CoordinatorSchedule)
     private readonly scheduleRepository: Repository<CoordinatorSchedule>,
@@ -23,8 +24,8 @@ export class AvailabilityService {
     private readonly appointmentRepository: Repository<ExaminationAppointment>,
   ) {}
   public async getAvailableSlots(date: Date) {
-    this.validateDate(date);
-    const day = this.getDayOfWeek(date);
+    SchedulingValidation.validateDate(date);
+    const day = SchedulingValidation.getDayOfWeek(date);
 
     const schedules = await this.loadSchedules(day);
 
@@ -75,7 +76,7 @@ export class AvailabilityService {
       message: availableSlots.length
         ? 'Available slots retrieved successfully'
         : 'No available slots for the given date',
-      slots: this.removePastSlots(availableSlots, date),
+      slots: SchedulingValidation.removePastSlots(availableSlots, date),
     };
   }
   public async validateSlotAvailability(
@@ -84,8 +85,8 @@ export class AvailabilityService {
     coordinatorId: number,
     manager: EntityManager,
   ) {
-    this.validateDate(date);
-    const day = this.getDayOfWeek(date);
+    SchedulingValidation.validateDate(date);
+    const day = SchedulingValidation.getDayOfWeek(date);
     let schedule: CoordinatorSchedule | null = null;
     schedule = await manager.findOne(CoordinatorSchedule, {
       where: {
@@ -112,7 +113,7 @@ export class AvailabilityService {
         'The requested slot is not valid for this coordinator',
       );
     }
-    this.validateFutureSlot(date, slot.startTime);
+    SchedulingValidation.validateFutureSlot(date, slot.startTime);
     const bookedAppointments = await manager.find(ExaminationAppointment, {
       where: {
         appointment_date: date,
@@ -163,60 +164,5 @@ export class AvailabilityService {
     return slots.filter(
       (slot) => !bookedSlots.has(`${slot.startTime}-${slot.endTime}`),
     );
-  }
-  private removePastSlots(slots: AppointmentSlot[], date: Date) {
-    const now = new Date();
-    if (date.toDateString() === now.toDateString()) {
-      return slots.filter((slot) => {
-        const [hours, minutes] = slot.startTime.split(':').map(Number);
-        const slotDate = new Date(date);
-        slotDate.setHours(hours, minutes, 0, 0);
-        return slotDate > now;
-      });
-    }
-
-    return slots;
-  }
-  private getDayOfWeek(date: Date): string {
-    const daysOfWeek = [
-      'sunday',
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
-    ];
-    date = new Date(date);
-
-    return daysOfWeek[date.getDay()];
-  }
-  private validateDate(date: Date) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const selectedDate = new Date(date);
-    selectedDate.setHours(0, 0, 0, 0);
-    if (date < today) {
-      throw new BadRequestException(
-        'Cannot get available slots for past dates',
-      );
-    }
-    return true;
-  }
-  private validateFutureSlot(appointmentDate: Date, startTime: string): void {
-    const now = new Date();
-
-    const slotDate = new Date(appointmentDate);
-
-    const [hours, minutes] = startTime.split(':').map(Number);
-
-    slotDate.setHours(hours, minutes, 0, 0);
-
-    if (slotDate <= now) {
-      throw new BadRequestException(
-        'The selected appointment slot has already passed.',
-      );
-    }
   }
 }

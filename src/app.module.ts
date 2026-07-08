@@ -25,6 +25,8 @@ import { SubjectsModule } from './subjects/subjects.module';
 import { InitialExaminationModule } from './initial-examination/initial-examination.module';
 import { ClinicalCaseModule } from './clinical-case/clinical-case.module';
 import { StudentAcademicYearsModule } from './student-academic-years/student-academic-years.module';
+import { SupervisorSchedulesModule } from './supervisor-schedules/supervisor-schedules.module';
+import { ClinicalAppointmentsModule } from './clinical-appointments/clinical-appointments.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -63,6 +65,8 @@ const ENV = process.env.NODE_ENV;
     InitialExaminationModule,
     ClinicalCaseModule,
     StudentAcademicYearsModule,
+    SupervisorSchedulesModule,
+    ClinicalAppointmentsModule,
   ],
   controllers: [AppController],
   providers: [

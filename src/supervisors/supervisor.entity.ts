@@ -1,8 +1,10 @@
+import { SupervisorSchedule } from 'src/supervisor-schedules/supervisor-schedules.entity';
 import { User } from '../users/user.entity';
 import {
   Column,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -19,4 +21,6 @@ export class Supervisor {
     default: () => 'CURRENT_TIMESTAMP',
   })
   created_at: Date;
+  @OneToMany(() => SupervisorSchedule, (schedule) => schedule.supervisor)
+  schedules: SupervisorSchedule[];
 }

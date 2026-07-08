@@ -129,4 +129,35 @@ export class PatientsService {
   private normalizePhoneNumber(phone: string): string {
     return phone.replace(/\D/g, ''); // Remove non-numeric characters
   }
+  public async updateMedicalRecords(
+    patientId: number,
+    updatePatientDto: UpdatePatientProfileDto,
+  ) {
+    const patient = await this.patientRepository.findOne({
+      where: { id: patientId },
+    });
+
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    if (updatePatientDto.medical_history !== undefined) {
+      patient.medical_history = updatePatientDto.medical_history;
+    }
+
+    if (updatePatientDto.current_medications !== undefined) {
+      patient.current_medications = updatePatientDto.current_medications;
+    }
+
+    if (updatePatientDto.allergies !== undefined) {
+      patient.allergies = updatePatientDto.allergies;
+    }
+
+    const savedPatient = await this.patientRepository.save(patient);
+
+    return {
+      message: 'Medical records updated successfully',
+      patient: savedPatient,
+    };
+  }
 }

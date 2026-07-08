@@ -81,6 +81,27 @@ export class ExaminationRequestsController {
     );
   }
 
+  @Get()
+  @Roles([UserRole.PATIENT, UserRole.COORDINATOR])
+  @ApiOperation({ summary: 'Get all examination requests for the current patient' })
+  @ApiOkResponse({ description: 'List of examination requests retrieved' })
+  @ApiResponse({ status: 404, description: 'Patient not found' })
+  async getAllExaminationRequestsForAUser(@CurrentUser() user: AuthenticatedUser) {
+    return this.examinationRequestsService.getAllExaminationRequestsForAUser(user);
+  }
+
+  @Get('/all')
+  @Roles([UserRole.COORDINATOR])
+  @ApiOperation({ summary: 'Get all examination requests' })
+  @ApiOkResponse({ description: 'List of examination requests retrieved' })
+  async getAllExaminationRequests() {
+    return this.examinationRequestsService.getAllExaminationRequests();
+  }
+
+
+
+
+
   @Get(':id')
   @Roles([UserRole.PATIENT, UserRole.COORDINATOR])
   @ApiOperation({ summary: 'Get examination request by ID' })
@@ -94,11 +115,5 @@ export class ExaminationRequestsController {
     return this.examinationRequestsService.getExaminationRequest(id, user);
   }
 
-  @Get()
-  @Roles([UserRole.PATIENT])
-  @ApiOperation({ summary: 'Get all examination requests for the current patient' })
-  @ApiOkResponse({ description: 'List of examination requests retrieved' })
-  async getAllExaminationRequests(@CurrentUser() user: AuthenticatedUser) {
-    return this.examinationRequestsService.getAllExaminationRequests(user);
-  }
+
 }

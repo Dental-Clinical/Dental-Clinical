@@ -146,30 +146,7 @@ export class ExaminationRequestsService {
     return examinationRequest;
   }
 
-  // async approveExaminationRequestAppointment(
-  //   id: number,
-  //   user: User,
-  //   dto: ApproveExaminationAppointmentDto,
-  // ) {
-  //   const examinationRequest = await this.examinationRepository.findOne({
-  //     where: { id: id },
-  //   });
-  //   if (!examinationRequest) {
-  //     throw new NotFoundException('Examination request not found');
-  //   }
-
-  //   const appointment = examinationRequest?.appointment_datetime;
-  //   const result = this.examinationAppointmentRepository.create({
-  //     request_id: examinationRequest?.id,
-  //     coordinator_id: user.id,
-  //     appointment_datetime: appointment,
-  //     status: dto.status,
-  //   });
-  //   await this.examinationAppointmentRepository.save(result);
-  //   return result;
-  // }
-
-  async getAllExaminationRequests(user: AuthenticatedUser) {
+  async getAllExaminationRequestsForAUser(user: AuthenticatedUser) {
     const examinationRequest = await this.examinationRepository.findOne({
       where: {
         patient: {
@@ -181,9 +158,15 @@ export class ExaminationRequestsService {
       relations: {
         patient: true,
         attachments: true,
+        appointment: true,
+        teeth: true,
       },
     });
 
     return examinationRequest;
+  }
+
+  async getAllExaminationRequests() {
+    return await this.examinationRepository.find();
   }
 }

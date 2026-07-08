@@ -1,4 +1,4 @@
-import { InitialExamination } from 'src/initial-examination/initial-examination.entity';
+import { InitialExamination } from '../initial-examination/initial-examination.entity';
 import { CoordinatorSchedule } from '../coordinator-schedules/coordniator-schedule.entity';
 import { User } from '../users/user.entity';
 import {

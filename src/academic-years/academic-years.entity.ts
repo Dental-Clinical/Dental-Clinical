@@ -1,7 +1,9 @@
+import { StudentAcademicYear } from 'src/student-academic-years/student-academic-years.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -22,4 +24,9 @@ export class AcademicYear {
   created_at: Date;
   @UpdateDateColumn()
   updated_at: Date;
+  @OneToMany(
+    () => StudentAcademicYear,
+    (studentAcademicYear) => studentAcademicYear.academicYear,
+  )
+  studentAcademicYears: StudentAcademicYear[];
 }

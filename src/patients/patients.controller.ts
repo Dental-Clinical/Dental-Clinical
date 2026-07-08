@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -19,6 +19,7 @@ import {
   PatientProfileResponseDto,
   UpdatePatientProfileResponseDto,
 } from './dto/patient-response.dto';
+import { UpdatePatientMedicalRecordsDto } from './dto/update-patient-medical-records.dto';
 
 @ApiTags('Patients')
 @ApiBearerAuth('JWT-auth')
@@ -62,5 +63,19 @@ export class PatientsController {
     @Body() dto: UpdatePatientProfileDto,
   ) {
     return await this.patientService.updateMyProfile(user.userId, dto);
+  }
+
+  @Patch(':id/medical-records')
+  @Roles([UserRole.COORDINATOR])
+  @ApiOperation({ summary: 'Update patient medical records' })
+  @ApiOkResponse({
+    description: 'Medical records updated',
+  })
+  @ApiResponse({ status: 404, description: 'Patient not found' })
+  async updatePatientMedicalRecords(
+    @Param('id') id: number,
+    @Body() dto: UpdatePatientMedicalRecordsDto,
+  ) {
+    return await this.patientService.updateMedicalRecords(id, dto);
   }
 }

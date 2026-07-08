@@ -24,6 +24,7 @@ import { StudyYearsModule } from './study-years/study-years.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { InitialExaminationModule } from './initial-examination/initial-examination.module';
 import { ClinicalCaseModule } from './clinical-case/clinical-case.module';
+import { StudentAcademicYearsModule } from './student-academic-years/student-academic-years.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -61,6 +62,7 @@ const ENV = process.env.NODE_ENV;
     SubjectsModule,
     InitialExaminationModule,
     ClinicalCaseModule,
+    StudentAcademicYearsModule,
   ],
   controllers: [AppController],
   providers: [

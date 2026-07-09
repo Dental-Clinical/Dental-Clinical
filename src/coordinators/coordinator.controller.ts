@@ -2,7 +2,9 @@ import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -38,10 +40,8 @@ export class CoordinatorController {
   @Get('appointments/today')
   @Roles([UserRole.COORDINATOR])
   @ApiOperation({ summary: 'Get today appointments for coordinator' })
-  @ApiResponse({
-    status: 200,
-    description: 'Appointments retrieved',
-  })
+  @ApiOkResponse({ description: 'Appointments retrieved' })
+  @ApiResponse({ status: 404, description: 'Coordinator not found' })
   public async getCoordinatorAppointments(
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
@@ -52,7 +52,8 @@ export class CoordinatorController {
   @Get('appointments/upcoming')
   @Roles([UserRole.COORDINATOR])
   @ApiOperation({ summary: 'Get upcoming appointments for coordinator' })
-  @ApiResponse({ status: 200, description: 'Appointments retrieved' })
+  @ApiOkResponse({ description: 'Appointments retrieved' })
+  @ApiResponse({ status: 404, description: 'Coordinator not found' })
   public async getUpcomingAppointments(
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
@@ -63,7 +64,13 @@ export class CoordinatorController {
   @Get('appointments/:appointmentId')
   @Roles([UserRole.COORDINATOR])
   @ApiOperation({ summary: 'Get appointment details for coordinator' })
-  @ApiResponse({ status: 200, description: 'Appointment details retrieved' })
+  @ApiParam({
+    name: 'appointmentId',
+    type: Number,
+    description: 'Appointment ID',
+  })
+  @ApiOkResponse({ description: 'Appointment details retrieved' })
+  @ApiResponse({ status: 404, description: 'Appointment not found' })
   public async getAppointmentDetails(
     @CurrentUser() currentUser: AuthenticatedUser,
     @Param('appointmentId') appointmentId: number,

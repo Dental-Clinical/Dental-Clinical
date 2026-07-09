@@ -83,7 +83,7 @@ export class ExaminationRequestsController {
 
   @Get()
   @Roles([UserRole.PATIENT, UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Get all examination requests for the current patient' })
+  @ApiOperation({ summary: 'Get all examination requests for the current user' })
   @ApiOkResponse({ description: 'List of examination requests retrieved' })
   @ApiResponse({ status: 404, description: 'Patient not found' })
   async getAllExaminationRequestsForAUser(@CurrentUser() user: AuthenticatedUser) {

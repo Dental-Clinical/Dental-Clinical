@@ -20,7 +20,7 @@ import { FilterClinicalCasesDto } from './dto/get-filtered-clinical-cases.dto';
 @ApiBearerAuth('JWT-auth')
 @Controller('clinical-cases')
 export class ClinicalCaseController {
-  constructor(private readonly clinicalCaseService: ClinicalCaseService) { }
+  constructor(private readonly clinicalCaseService: ClinicalCaseService) {}
   @Get()
   @ApiOperation({ summary: 'Get all clinical cases, optionally filtered' })
   @ApiOkResponse({
@@ -53,5 +53,15 @@ export class ClinicalCaseController {
   @ApiResponse({ status: 404, description: 'Clinical Case not found' })
   async getClinicalCase(@Param('id', ParseIntPipe) id: number) {
     return this.clinicalCaseService.findOne(id);
+  }
+  @Get('my-cases')
+  @ApiOperation({
+    summary: 'Get clinical cases assigned to the current student',
+  })
+  @ApiOkResponse({ description: 'List of clinical cases retrieved' })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  @Roles([UserRole.STUDENT])
+  async getStudentClinicalCases(@CurrentUser() user: AuthenticatedUser) {
+    return this.clinicalCaseService.findStudentCases(user.userId);
   }
 }

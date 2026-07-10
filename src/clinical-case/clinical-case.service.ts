@@ -26,7 +26,7 @@ export class ClinicalCaseService {
     @InjectRepository(ClinicalCase)
     private readonly clinicalCaseRepository: Repository<ClinicalCase>,
     private readonly studentService: StudentService,
-  ) { }
+  ) {}
   private async create(dto: CreateClinicalCaseDto, manager: EntityManager) {
     const initialExamination = await manager.findOne(InitialExamination, {
       where: { id: dto.initialExaminationId },
@@ -70,8 +70,18 @@ export class ClinicalCaseService {
 
     return await manager.save(clinicalCase);
   }
-  async findAll(dto: FilterClinicalCasesDto): Promise<ClinicalCaseSummaryDto[]> {
-    const { status, subjectId, assignedStudentId, studyYearId, patientName, fromDate, toDate } = dto;
+  async findAll(
+    dto: FilterClinicalCasesDto,
+  ): Promise<ClinicalCaseSummaryDto[]> {
+    const {
+      status,
+      subjectId,
+      assignedStudentId,
+      studyYearId,
+      patientName,
+      fromDate,
+      toDate,
+    } = dto;
 
     const qb = this.clinicalCaseRepository
       .createQueryBuilder('clinicalCase')
@@ -89,17 +99,25 @@ export class ClinicalCaseService {
     }
 
     if (assignedStudentId) {
-      qb.andWhere('assignedStudent.id = :assignedStudentId', { assignedStudentId });
+      qb.andWhere('assignedStudent.id = :assignedStudentId', {
+        assignedStudentId,
+      });
     }
 
     if (studyYearId) {
-      qb.innerJoin('assignedStudent.studentAcademicYears', 'studentAcademicYear', 'studentAcademicYear.isCurrent = true')
+      qb.innerJoin(
+        'assignedStudent.studentAcademicYears',
+        'studentAcademicYear',
+        'studentAcademicYear.isCurrent = true',
+      )
         .innerJoin('studentAcademicYear.studyYear', 'studyYear')
         .andWhere('studyYear.id = :studyYearId', { studyYearId });
     }
 
     if (patientName) {
-      qb.andWhere('patient.full_name ILIKE :patientName', { patientName: `%${patientName}%` });
+      qb.andWhere('patient.full_name ILIKE :patientName', {
+        patientName: `%${patientName}%`,
+      });
     }
 
     if (fromDate) {
@@ -129,9 +147,9 @@ export class ClinicalCaseService {
       },
       assignedStudent: clinicalCase.assignedStudent
         ? {
-          id: clinicalCase.assignedStudent.id,
-          name: clinicalCase.assignedStudent.user.full_name,
-        }
+            id: clinicalCase.assignedStudent.id,
+            name: clinicalCase.assignedStudent.user.full_name,
+          }
         : null,
     }));
   }
@@ -177,11 +195,28 @@ export class ClinicalCaseService {
 
       assignedStudent: clinicalCase.assignedStudent
         ? {
-          id: clinicalCase.assignedStudent.id,
-          name: clinicalCase.assignedStudent.user.full_name,
-        }
+            id: clinicalCase.assignedStudent.id,
+            name: clinicalCase.assignedStudent.user.full_name,
+          }
         : null,
     };
+  }
+  async findStudentCases(userId: number) {
+    const student = await this.studentService.findByUserId(userId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    const clinicalCases = await this.clinicalCaseRepository.find({
+      where: { assignedStudent: { id: student.id } },
+      relations: {
+        patient: true,
+        subject: true,
+        assignedStudent: true,
+        initialExamination: true,
+        request: true,
+      },
+    });
+    return clinicalCases;
   }
   async updateStatus(id: number, dto: UpdateClinicalCaseStatusDto) {
     const clinicalCase = await this.clinicalCaseRepository.findOne({
@@ -269,5 +304,4 @@ export class ClinicalCaseService {
       );
     }
   }
-
 }

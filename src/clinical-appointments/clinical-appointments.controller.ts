@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -25,8 +33,8 @@ import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.i
 export class ClinicalAppointmentsController {
   constructor(
     private readonly supervisorAvailabilityService: SupervisorAvailabilityService,
-    private readonly clinicalAppointmentService: ClinicalAppointmentsService
-  ) { }
+    private readonly clinicalAppointmentService: ClinicalAppointmentsService,
+  ) {}
   @Get('/available')
   @Roles([UserRole.STUDENT])
   @ApiOperation({ summary: 'Get available supervisor slots for a date' })
@@ -40,9 +48,13 @@ export class ClinicalAppointmentsController {
 
   @Post()
   @Roles([UserRole.STUDENT])
-  @ApiOperation({ summary: 'Create a clinical appointment for a clinical case' })
+  @ApiOperation({
+    summary: 'Create a clinical appointment for a clinical case',
+  })
   @ApiBody({ type: CreateStudentClinicalAppointmentDto })
-  @ApiCreatedResponse({ description: 'Clinical appointment created successfully' })
+  @ApiCreatedResponse({
+    description: 'Clinical appointment created successfully',
+  })
   @ApiResponse({
     status: 404,
     description:
@@ -52,23 +64,43 @@ export class ClinicalAppointmentsController {
     status: 409,
     description: 'A clinical appointment already exists with the same data',
   })
-  async createClinicalAppointment(@Body() dto: CreateStudentClinicalAppointmentDto) {
-    return await this.clinicalAppointmentService.createStudentClinicalAppointment(dto)
+  async createClinicalAppointment(
+    @Body() dto: CreateStudentClinicalAppointmentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.clinicalAppointmentService.createStudentClinicalAppointment(
+      user,
+      dto,
+    );
   }
 
   @Post(':id')
   // for now, we still don't know who does this
   @Roles([UserRole.STUDENT, UserRole.PATIENT, UserRole.SUPERVISOR])
   @ApiOperation({ summary: 'Update the status of a clinical appointment' })
-  @ApiParam({ name: 'id', type: Number, description: 'Clinical appointment ID' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Clinical appointment ID',
+  })
   @ApiBody({ type: UpdateStudentClinicalAppointmentDto })
-  @ApiCreatedResponse({ description: 'Clinical appointment updated successfully' })
-  @ApiResponse({ status: 403, description: 'Appointment does not belong to this user' })
+  @ApiCreatedResponse({
+    description: 'Clinical appointment updated successfully',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Appointment does not belong to this user',
+  })
   @ApiResponse({ status: 404, description: 'Appointment not found' })
-  async updateClinicalAppointment(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateStudentClinicalAppointmentDto, @CurrentUser() user: AuthenticatedUser) {
-    return await this.clinicalAppointmentService.updateAppointment(id, user, dto)
+  async updateClinicalAppointment(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateStudentClinicalAppointmentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.clinicalAppointmentService.updateAppointment(
+      id,
+      user,
+      dto,
+    );
   }
-
-
-
 }

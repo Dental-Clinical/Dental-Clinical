@@ -35,7 +35,7 @@ export class StudentService {
   public async findByUserId(id: number) {
     return await this.studentRepository.findOne({
       where: {
-        user: { id },
+        user: { id, is_active: true },
         studentAcademicYears: { isCurrent: true },
       },
       relations: {

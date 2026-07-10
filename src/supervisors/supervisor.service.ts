@@ -65,4 +65,13 @@ export class SupervisorService {
       },
     });
   }
+  async findById(id: number) {
+    return await this.dataSource.getRepository(Supervisor).findOne({
+      where: { id, user: { is_active: true } },
+      relations: {
+        user: true,
+        schedules: true,
+      },
+    });
+  }
 }

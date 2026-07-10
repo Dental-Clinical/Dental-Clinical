@@ -1,7 +1,12 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClinicalAppointment } from './clinical-appointments.entity';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, IsNull, Repository } from 'typeorm';
 import { CreateStudentClinicalAppointmentDto } from './dto/create-student-clinical-appointment.dto';
 import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 import { Student } from 'src/students/student.entity';
@@ -17,139 +22,153 @@ import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interf
 import { UserRole } from 'src/constants/user-roles';
 import { UpdateStudentClinicalAppointmentDto } from './dto/update-student-clinical-appointment.dto';
 import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status.enum';
+import { StudentService } from 'src/students/student.service';
+import { SupervisorService } from 'src/supervisors/supervisor.service';
 
 @Injectable()
 export class ClinicalAppointmentsService {
   constructor(
-    @InjectRepository(ClinicalAppointment) readonly clinicalAppointmentRepository: Repository<ClinicalAppointment>,
-    @InjectRepository(ClinicalCase) readonly clinicalCaseRepository: Repository<ClinicalCase>,
-    @InjectRepository(Student) readonly studentRepository: Repository<Student>,
-    @InjectRepository(Patient) readonly patientRepository: Repository<Patient>,
-    @InjectRepository(Supervisor) readonly supervisorRepository: Repository<Supervisor>,
+    @InjectRepository(ClinicalAppointment)
+    readonly clinicalAppointmentRepository: Repository<ClinicalAppointment>,
     private readonly dataSource: DataSource,
-    @InjectRepository(ExaminationRequest) readonly examinationRequestRepository: Repository<ExaminationRequest>,
-    @InjectRepository(InitialExamination) readonly initialExaminationRepository: Repository<InitialExamination>,
-    private readonly supervisorAvailibilityService: SupervisorAvailabilityService
-  ) { }
+    private readonly studentService: StudentService,
+    private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
+  ) {}
 
-  async createStudentClinicalAppointment(dto: CreateStudentClinicalAppointmentDto) {
-    const [clinicalCase, student, patient, supervisor, request] = await Promise.all([
-      this.clinicalCaseRepository.findOneBy({ id: dto.clinical_case }),
-      this.studentRepository.findOneBy({ id: dto.student }),
-      this.patientRepository.findOneBy({ id: dto.patient }),
-      this.supervisorRepository.findOneBy({ id: dto.supervisor }),
-      this.examinationRequestRepository.findOne({
-        where: {
-          id: dto.patient,
-          status: ExaminationRequestStatus.CONVERTED_TO_CASE,
-        },
-      }),
-    ]);
+  async createStudentClinicalAppointment(
+    currentUser: AuthenticatedUser,
+    dto: CreateStudentClinicalAppointmentDto,
+  ) {
+    return await this.dataSource.transaction(async (manager) => {
+      const supervisor = await manager.findOne(Supervisor, {
+        where: { id: dto.supervisorId, user: { is_active: true } },
+      });
 
-    if (!clinicalCase) {
-      throw new NotFoundException('Clinical Case not Found');
-    }
-    if (!student) {
-      throw new NotFoundException('Student not Found');
-    }
-    if (!patient) {
-      throw new NotFoundException('Patient not Found');
-    }
-    if (!supervisor) {
-      throw new NotFoundException('Supervisor not Found');
-    }
-    if (!request) {
-      throw new NotFoundException('Examination Request Not Found');
-    }
+      if (!supervisor) {
+        throw new NotFoundException('Supervisor not Found');
+      }
+      const clinicalCase = await manager
+        .getRepository(ClinicalCase)
+        .createQueryBuilder('clinicalCase')
+        .setLock('pessimistic_write')
+        .leftJoinAndSelect('clinicalCase.subject', 'subject')
+        .leftJoinAndSelect('subject.studyYear', 'studyYear')
+        .leftJoinAndSelect('clinicalCase.patient', 'patient')
+        .where('clinicalCase.id = :id', { id: dto.clinicalCaseId })
+        .getOne();
 
+      if (!clinicalCase) {
+        throw new NotFoundException('Clinical Case not Found');
+      }
 
-    const initialExamination = await this.initialExaminationRepository.findOneBy({
-      request,
-    });
-    if (!initialExamination) {
-      throw new NotFoundException('Initial Examination not Found');
-    }
-    if (initialExamination.status === InitialExaminationStatus.COMPLETED) {
-      throw new NotFoundException(
-        "Initial Examination Status doesn't allow for another clinical appointment",
+      if (clinicalCase.status !== ClinicalCaseStatus.OPEN) {
+        throw new ConflictException('Clinical Case is not open');
+      }
+
+      if (clinicalCase.assignedStudent) {
+        throw new ConflictException(
+          'Clinical Case is already assigned to a student',
+        );
+      }
+
+      const student = await manager.findOne(Student, {
+        where: { user: { id: currentUser.userId } },
+      });
+
+      if (!student) {
+        throw new NotFoundException('Student not Found');
+      }
+
+      const studentCurrentYear = await this.studentService.getCurrentStudyYear(
+        student.id,
       );
-    }
 
-    if (clinicalCase.status !== ClinicalCaseStatus.OPEN) {
-      throw new ConflictException("Clinical Case is not open")
-    }
+      if (clinicalCase.subject.studyYear.level !== studentCurrentYear.level) {
+        throw new ForbiddenException(
+          'Student is not in the same study year as the clinical case',
+        );
+      }
 
-    const existingAppointment = await this.clinicalAppointmentRepository.findOne({
-      where: {
-        clinicalCase,
-        student,
-        patient,
-        supervisor,
-        appointmentStart: dto.appointment_start,
-        appointmentEnd: dto.appointment_end,
-        appointmentDate: dto.appointment_date,
-        status: ClinicalAppointmentStatus.SCHEDULED,
-      },
-    });
-    if (existingAppointment) {
-      throw new ConflictException('A clinical appointment already exists with the same data');
-    }
+      const patient = clinicalCase.patient;
 
-    return this.dataSource.transaction(async (manager) => {
-      const { startTime, endTime } = await this.checkSuperVisorAvailability(
+      const { startTime, endTime } = await this.checkSupervisorAvailability(
         dto.appointment_date,
         dto.appointment_start,
-        dto.supervisor,
+        supervisor.id,
         manager,
       );
 
-      const clinicalAppointment = manager.getRepository(ClinicalAppointment).create({
-        clinicalCase,
-        student,
-        patient,
-        supervisor,
-        appointmentDate: dto.appointment_date,
-        appointmentStart: startTime,
-        appointmentEnd: endTime,
-        status: ClinicalAppointmentStatus.SCHEDULED,
+      const existingAppointment = await manager.findOne(ClinicalAppointment, {
+        where: {
+          clinicalCase: { id: clinicalCase.id },
+          status: ClinicalAppointmentStatus.SCHEDULED,
+        },
       });
+      if (existingAppointment) {
+        throw new ConflictException('A clinical appointment already exists');
+      }
 
-      this.clinicalCaseRepository.update(clinicalCase.id, { status: ClinicalCaseStatus.ASSIGNED })
+      const clinicalAppointment = manager
+        .getRepository(ClinicalAppointment)
+        .create({
+          clinicalCase,
+          student,
+          patient,
+          supervisor,
+          appointmentDate: dto.appointment_date,
+          appointmentStart: startTime,
+          appointmentEnd: endTime,
+          status: ClinicalAppointmentStatus.SCHEDULED,
+        });
+
+      clinicalCase.assignedStudent = student;
+      clinicalCase.status = ClinicalCaseStatus.ASSIGNED;
+      await manager.save(clinicalCase);
 
       return manager.save(clinicalAppointment);
     });
   }
 
-  private async checkSuperVisorAvailability(
+  private async checkSupervisorAvailability(
     date: Date,
     time: string,
     supervisorId: number,
     manager: EntityManager,
   ) {
-    const availableSlot = await this.supervisorAvailibilityService.validateSlotAvailability(
-      date,
-      time,
-      supervisorId,
-      manager,
-    );
+    const availableSlot =
+      await this.supervisorAvailibilityService.validateSlotAvailability(
+        date,
+        time,
+        supervisorId,
+        manager,
+      );
 
     return availableSlot;
   }
 
-
-  async updateAppointment(id: number, user: AuthenticatedUser, dto: UpdateStudentClinicalAppointmentDto) {
-    const appointment = await this.clinicalAppointmentRepository.findOneBy({ id })
+  async updateAppointment(
+    id: number,
+    user: AuthenticatedUser,
+    dto: UpdateStudentClinicalAppointmentDto,
+  ) {
+    const appointment = await this.clinicalAppointmentRepository.findOneBy({
+      id,
+    });
     if (!appointment) {
-      throw new NotFoundException("Appointment Not Found")
+      throw new NotFoundException('Appointment Not Found');
     }
-    if (user.role === UserRole.STUDENT && appointment.student.user.id !== user.userId) {
-      throw new ForbiddenException("Appointment isn't for this user")
+    if (
+      user.role === UserRole.STUDENT &&
+      appointment.student.user.id !== user.userId
+    ) {
+      throw new ForbiddenException("Appointment isn't for this user");
     }
-    if (user.role === UserRole.PATIENT && appointment.patient.user?.id !== user.userId) {
-
-      throw new ForbiddenException("Appointment isn't for this patient")
+    if (
+      user.role === UserRole.PATIENT &&
+      appointment.patient.user?.id !== user.userId
+    ) {
+      throw new ForbiddenException("Appointment isn't for this patient");
     }
-    return await this.clinicalAppointmentRepository.update(id, dto)
+    return await this.clinicalAppointmentRepository.update(id, dto);
   }
-
 }

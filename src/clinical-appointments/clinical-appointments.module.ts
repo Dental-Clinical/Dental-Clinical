@@ -11,13 +11,24 @@ import { Patient } from 'src/patients/patient.entity';
 import { Supervisor } from 'src/supervisors/supervisor.entity';
 import { ExaminationRequest } from 'src/examination-requests/entities/examination-request.entity';
 import { InitialExamination } from 'src/initial-examination/initial-examination.entity';
+import { StudentModule } from 'src/students/student.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ClinicalAppointment, SupervisorSchedule, ClinicalCase, Student, Patient, Supervisor, ExaminationRequest, InitialExamination]),
+    TypeOrmModule.forFeature([
+      ClinicalAppointment,
+      SupervisorSchedule,
+      ClinicalCase,
+      Student,
+      Patient,
+      Supervisor,
+      ExaminationRequest,
+      InitialExamination,
+    ]),
+    StudentModule,
   ],
   providers: [SupervisorAvailabilityService, ClinicalAppointmentsService],
   controllers: [ClinicalAppointmentsController],
   exports: [SupervisorAvailabilityService, ClinicalAppointmentsService],
 })
-export class ClinicalAppointmentsModule { }
+export class ClinicalAppointmentsModule {}

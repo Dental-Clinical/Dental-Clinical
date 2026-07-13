@@ -14,6 +14,8 @@ import {
 import { Subject } from '../subjects/subjects.entity';
 import { Student } from '../students/student.entity';
 import { ClinicalCaseStatus } from './enums/clinical-case-status.enum';
+import { Supervisor } from 'src/supervisors/supervisor.entity';
+import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
 
 @Entity('clinical_cases')
 export class ClinicalCase {
@@ -53,6 +55,18 @@ export class ClinicalCase {
   })
   @JoinColumn({ name: 'assigned_student_id' })
   assignedStudent: Student;
+
+  @ManyToOne(() => Supervisor, (supervisor) => supervisor.clinicalCases, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'assigned_supervisor_id' })
+  assignedSupervisor: Supervisor;
+
+  @OneToOne(
+    () => DiagnosisSubmission,
+    (diagnosisSubmission) => diagnosisSubmission.clinicalCase,
+  )
+  diagnosisSubmission: DiagnosisSubmission;
 
   @Column({
     type: 'enum',

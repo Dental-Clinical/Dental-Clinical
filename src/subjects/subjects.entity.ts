@@ -13,6 +13,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ClinicalCase } from '../clinical-case/clinical-case.entity';
+import { SubjectProcedures } from 'src/subject-procedures/subject-procedures.entity';
 
 @Entity('subjects')
 @Unique(['studyYear', 'name'])
@@ -31,8 +32,6 @@ export class Subject {
   name: string;
   @Column({ type: 'text', nullable: true })
   description: string;
-  @Column({ type: 'int', nullable: false })
-  required_cases: number;
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
   @CreateDateColumn()
@@ -43,4 +42,9 @@ export class Subject {
   initialExaminations: InitialExamination[];
   @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.subject)
   clinicalCases: ClinicalCase[];
+  @OneToMany(
+    () => SubjectProcedures,
+    (subjectProcedure) => subjectProcedure.subject,
+  )
+  subjectProcedures: SubjectProcedures[];
 }

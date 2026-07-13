@@ -122,7 +122,9 @@ export class ClinicalAppointmentsService {
         });
 
       clinicalCase.assignedStudent = student;
+      clinicalCase.assignedSupervisor = supervisor;
       clinicalCase.status = ClinicalCaseStatus.ASSIGNED;
+
       await manager.save(clinicalCase);
 
       return manager.save(clinicalAppointment);

@@ -8,6 +8,8 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
+import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
 
 @Entity('supervisors')
 export class Supervisor {
@@ -23,4 +25,16 @@ export class Supervisor {
   created_at: Date;
   @OneToMany(() => SupervisorSchedule, (schedule) => schedule.supervisor)
   schedules: SupervisorSchedule[];
+
+  @OneToMany(
+    () => ClinicalCase,
+    (clinicalCase) => clinicalCase.assignedSupervisor,
+  )
+  clinicalCases: ClinicalCase[];
+
+  @OneToMany(
+    () => DiagnosisSubmission,
+    (diagnosisSubmission) => diagnosisSubmission.supervisor,
+  )
+  diagnosisSubmissions: DiagnosisSubmission[];
 }

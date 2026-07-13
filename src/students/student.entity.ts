@@ -9,6 +9,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { JoinColumn } from 'typeorm/browser';
+import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
 
 @Entity('students')
 export class Student {
@@ -37,4 +38,10 @@ export class Student {
     (studentAcademicYear) => studentAcademicYear.student,
   )
   studentAcademicYears: StudentAcademicYear[];
+
+  @OneToMany(
+    () => DiagnosisSubmission,
+    (diagnosisSubmission) => diagnosisSubmission.student,
+  )
+  diagnosisSubmissions: DiagnosisSubmission[];
 }

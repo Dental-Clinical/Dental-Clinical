@@ -98,7 +98,11 @@ export class AuthService {
 
     return {
       accessToken,
-      role: user.role,
+      user: {
+        id: user.id,
+        full_name: user.full_name,
+        role: user.role,
+      },
     };
   }
   // send registration OTP
@@ -238,11 +242,10 @@ export class AuthService {
 
     return {
       accessToken,
-      role: user.role,
       user: {
         id: user.id,
         full_name: user.full_name,
-        father_name: user.father_name,
+        role: user.role,
       },
     };
   }

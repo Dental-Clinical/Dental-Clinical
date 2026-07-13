@@ -29,8 +29,8 @@ export class PlannedProcedures {
   @JoinColumn({ name: 'diagnosis_submission_id' })
   diagnosisSubmission: DiagnosisSubmission;
 
-  @Column({ type: 'varchar', name: 'tooth_number' })
-  toothNumber: string;
+  @Column({ type: 'int', name: 'tooth_number' })
+  toothNumber: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

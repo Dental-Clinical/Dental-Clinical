@@ -51,7 +51,7 @@ export class DiagnosisSubmission {
   @Column({
     type: 'enum',
     enum: DiagnosisSubmissionStatus,
-    default: DiagnosisSubmissionStatus.SUBMITTED,
+    default: DiagnosisSubmissionStatus.PENDING_REVIEW,
   })
   status: DiagnosisSubmissionStatus;
 

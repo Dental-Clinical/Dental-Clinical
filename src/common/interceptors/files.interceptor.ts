@@ -10,12 +10,19 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { v4 as uuid } from 'uuid';
 import { mkdirSync } from 'fs';
+import { UploadOptions } from '../interfaces/upload-options.interface';
 
-export function ExaminationAttachmentsInterceptor(
-  fieldName = 'attachments',
-  maxCount = 5,
+export function FileUploadInterceptor(
+  options: UploadOptions,
 ): Type<NestInterceptor> {
-  const uploadPath = './uploads/examination-requests';
+  const {
+    uploadPath,
+    fieldName = 'files',
+    maxCount = 5,
+    allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'],
+    maxFileSize = 5 * 1024 * 1024,
+  } = options;
+
   mkdirSync(uploadPath, { recursive: true });
 
   @Injectable()
@@ -26,15 +33,19 @@ export function ExaminationAttachmentsInterceptor(
         cb(null, `${uuid()}${extname(file.originalname)}`);
       },
     }),
-    limits: { fileSize: 5 * 1024 * 1024 },
+
+    limits: {
+      fileSize: maxFileSize,
+    },
+
     fileFilter: (req, file, cb) => {
-      const allowed = ['image/jpeg', 'image/png', 'application/pdf'];
-      if (!allowed.includes(file.mimetype)) {
+      if (!allowedMimeTypes.includes(file.mimetype)) {
         return cb(new BadRequestException('Unsupported file type'), false);
       }
+
       cb(null, true);
     },
-  }) { }
+  }) {}
 
   return mixin(MixinInterceptor);
 }

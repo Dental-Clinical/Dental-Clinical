@@ -6,14 +6,22 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ExaminationRequest } from './examination-request.entity';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
 @Entity()
 export class ExaminationRequestAttachments {
+  @ApiProperty({ description: 'Attachment ID', example: 1 })
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty({ description: 'Request ID', example: 1 })
   @Column()
   request_id: number;
 
+  @ApiProperty({
+    type: () => ExaminationRequest,
+    description: 'Associated examination request',
+  })
   @ManyToOne(
     () => ExaminationRequest,
     (examinationRequest) => examinationRequest.attachments,
@@ -22,12 +30,18 @@ export class ExaminationRequestAttachments {
   @JoinColumn({ name: 'request_id' })
   examination_request: ExaminationRequest;
 
+  @ApiProperty({
+    description: 'File path',
+    example: 'uploads/examination-requests/image.jpg',
+  })
   @Column()
   file_path: string;
 
+  @ApiProperty({ description: 'File name', example: 'xray-tooth-36.jpg' })
   @Column()
   file_name: string;
 
+  @ApiProperty({ description: 'MIME type', example: 'image/jpeg' })
   @Column()
   mime_type: string;
 }

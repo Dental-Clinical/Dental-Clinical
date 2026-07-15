@@ -8,13 +8,16 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('student_sections')
 @Unique(['studentAcademicYear', 'clinicSection'])
 export class StudentSection {
+  @ApiProperty({ description: 'Record ID', example: 1 })
   @PrimaryGeneratedColumn()
   id: number;
 
+  @ApiProperty({ type: () => StudentAcademicYear, description: 'Associated student academic year' })
   @ManyToOne(
     () => StudentAcademicYear,
     (studentAcademicYear) => studentAcademicYear.studentSections,
@@ -26,6 +29,7 @@ export class StudentSection {
   @JoinColumn({ name: 'student_academic_year_id' })
   studentAcademicYear: StudentAcademicYear;
 
+  @ApiProperty({ type: () => ClinicSections, description: 'Associated clinic section' })
   @ManyToOne(
     () => ClinicSections,
     (clinicSection) => clinicSection.studentSections,
@@ -37,6 +41,7 @@ export class StudentSection {
   @JoinColumn({ name: 'clinic_section_id' })
   clinicSection: ClinicSections;
 
+  @ApiProperty({ description: 'Creation timestamp' })
   @CreateDateColumn()
   createdAt: Date;
 }

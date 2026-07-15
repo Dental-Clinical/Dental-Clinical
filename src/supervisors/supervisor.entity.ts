@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
+import { ClinicSections } from 'src/clinic-sections/clinic-sections.entity';
 
 @Entity('supervisors')
 export class Supervisor {
@@ -37,4 +38,7 @@ export class Supervisor {
     (diagnosisSubmission) => diagnosisSubmission.supervisor,
   )
   diagnosisSubmissions: DiagnosisSubmission[];
+
+  @OneToMany(() => ClinicSections, (clinicSection) => clinicSection.supervisor)
+  clinicSections: ClinicSections[];
 }

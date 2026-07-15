@@ -25,4 +25,11 @@ export class SlotGenerator {
 
     return slots;
   }
+  static generateFixedDurationSlots(
+    startTime: string,
+    endTime: string,
+    slotDuration: number,
+  ): AppointmentSlot[] {
+    return this.generateSlots(startTime, endTime, slotDuration);
+  }
 }

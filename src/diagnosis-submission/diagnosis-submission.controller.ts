@@ -12,6 +12,8 @@ import { CreateDiagnosisSubmissionDto } from './dto/create-diagnosis-submission.
 import { FileUploadInterceptor } from 'src/common/interceptors/files.interceptor';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { UserRole } from 'src/constants/user-roles';
 
 @Controller('diagnosis-submission')
 export class DiagnosisSubmissionController {
@@ -19,6 +21,7 @@ export class DiagnosisSubmissionController {
     private readonly diagnosisSubmissionService: DiagnosisSubmissionService,
   ) {}
   @Post()
+  @Roles([UserRole.STUDENT])
   @UseInterceptors(
     FileUploadInterceptor({
       uploadPath: './uploads/diagnosis-submissions',

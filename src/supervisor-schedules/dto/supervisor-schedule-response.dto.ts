@@ -17,9 +17,6 @@ export class SupervisorScheduleResponseDto {
   @ApiProperty({ example: '12:00' })
   end_time: string;
 
-  @ApiProperty({ example: 30 })
-  slot_duration: number;
-
   @ApiProperty({ example: true })
   is_active: boolean;
 

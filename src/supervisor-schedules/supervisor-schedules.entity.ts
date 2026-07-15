@@ -43,12 +43,6 @@ export class SupervisorSchedule {
   })
   end_time: string;
 
-  // Duration in minutes
-  @Column({
-    type: 'int',
-  })
-  slot_duration: number;
-
   @Column({
     default: true,
   })

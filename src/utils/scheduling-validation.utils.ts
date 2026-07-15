@@ -57,4 +57,54 @@ export class SchedulingValidation {
 
     return daysOfWeek[date.getDay()];
   }
+  static calculateAppointmentEndTime(
+    startTime: string,
+    durationMinutes: number,
+  ): string {
+    const [hours, minutes] = startTime.split(':').map(Number);
+
+    const start = new Date(0, 0, 0, hours, minutes);
+
+    start.setMinutes(start.getMinutes() + durationMinutes);
+
+    return start.toTimeString().slice(0, 8);
+  }
+  static validateWithinSchedule(
+    startTime: string,
+    endTime: string,
+    scheduleStart: string,
+    scheduleEnd: string,
+  ) {
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+    const [endHours, endMinutes] = endTime.split(':').map(Number);
+    const [scheduleStartHours, scheduleStartMinutes] = scheduleStart
+      .split(':')
+      .map(Number);
+    const [scheduleEndHours, scheduleEndMinutes] = scheduleEnd
+      .split(':')
+      .map(Number);
+
+    const startDate = new Date(0, 0, 0, startHours, startMinutes);
+    const endDate = new Date(0, 0, 0, endHours, endMinutes);
+    const scheduleStartDate = new Date(
+      0,
+      0,
+      0,
+      scheduleStartHours,
+      scheduleStartMinutes,
+    );
+    const scheduleEndDate = new Date(
+      0,
+      0,
+      0,
+      scheduleEndHours,
+      scheduleEndMinutes,
+    );
+
+    if (startDate < scheduleStartDate || endDate > scheduleEndDate) {
+      throw new BadRequestException(
+        'The selected appointment time is outside the supervisor schedule.',
+      );
+    }
+  }
 }

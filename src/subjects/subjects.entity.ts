@@ -7,6 +7,7 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   RelationId,
   Unique,
@@ -14,6 +15,7 @@ import {
 } from 'typeorm';
 import { ClinicalCase } from '../clinical-case/clinical-case.entity';
 import { SubjectProcedures } from 'src/subject-procedures/subject-procedures.entity';
+import { ClinicSections } from 'src/clinic-sections/clinic-sections.entity';
 
 @Entity('subjects')
 @Unique(['studyYear', 'name'])
@@ -47,4 +49,6 @@ export class Subject {
     (subjectProcedure) => subjectProcedure.subject,
   )
   subjectProcedures: SubjectProcedures[];
+  @OneToMany(() => ClinicSections, (clinicSection) => clinicSection.subject)
+  clinicSections: ClinicSections[];
 }

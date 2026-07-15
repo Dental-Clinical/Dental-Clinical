@@ -153,6 +153,7 @@ export class AuthService {
   }
   // send login OTP
   public async sendLoginOtp(otpDto: SendOtpDto): Promise<void> {
+    otpDto.phone = otpDto.phone.replace(/\D/g, '');
     const user = await this.userService.findByPhone(otpDto.phone);
     if (!user) {
       throw new HttpException(
@@ -205,12 +206,16 @@ export class AuthService {
 
     return {
       accessToken,
-      role: user.role,
+      user: {
+        id: user.id,
+        full_name: user.full_name,
+        role: user.role,
+      },
     };
   }
   // staff login
   public async staffLogin(dto: StaffLoginDto) {
-    const user = await this.findStaffByIdentifier(dto.identifier);
+    const user = await this.findStaffByEmail(dto.email);
 
     if (!user || !user.password_hash) {
       throw new UnauthorizedException('Invalid credentials');
@@ -270,15 +275,7 @@ export class AuthService {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
   }
   // helper function to find staff by identifier (email or university ID)
-  private async findStaffByIdentifier(
-    identifier: string,
-  ): Promise<User | null> {
-    if (this.isEmail(identifier)) {
-      return this.userService.findByEmail(identifier);
-    }
-
-    const student = await this.studentService.findByUniversityId(identifier);
-
-    return student?.user ?? null;
+  private async findStaffByEmail(email: string): Promise<User | null> {
+    return await this.userService.findByEmail(email);
   }
 }

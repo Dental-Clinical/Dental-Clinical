@@ -10,9 +10,7 @@ import { CreateSupervisorScheduleDto } from './dto/create-supervisor-schedule.dt
 import { InjectRepository } from '@nestjs/typeorm';
 import { SupervisorSchedule } from './supervisor-schedules.entity';
 import { Repository } from 'typeorm';
-import { CoordinatorService } from 'src/coordinators/coordinator.service';
 import { DayOfWeek } from 'src/constants/day-of-week';
-import type { AppointmentSlot } from './dto/appointment-slot.interface';
 import { UpdateSupervisorScheduleDto } from './dto/update-supervisor-schedule.dto';
 import { SupervisorService } from 'src/supervisors/supervisor.service';
 
@@ -26,10 +24,6 @@ export class SupervisorScheduleService {
   ) {}
   async createSchedule(userId: number, dto: CreateSupervisorScheduleDto) {
     dto.day_of_week = dto.day_of_week.toLowerCase();
-    const allowedDurations = [15, 20, 30, 45, 60];
-    if (!allowedDurations.includes(dto.slot_duration)) {
-      throw new BadRequestException(`Invalid slot duration`);
-    }
 
     const supervisor = await this.supervisorService.findByUserId(userId);
     if (!supervisor) {
@@ -89,7 +83,6 @@ export class SupervisorScheduleService {
         workingDays: schedules.map((schedule) => ({
           day: schedule.day_of_week,
           workingHours: schedule.start_time + ' - ' + schedule.end_time,
-          slotDuration: schedule.slot_duration,
           isActive: schedule.is_active,
         })),
       },
@@ -177,24 +170,12 @@ export class SupervisorScheduleService {
       throw new BadRequestException('End time must be after start time');
     }
 
-    if (duration < schedule.slot_duration) {
-      throw new BadRequestException(
-        'Working period is shorter than slot duration',
-      );
-    }
-
-    if (duration % schedule.slot_duration !== 0) {
-      throw new BadRequestException(
-        'Slot duration must divide the working hours exactly',
-      );
-    }
-
     if (duration > this.MAX_WORKING_MINUTES) {
       throw new BadRequestException('Working period cannot exceed 12 hours');
     }
     const query = this.supervisorScheduleRepository
       .createQueryBuilder('schedule')
-      .where('schedule.coordinator_id = :coordinatorId', {
+      .where('schedule.supervisor_id = :supervisorId', {
         supervisorId,
       })
       .andWhere('schedule.day_of_week = :day', {

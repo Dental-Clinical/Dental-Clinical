@@ -5,10 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Student } from './student.entity';
 import { UserModule } from 'src/users/user.module';
 import { CommonModule } from 'src/common/common.module';
+import { StudentSection } from 'src/student-section/student-section.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Student]),
+    TypeOrmModule.forFeature([Student, StudentSection]),
     forwardRef(() => UserModule),
     CommonModule,
   ],

@@ -30,6 +30,8 @@ export class ClinicalAppointmentsService {
   constructor(
     @InjectRepository(ClinicalAppointment)
     readonly clinicalAppointmentRepository: Repository<ClinicalAppointment>,
+    @InjectRepository(ClinicalCase)
+    readonly clinicalCaseRepository: Repository<ClinicalCase>,
     private readonly dataSource: DataSource,
     private readonly studentService: StudentService,
     private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
@@ -40,40 +42,45 @@ export class ClinicalAppointmentsService {
     dto: CreateStudentClinicalAppointmentDto,
   ) {
     return await this.dataSource.transaction(async (manager) => {
-      const supervisor = await manager.findOne(Supervisor, {
-        where: { id: dto.supervisorId, user: { is_active: true } },
-      });
-
-      if (!supervisor) {
-        throw new NotFoundException('Supervisor not Found');
-      }
       const clinicalCase = await manager
         .getRepository(ClinicalCase)
         .createQueryBuilder('clinicalCase')
         .setLock('pessimistic_write')
-        .leftJoinAndSelect('clinicalCase.subject', 'subject')
-        .leftJoinAndSelect('subject.studyYear', 'studyYear')
-        .leftJoinAndSelect('clinicalCase.patient', 'patient')
         .where('clinicalCase.id = :id', { id: dto.clinicalCaseId })
         .getOne();
 
-      if (!clinicalCase) {
+      const loadedCase = await manager.findOne(ClinicalCase, {
+        where: { id: dto.clinicalCaseId },
+        relations: {
+          subject: { studyYear: true },
+          patient: true,
+        },
+      });
+
+      if (!loadedCase) {
         throw new NotFoundException('Clinical Case not Found');
       }
 
-      if (clinicalCase.status !== ClinicalCaseStatus.OPEN) {
+      if (loadedCase.status !== ClinicalCaseStatus.OPEN) {
         throw new ConflictException('Clinical Case is not open');
       }
 
-      if (clinicalCase.assignedStudent) {
+      if (loadedCase.assignedStudent) {
         throw new ConflictException(
           'Clinical Case is already assigned to a student',
         );
       }
 
-      const student = await manager.findOne(Student, {
-        where: { user: { id: currentUser.userId } },
-      });
+      if (loadedCase.assignedSupervisor) {
+        throw new ConflictException(
+          'Clinical Case is already assigned to a supervisor',
+        );
+      }
+
+      const student = await this.studentService.findByUserId(
+        currentUser.userId,
+        manager,
+      );
 
       if (!student) {
         throw new NotFoundException('Student not Found');
@@ -81,26 +88,35 @@ export class ClinicalAppointmentsService {
 
       const studentCurrentYear = await this.studentService.getCurrentStudyYear(
         student.id,
+        manager,
       );
 
-      if (clinicalCase.subject.studyYear.level !== studentCurrentYear.level) {
+      if (loadedCase.subject.studyYear.level !== studentCurrentYear.level) {
         throw new ForbiddenException(
           'Student is not in the same study year as the clinical case',
         );
       }
 
-      const patient = clinicalCase.patient;
+      const studentCurrentSection =
+        await this.studentService.getStudentSectionForSubject(
+          student.id,
+          loadedCase.subject.id,
+          manager,
+        );
+
+      const { patient } = loadedCase;
+      const { supervisor } = studentCurrentSection.clinicSection;
 
       const { startTime, endTime } = await this.checkSupervisorAvailability(
-        dto.appointment_date,
-        dto.appointment_start,
+        dto.appointmentDate,
+        dto.appointmentStart,
         supervisor.id,
         manager,
       );
 
       const existingAppointment = await manager.findOne(ClinicalAppointment, {
         where: {
-          clinicalCase: { id: clinicalCase.id },
+          clinicalCase: { id: loadedCase.id },
           status: ClinicalAppointmentStatus.SCHEDULED,
         },
       });
@@ -111,21 +127,21 @@ export class ClinicalAppointmentsService {
       const clinicalAppointment = manager
         .getRepository(ClinicalAppointment)
         .create({
-          clinicalCase,
+          clinicalCase: loadedCase,
           student,
           patient,
           supervisor,
-          appointmentDate: dto.appointment_date,
+          appointmentDate: dto.appointmentDate,
           appointmentStart: startTime,
           appointmentEnd: endTime,
           status: ClinicalAppointmentStatus.SCHEDULED,
         });
 
-      clinicalCase.assignedStudent = student;
-      clinicalCase.assignedSupervisor = supervisor;
-      clinicalCase.status = ClinicalCaseStatus.ASSIGNED;
+      loadedCase.assignedStudent = student;
+      loadedCase.assignedSupervisor = supervisor;
+      loadedCase.status = ClinicalCaseStatus.ASSIGNED;
 
-      await manager.save(clinicalCase);
+      await manager.save(loadedCase);
 
       return manager.save(clinicalAppointment);
     });
@@ -172,5 +188,43 @@ export class ClinicalAppointmentsService {
       throw new ForbiddenException("Appointment isn't for this patient");
     }
     return await this.clinicalAppointmentRepository.update(id, dto);
+  }
+  async getAvailableSlots(
+    currentUser: AuthenticatedUser,
+    date: Date,
+    clinicalCaseId: number,
+  ) {
+    const clinicalCase = await this.clinicalCaseRepository.findOne({
+      where: { id: clinicalCaseId },
+      relations: {
+        subject: true,
+      },
+    });
+    console.log(clinicalCase);
+
+    if (!clinicalCase) {
+      throw new NotFoundException('Clinical case not found');
+    }
+
+    if (clinicalCase.status !== ClinicalCaseStatus.OPEN) {
+      throw new ConflictException(
+        'Clinical case is no longer available for scheduling',
+      );
+    }
+
+    if (clinicalCase.assignedStudent) {
+      throw new ConflictException('Clinical case has already been assigned');
+    }
+
+    const studentSection =
+      await this.studentService.getStudentSectionForSubject(
+        currentUser.userId,
+        clinicalCase.subject.id,
+      );
+
+    return await this.supervisorAvailibilityService.getAvailableSlots(
+      date,
+      studentSection.clinicSection.supervisor.id,
+    );
   }
 }

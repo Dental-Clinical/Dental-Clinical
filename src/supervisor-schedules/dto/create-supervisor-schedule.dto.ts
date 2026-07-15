@@ -38,14 +38,4 @@ export class CreateSupervisorScheduleDto {
     message: 'end_time must be in HH:mm format',
   })
   end_time: string;
-
-  @ApiProperty({
-    example: 30,
-    description: 'Slot duration in minutes',
-  })
-  @IsNotEmpty()
-  @IsInt()
-  @Min(5)
-  @Max(180)
-  slot_duration: number;
 }

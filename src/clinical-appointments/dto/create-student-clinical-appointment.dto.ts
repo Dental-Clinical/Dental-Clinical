@@ -1,4 +1,10 @@
-import { IsDateString, IsEnum, IsNumber, Matches } from 'class-validator';
+import {
+  IsDate,
+  IsDateString,
+  IsEnum,
+  IsNumber,
+  Matches,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ClinicalAppointmentStatus } from '../enums/clinical-appointment.enum';
 
@@ -7,13 +13,9 @@ export class CreateStudentClinicalAppointmentDto {
   @IsNumber()
   clinicalCaseId: number;
 
-  @ApiProperty({ example: 1, description: 'Supervisor ID' })
-  @IsNumber()
-  supervisorId: number;
-
   @ApiProperty({ example: '2026-12-25', description: 'Appointment date' })
-  @IsDateString()
-  appointment_date: Date;
+  @IsDate()
+  appointmentDate: Date;
 
   @ApiProperty({
     example: '09:00',
@@ -22,5 +24,5 @@ export class CreateStudentClinicalAppointmentDto {
   @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/, {
     message: 'time must be in HH:mm format',
   })
-  appointment_start: string;
+  appointmentStart: string;
 }

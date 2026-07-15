@@ -40,9 +40,14 @@ export class ClinicalAppointmentsController {
   @ApiOperation({ summary: 'Get available supervisor slots for a date' })
   @ApiOkResponse({ description: 'Available slots retrieved successfully' })
   @ApiResponse({ status: 400, description: 'Invalid date or past date' })
-  async getAvailableAppointments(@Query() dto: GetAvailableSlotDto) {
-    return await this.supervisorAvailabilityService.getAvailableSlots(
+  async getAvailableAppointments(
+    @Query() dto: GetAvailableSlotDto,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return await this.clinicalAppointmentService.getAvailableSlots(
+      currentUser,
       new Date(dto.date),
+      dto.clinicalCaseId,
     );
   }
 

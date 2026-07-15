@@ -1,4 +1,5 @@
 import { AcademicYear } from 'src/academic-years/academic-years.entity';
+import { StudentSection } from 'src/student-section/student-section.entity';
 import { Student } from 'src/students/student.entity';
 import { StudyYear } from 'src/study-years/study-years.entity';
 import {
@@ -7,6 +8,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
@@ -28,6 +30,12 @@ export class StudentAcademicYear {
   @ManyToOne(() => StudyYear)
   @JoinColumn({ name: 'study_year_id' })
   studyYear: StudyYear;
+
+  @OneToMany(
+    () => StudentSection,
+    (studentSection) => studentSection.studentAcademicYear,
+  )
+  studentSections: StudentSection[];
 
   @Column({ default: true })
   isCurrent: boolean;

@@ -3,6 +3,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { AppointmentSlot } from 'src/coordinator-schedules/dto/appointment-slot.interface';
 import { EntityManager, Not, Repository } from 'typeorm';
@@ -23,60 +24,40 @@ export class SupervisorAvailabilityService {
     @InjectRepository(ClinicalAppointment)
     private readonly appointmentRepository: Repository<ClinicalAppointment>,
   ) {}
-  public async getAvailableSlots(date: Date) {
+  public async getAvailableSlots(date: Date, supervisorId: number) {
     SchedulingValidation.validateDate(date);
+
     const day = SchedulingValidation.getDayOfWeek(date);
 
-    const schedules = await this.loadSchedules(day);
+    const schedule = await this.scheduleRepository.findOne({
+      where: {
+        supervisor: {
+          id: supervisorId,
+        },
+        day_of_week: day,
+        is_active: true,
+      },
+      relations: {
+        supervisor: {
+          user: true,
+        },
+      },
+    });
 
-    const booked = await this.loadBookedAppointment(date);
-
-    const bookedByCoordinator = new Map<number, Set<string>>();
-    for (const appointment of booked) {
-      if (!bookedByCoordinator.has(appointment.supervisor.id)) {
-        bookedByCoordinator.set(appointment.supervisor.id, new Set());
-      }
-
-      bookedByCoordinator
-        .get(appointment.supervisor.id)!
-        .add(`${appointment.appointmentStart}-${appointment.appointmentEnd}`);
+    if (!schedule) {
+      throw new NotFoundException('Supervisor is not available on this day');
     }
-    const availableSlots: AvailableSlot[] = [];
-    for (const schedule of schedules) {
-      const generated = SlotGenerator.generateSlots(
-        schedule.start_time,
-        schedule.end_time,
-        schedule.slot_duration,
-      );
 
-      const bookedSlots =
-        bookedByCoordinator.get(schedule.supervisor_id) ?? new Set();
+    const slots = SlotGenerator.generateFixedDurationSlots(
+      schedule.start_time,
+      schedule.end_time,
+      120,
+    );
 
-      const available = await this.removeBookedSlots(generated, bookedSlots);
-      availableSlots.sort((a, b) => {
-        if (a.startTime !== b.startTime) {
-          return a.startTime.localeCompare(b.startTime);
-        }
-
-        return a.coordinatorName.localeCompare(b.coordinatorName);
-      });
-
-      availableSlots.push(
-        ...available.map((slot) => ({
-          coordinatorId: schedule.supervisor_id,
-          coordinatorName: schedule.supervisor.user.full_name,
-          appointmentDate: date,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-        })),
-      );
-    }
-    // return availableSlots;
     return {
-      message: availableSlots.length
-        ? 'Available slots retrieved successfully'
-        : 'No available slots for the given date',
-      slots: SchedulingValidation.removePastSlots(availableSlots, date),
+      supervisor: schedule.supervisor.user.full_name,
+      appointmentDate: date,
+      slots: SchedulingValidation.removePastSlots(slots, date),
     };
   }
   public async validateSlotAvailability(
@@ -102,38 +83,25 @@ export class SupervisorAvailabilityService {
         HttpStatus.NOT_FOUND,
       );
     }
-    const generatedSlots = SlotGenerator.generateSlots(
+    SchedulingValidation.validateFutureSlot(date, startTime);
+
+    const endTime = SchedulingValidation.calculateAppointmentEndTime(
+      startTime,
+      120,
+    );
+
+    SchedulingValidation.validateWithinSchedule(
+      startTime,
+      endTime,
       schedule.start_time,
       schedule.end_time,
-      schedule.slot_duration,
     );
-    const slot = generatedSlots.find((slot) => slot.startTime === startTime);
-    if (!slot) {
-      throw new BadRequestException(
-        'The requested slot is not valid for this supervisor',
-      );
-    }
-    SchedulingValidation.validateFutureSlot(date, slot.startTime);
-    const bookedAppointments = await manager.find(ClinicalAppointment, {
-      where: {
-        appointmentDate: date,
-        appointmentStart: startTime,
-        supervisor: { id: supervisorId },
-        status: ClinicalAppointmentStatus.SCHEDULED,
-      },
-    });
-    if (bookedAppointments.length > 0) {
-      throw new HttpException(
-        'The requested slot is already booked',
-        HttpStatus.CONFLICT,
-      );
-    }
 
     return {
       supervisor: schedule.supervisor,
       appointmentDate: date,
-      startTime: slot.startTime,
-      endTime: slot.endTime,
+      startTime,
+      endTime,
     };
   }
   private async loadSchedules(day: string) {

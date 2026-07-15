@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from './student.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { User } from 'src/users/user.entity';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UserService } from 'src/users/user.service';
@@ -14,6 +14,7 @@ import { UserRole } from 'src/constants/user-roles';
 import { randomBytes } from 'crypto';
 import { PasswordService } from 'src/common/services/password.service';
 import * as xlsx from 'xlsx';
+import { StudentSection } from 'src/student-section/student-section.entity';
 
 @Injectable()
 export class StudentService {
@@ -23,6 +24,8 @@ export class StudentService {
     private readonly studentRepository: Repository<Student>,
     private readonly passwordService: PasswordService,
     private readonly dataSource: DataSource,
+    @InjectRepository(StudentSection)
+    private readonly studentSectionRepository: Repository<StudentSection>,
   ) {}
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
@@ -32,8 +35,10 @@ export class StudentService {
       },
     });
   }
-  public async findByUserId(id: number) {
-    return await this.studentRepository.findOne({
+  public async findByUserId(id: number, manager?: EntityManager) {
+    return await (
+      manager ? manager.getRepository(Student) : this.studentRepository
+    ).findOne({
       where: {
         user: { id, is_active: true },
         studentAcademicYears: { isCurrent: true },
@@ -44,8 +49,10 @@ export class StudentService {
       },
     });
   }
-  public async getCurrentStudyYear(userId: number) {
-    const student = await this.studentRepository.findOne({
+  public async getCurrentStudyYear(userId: number, manager?: EntityManager) {
+    const student = await (
+      manager ? manager.getRepository(Student) : this.studentRepository
+    ).findOne({
       where: {
         user: { id: userId },
         studentAcademicYears: { isCurrent: true },
@@ -64,6 +71,45 @@ export class StudentService {
       throw new NotFoundException('Current enrollment not found for student');
     }
     return currentEnrollment.studyYear;
+  }
+  public async getStudentSectionForSubject(
+    userId: number,
+    subjectId: number,
+    manager?: EntityManager,
+  ) {
+    const studentSection = await (
+      manager
+        ? manager.getRepository(StudentSection)
+        : this.studentSectionRepository
+    ).findOne({
+      where: {
+        studentAcademicYear: {
+          isCurrent: true,
+          student: {
+            user: {
+              id: userId,
+            },
+          },
+        },
+        clinicSection: {
+          subject: {
+            id: subjectId,
+          },
+        },
+      },
+      relations: {
+        clinicSection: {
+          supervisor: true,
+          subject: true,
+        },
+      },
+    });
+    if (!studentSection) {
+      throw new NotFoundException(
+        'Current student section not found for the given subject',
+      );
+    }
+    return studentSection;
   }
   public async createStudent(student: CreateStudentDto) {
     return await this.dataSource.transaction(async (manager) => {

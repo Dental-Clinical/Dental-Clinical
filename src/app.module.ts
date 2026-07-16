@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
-import * as redisStore from 'cache-manager-redis-store';
+import { redisStore } from 'cache-manager-redis-store';
 import { AppController } from './app.controller';
 import { connectionSource } from './database/database.config';
 import { AuthModule } from './auth/auth.module';
@@ -45,10 +45,15 @@ const ENV = process.env.NODE_ENV;
       isGlobal: true,
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        store: redisStore,
-        host: configService.get('redis.host'),
-        port: configService.get('redis.port'),
+      useFactory: async (configService: ConfigService) => ({
+        store: await redisStore({
+          socket: {
+            host: configService.get('redis.host'),
+            port: configService.get('redis.port'),
+            tls: configService.get('redis.tls') === 'true',
+          },
+          password: configService.get('redis.password'),
+        }),
         ttl: configService.get('redis.ttl'),
         isGlobal: true,
       }),

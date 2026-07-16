@@ -19,6 +19,7 @@ async function bootstrap() {
       },
     }),
   );
+  app.enableCors();
   const config = new DocumentBuilder()
     .setTitle('Dental Clinical API')
     .setDescription('The dental clinical API description')

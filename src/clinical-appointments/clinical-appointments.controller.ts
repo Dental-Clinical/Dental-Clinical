@@ -51,6 +51,20 @@ export class ClinicalAppointmentsController {
     );
   }
 
+  @Get('/today')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary: "Get today's clinical appointments for the current user",
+  })
+  @ApiOkResponse({
+    description: "Today's clinical appointments retrieved successfully",
+  })
+  @ApiResponse({ status: 404, description: 'No appointments found for today' })
+  async getTodayAppointments(@CurrentUser() currentUser: AuthenticatedUser) {
+    return await this.clinicalAppointmentService.getTodayAppointments(
+      currentUser,
+    );
+  }
   @Post()
   @Roles([UserRole.STUDENT])
   @ApiOperation({

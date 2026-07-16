@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -11,6 +11,8 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/constants/user-roles';
 import { CreateSupervisorDto } from './dto/create-supervisor.dto';
 import { CreateSupervisorResponseDto } from './dto/create-supervisor-response.dto';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 
 @ApiTags('Supervisors')
 @ApiBearerAuth('JWT-auth')
@@ -30,5 +32,10 @@ export class SupervisorController {
     @Body() createSupervisorDto: CreateSupervisorDto,
   ) {
     return await this.supervisorService.createSupervisor(createSupervisorDto);
+  }
+  @Get('/reviews/pending')
+  @Roles([UserRole.SUPERVISOR])
+  public async getPendingReviews(@CurrentUser() user: AuthenticatedUser) {
+    return await this.supervisorService.getPendingReviews(user);
   }
 }

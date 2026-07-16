@@ -200,8 +200,6 @@ export class ClinicalAppointmentsService {
         subject: true,
       },
     });
-    console.log(clinicalCase);
-
     if (!clinicalCase) {
       throw new NotFoundException('Clinical case not found');
     }
@@ -226,5 +224,63 @@ export class ClinicalAppointmentsService {
       date,
       studentSection.clinicSection.supervisor.id,
     );
+  }
+  async getTodayAppointments(currentUser: AuthenticatedUser) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const appointments = await this.clinicalAppointmentRepository.find({
+      where: {
+        student: { user: { id: currentUser.userId } },
+        appointmentDate: today,
+        status: ClinicalAppointmentStatus.SCHEDULED,
+      },
+      relations: {
+        clinicalCase: true,
+        patient: true,
+        supervisor: true,
+      },
+    });
+
+    if (appointments.length === 0) {
+      throw new NotFoundException('No appointments found for today');
+    }
+    const now = new Date();
+    return appointments.map((appointment) => {
+      const start = this.combineDateAndTime(
+        appointment.appointmentDate,
+        appointment.appointmentStart,
+      );
+      const end = this.combineDateAndTime(
+        appointment.appointmentDate,
+        appointment.appointmentEnd,
+      );
+      let displayStatus: string;
+
+      if (appointment.status === ClinicalAppointmentStatus.CANCELLED) {
+        displayStatus = 'Cancelled';
+      } else if (appointment.status === ClinicalAppointmentStatus.NO_SHOW) {
+        displayStatus = 'No Show';
+      } else if (now < start) {
+        displayStatus = 'Upcoming';
+      } else if (now >= start && now < end) {
+        displayStatus = 'Ongoing';
+      } else {
+        displayStatus = 'Completed';
+      }
+
+      return {
+        appointmentId: appointment.id,
+        patient: appointment.patient.full_name,
+        start: new Date(start).toLocaleTimeString(),
+        displayStatus,
+      };
+    });
+  }
+  private combineDateAndTime(date: Date, time: string): Date {
+    const [hours, minutes] = time.split(':').map(Number);
+    const combinedDateTime = new Date(date);
+    combinedDateTime.setHours(hours, minutes, 0, 0);
+    return combinedDateTime;
   }
 }

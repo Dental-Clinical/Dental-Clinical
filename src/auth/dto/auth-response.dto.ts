@@ -8,10 +8,14 @@ export class AuthResponseDto {
   accessToken: string;
 
   @ApiProperty({
-    description: 'User role',
-    example: 'patient',
+    description: 'Basic user info',
+    example: { id: 1, full_name: 'John', role: 'patient' },
   })
-  role: string;
+  user: {
+    id: number;
+    full_name: string;
+    role: string;
+  };
 }
 
 export class StaffLoginResponseDto {
@@ -22,18 +26,12 @@ export class StaffLoginResponseDto {
   accessToken: string;
 
   @ApiProperty({
-    description: 'User role',
-    example: 'admin',
-  })
-  role: string;
-
-  @ApiProperty({
     description: 'Basic user info',
-    example: { id: 1, full_name: 'John', father_name: 'Doe' },
+    example: { id: 1, full_name: 'John', role: 'student' },
   })
   user: {
     id: number;
     full_name: string;
-    father_name: string;
+    role: string;
   };
 }

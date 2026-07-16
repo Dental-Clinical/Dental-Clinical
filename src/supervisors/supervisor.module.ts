@@ -18,5 +18,6 @@ import ultramsgConfig from 'src/config/ultramsg.config';
     UserModule,
     ConfigModule.forFeature(ultramsgConfig),
   ],
+  exports: [SupervisorService],
 })
 export class SupervisorModule {}

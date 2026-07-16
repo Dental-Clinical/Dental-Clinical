@@ -1,9 +1,11 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -68,6 +70,8 @@ export class PatientsController {
   @Patch(':id/medical-records')
   @Roles([UserRole.COORDINATOR])
   @ApiOperation({ summary: 'Update patient medical records' })
+  @ApiParam({ name: 'id', type: Number, description: 'Patient ID' })
+  @ApiBody({ type: UpdatePatientMedicalRecordsDto })
   @ApiOkResponse({
     description: 'Medical records updated',
   })

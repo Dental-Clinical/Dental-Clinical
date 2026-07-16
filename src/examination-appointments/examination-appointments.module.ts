@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ExaminationAppointmentsService } from './examination-appointments.service';
 import { ExaminationAppointmentsController } from './examination-appointments.controller';
-import { AvailabilityService } from './availability.service';
+import { CoordinatorAvailabilityService } from './coordinator-availability.service';
 import { ExaminationAppointment } from './examination-appointment.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CoordinatorSchedule } from 'src/coordinator-schedules/coordniator-schedule.entity';
@@ -10,8 +10,8 @@ import { CoordinatorSchedule } from 'src/coordinator-schedules/coordniator-sched
   imports: [
     TypeOrmModule.forFeature([ExaminationAppointment, CoordinatorSchedule]),
   ],
-  providers: [ExaminationAppointmentsService, AvailabilityService],
+  providers: [ExaminationAppointmentsService, CoordinatorAvailabilityService],
   controllers: [ExaminationAppointmentsController],
-  exports: [ExaminationAppointmentsService, AvailabilityService],
+  exports: [ExaminationAppointmentsService, CoordinatorAvailabilityService],
 })
 export class ExaminationAppointmentsModule {}

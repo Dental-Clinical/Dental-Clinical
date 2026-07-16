@@ -10,8 +10,8 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
-  ApiOkResponse,
   ApiOperation,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -35,6 +35,7 @@ export class StudentController {
     type: CreateStudentResponseDto,
     description: 'Student created',
   })
+  @ApiResponse({ status: 409, description: 'Student already exists' })
   public async createStudent(@Body() createStudentDto: CreateStudentDto) {
     return await this.studentService.createStudent(createStudentDto);
   }
@@ -56,7 +57,8 @@ export class StudentController {
       },
     },
   })
-  @ApiOkResponse({ description: 'Students imported successfully' })
+  @ApiCreatedResponse({ description: 'Students imported successfully' })
+  @ApiResponse({ status: 409, description: 'Student already exists' })
   async importStudents(@UploadedFile() file: Express.Multer.File) {
     return this.studentService.importStudents(file);
   }

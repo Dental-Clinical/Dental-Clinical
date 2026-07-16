@@ -12,7 +12,7 @@ import { ExaminationRequestStatus } from './Enums/examination-request.enum';
 import { ExaminationRequestTeeth } from './entities/examination-request-teeth.entity';
 import { ExaminationRequestAttachments } from './entities/examination-request-attachment.entity';
 import { unlink } from 'fs/promises';
-import { AvailabilityService } from '../examination-appointments/availability.service';
+import { CoordinatorAvailabilityService } from '../examination-appointments/coordinator-availability.service';
 import { ExaminationAppointmentsService } from 'src/examination-appointments/examination-appointments.service';
 import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 
@@ -23,7 +23,7 @@ export class ExaminationRequestsService {
     private readonly examinationRepository: Repository<ExaminationRequest>,
     @InjectRepository(Patient)
     private readonly patientRepository: Repository<Patient>,
-    private readonly availablityService: AvailabilityService,
+    private readonly CoordinatorAvailabilityService: CoordinatorAvailabilityService,
     private readonly appointmentService: ExaminationAppointmentsService,
     private readonly dataSource: DataSource,
   ) {}
@@ -62,12 +62,13 @@ export class ExaminationRequestsService {
           );
         }
 
-        const slot = await this.availablityService.validateSlotAvailability(
-          dto.appointmentDate,
-          dto.appointmentStart,
-          dto.coordinatorId,
-          manager,
-        );
+        const slot =
+          await this.CoordinatorAvailabilityService.validateSlotAvailability(
+            dto.appointmentDate,
+            dto.appointmentStart,
+            dto.coordinatorId,
+            manager,
+          );
 
         const request = manager.create(ExaminationRequest, {
           patient_id: patient.id,

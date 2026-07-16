@@ -31,6 +31,8 @@ import { SubjectProceduresModule } from './subject-procedures/subject-procedures
 import { DiagnosisSubmissionModule } from './diagnosis-submission/diagnosis-submission.module';
 import { PlannedProceduresModule } from './planned-procedures/planned-procedures.module';
 import { DiagnosisImagesModule } from './diagnosis-images/diagnosis-images.module';
+import { ClinicSectionsModule } from './clinic-sections/clinic-sections.module';
+import { StudentSectionModule } from './student-section/student-section.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -80,6 +82,8 @@ const ENV = process.env.NODE_ENV;
     DiagnosisSubmissionModule,
     PlannedProceduresModule,
     DiagnosisImagesModule,
+    ClinicSectionsModule,
+    StudentSectionModule,
   ],
   controllers: [AppController],
   providers: [

@@ -8,6 +8,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  RelationId,
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
@@ -25,7 +26,14 @@ export class SubjectProcedures {
   @JoinColumn({ name: 'subject_id' })
   subject: Subject;
 
-  @ApiPropertyOptional({ type: () => [PlannedProcedures], description: 'Planned procedures using this subject procedure' })
+  @ApiProperty({ description: 'Subject ID', example: 1 })
+  @RelationId('subject')
+  subject_id: number;
+
+  @ApiPropertyOptional({
+    type: () => [PlannedProcedures],
+    description: 'Planned procedures using this subject procedure',
+  })
   @OneToMany(
     () => PlannedProcedures,
     (plannedProcedure) => plannedProcedure.subjectProcedure,
@@ -38,7 +46,10 @@ export class SubjectProcedures {
   })
   name: string;
 
-  @ApiPropertyOptional({ description: 'Procedure description', example: 'Direct composite restoration' })
+  @ApiPropertyOptional({
+    description: 'Procedure description',
+    example: 'Direct composite restoration',
+  })
   @Column({
     type: 'varchar',
     nullable: true,
@@ -51,7 +62,10 @@ export class SubjectProcedures {
   })
   required_count: number;
 
-  @ApiProperty({ description: 'Whether the procedure is active', example: true })
+  @ApiProperty({
+    description: 'Whether the procedure is active',
+    example: true,
+  })
   @Column({
     type: 'boolean',
     default: true,

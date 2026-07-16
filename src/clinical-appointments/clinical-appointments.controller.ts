@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -26,6 +27,7 @@ import { ClinicalAppointmentsService } from './clinical-appointments.service';
 import { UpdateStudentClinicalAppointmentDto } from './dto/update-student-clinical-appointment.dto';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
+import { User } from 'src/users/user.entity';
 
 @ApiTags('Clinical Appointments')
 @ApiBearerAuth('JWT-auth')
@@ -34,7 +36,7 @@ export class ClinicalAppointmentsController {
   constructor(
     private readonly supervisorAvailabilityService: SupervisorAvailabilityService,
     private readonly clinicalAppointmentService: ClinicalAppointmentsService,
-  ) {}
+  ) { }
   @Get('/available')
   @Roles([UserRole.STUDENT])
   @ApiOperation({ summary: 'Get available supervisor slots for a date' })
@@ -121,5 +123,48 @@ export class ClinicalAppointmentsController {
       user,
       dto,
     );
+  }
+
+
+  @Patch('no-show/:id')
+  @Roles([UserRole.STUDENT, UserRole.SUPERVISOR])
+  @ApiOperation({ summary: 'Mark a clinical appointment as no-show' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Clinical appointment ID',
+  })
+  @ApiOkResponse({
+    description: 'Clinical appointment marked as no-show successfully',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Appointment does not belong to this user',
+  })
+  @ApiResponse({ status: 404, description: 'Appointment not found' })
+  async noShowAppointment(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthenticatedUser) {
+    return await this.clinicalAppointmentService.noShowAppointment(id, user)
+  }
+
+  @Patch('cancel/:id')
+  @Roles([UserRole.STUDENT, UserRole.SUPERVISOR, UserRole.PATIENT])
+  @ApiOperation({ summary: 'Cancel a clinical appointment' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Clinical appointment ID',
+  })
+  @ApiOkResponse({ description: 'Clinical appointment cancelled successfully' })
+  @ApiResponse({
+    status: 403,
+    description: 'Appointment does not belong to this user',
+  })
+  @ApiResponse({ status: 404, description: 'Appointment not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Only scheduled appointments can be cancelled',
+  })
+  async cancelAppointment(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthenticatedUser) {
+    return await this.clinicalAppointmentService.cancelAppointment(id, user)
   }
 }

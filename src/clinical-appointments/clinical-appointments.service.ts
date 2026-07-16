@@ -32,10 +32,11 @@ export class ClinicalAppointmentsService {
     readonly clinicalAppointmentRepository: Repository<ClinicalAppointment>,
     @InjectRepository(ClinicalCase)
     readonly clinicalCaseRepository: Repository<ClinicalCase>,
+    @InjectRepository(Student) readonly studentRepository: Repository<Student>,
     private readonly dataSource: DataSource,
     private readonly studentService: StudentService,
     private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
-  ) {}
+  ) { }
 
   async createStudentClinicalAppointment(
     currentUser: AuthenticatedUser,
@@ -282,5 +283,77 @@ export class ClinicalAppointmentsService {
     const combinedDateTime = new Date(date);
     combinedDateTime.setHours(hours, minutes, 0, 0);
     return combinedDateTime;
+  }
+
+  async noShowAppointment(id: number, user: AuthenticatedUser) {
+    const isStudent = user.role === UserRole.STUDENT
+    if (!isStudent && user.role !== UserRole.SUPERVISOR) {
+      throw new ForbiddenException("You are not allowed to perform this action")
+    }
+
+    const appointment = await this.clinicalAppointmentRepository.findOne({
+      where: { id },
+      relations: isStudent ? { student: { user: true } } : {},
+    })
+
+    if (!appointment) {
+      throw new NotFoundException("Appointment Not Found")
+    }
+
+    if (isStudent && appointment.student?.user?.id !== user.userId) {
+      throw new ForbiddenException("You are not the student of this appointment")
+    }
+
+    await this.clinicalAppointmentRepository.update(id, {
+      status: ClinicalAppointmentStatus.NO_SHOW,
+    })
+
+    appointment.status = ClinicalAppointmentStatus.NO_SHOW
+    return appointment
+  }
+
+  async cancelAppointment(id: number, user: AuthenticatedUser) {
+    const isStudent = user.role === UserRole.STUDENT
+    const isSupervisor = user.role === UserRole.SUPERVISOR
+    const isPatient = user.role === UserRole.PATIENT
+    if (!isStudent && !isSupervisor && !isPatient) {
+      throw new ForbiddenException('You are not allowed to perform this action')
+    }
+
+    const appointment = await this.clinicalAppointmentRepository.findOne({
+      where: { id },
+      relations: {
+        student: { user: true },
+        supervisor: { user: true },
+        patient: { user: true },
+      },
+    })
+
+    if (!appointment) {
+      throw new NotFoundException('Appointment Not Found')
+    }
+
+    const ownerId = isStudent
+      ? appointment.student?.user?.id
+      : isSupervisor
+        ? appointment.supervisor?.user?.id
+        : appointment.patient?.user?.id
+
+    if (ownerId !== user.userId) {
+      throw new ForbiddenException('This appointment does not belong to you')
+    }
+
+    if (appointment.status !== ClinicalAppointmentStatus.SCHEDULED) {
+      throw new ConflictException(
+        'Only scheduled appointments can be cancelled',
+      )
+    }
+
+    await this.clinicalAppointmentRepository.update(id, {
+      status: ClinicalAppointmentStatus.CANCELLED,
+    })
+
+    appointment.status = ClinicalAppointmentStatus.CANCELLED
+    return appointment
   }
 }

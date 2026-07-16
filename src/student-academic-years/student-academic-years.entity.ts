@@ -10,6 +10,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  RelationId,
   Unique,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -26,24 +27,45 @@ export class StudentAcademicYear {
   @JoinColumn({ name: 'student_id' })
   student: Student;
 
-  @ApiProperty({ type: () => AcademicYear, description: 'Associated academic year' })
+  @ApiProperty({ description: 'Student ID', example: 1 })
+  @RelationId('student')
+  student_id: number;
+
+  @ApiProperty({
+    type: () => AcademicYear,
+    description: 'Associated academic year',
+  })
   @ManyToOne(() => AcademicYear)
   @JoinColumn({ name: 'academic_year_id' })
   academicYear: AcademicYear;
+
+  @ApiProperty({ description: 'Academic year ID', example: 1 })
+  @RelationId('academicYear')
+  academic_year_id: number;
 
   @ApiProperty({ type: () => StudyYear, description: 'Associated study year' })
   @ManyToOne(() => StudyYear)
   @JoinColumn({ name: 'study_year_id' })
   studyYear: StudyYear;
 
-  @ApiPropertyOptional({ type: () => [StudentSection], description: 'Student section enrollments' })
+  @ApiProperty({ description: 'Study year ID', example: 1 })
+  @RelationId('studyYear')
+  study_year_id: number;
+
+  @ApiPropertyOptional({
+    type: () => [StudentSection],
+    description: 'Student section enrollments',
+  })
   @OneToMany(
     () => StudentSection,
     (studentSection) => studentSection.studentAcademicYear,
   )
   studentSections: StudentSection[];
 
-  @ApiProperty({ description: 'Whether this is the current enrollment', example: true })
+  @ApiProperty({
+    description: 'Whether this is the current enrollment',
+    example: true,
+  })
   @Column({ default: true })
   isCurrent: boolean;
 

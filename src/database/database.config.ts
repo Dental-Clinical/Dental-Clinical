@@ -2,8 +2,9 @@ import { join } from 'path';
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 
+const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : '.env';
 config({
-  path: join(process.cwd(), `.env.${process.env.NODE_ENV}`),
+  path: join(process.cwd(), envFile),
 });
 
 // export const connectionSource = new DataSource({
@@ -19,9 +20,9 @@ config({
 // });
 
 export const connectionSource = new DataSource({
- type: 'postgres',
- url: process.env.DATABASE_URL,
- ssl: true,
- entities: [__dirname + '/../**/*.entity{.ts,.js}'],
- migrations: [__dirname + '/migrations/*{.ts,.js}'],
+  type: 'postgres',
+  url: process.env.DB_URL,
+  ssl: true,
+  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+  migrations: [__dirname + '/migrations/*{.ts,.js}'],
 });

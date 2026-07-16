@@ -34,7 +34,7 @@ export class InitialExaminationService {
     private readonly subjectRepository: Repository<Subject>,
     private readonly dataSource: DataSource,
     private readonly clinicalCaseService: ClinicalCaseService,
-  ) {}
+  ) { }
 
   async createInitialExamination(
     dto: CreateInitialExaminationDto,
@@ -216,9 +216,9 @@ export class InitialExaminationService {
 
       clinicalCase: examination.clinicalCase
         ? {
-            id: examination.clinicalCase.id,
-            status: examination.clinicalCase.status,
-          }
+          id: examination.clinicalCase.id,
+          status: examination.clinicalCase.status,
+        }
         : null,
     };
   }

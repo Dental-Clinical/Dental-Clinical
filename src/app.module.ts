@@ -25,6 +25,12 @@ import { SubjectsModule } from './subjects/subjects.module';
 import { InitialExaminationModule } from './initial-examination/initial-examination.module';
 import { ClinicalCaseModule } from './clinical-case/clinical-case.module';
 import { StudentAcademicYearsModule } from './student-academic-years/student-academic-years.module';
+import { SupervisorSchedulesModule } from './supervisor-schedules/supervisor-schedules.module';
+import { ClinicalAppointmentsModule } from './clinical-appointments/clinical-appointments.module';
+import { SubjectProceduresModule } from './subject-procedures/subject-procedures.module';
+import { DiagnosisSubmissionModule } from './diagnosis-submission/diagnosis-submission.module';
+import { PlannedProceduresModule } from './planned-procedures/planned-procedures.module';
+import { DiagnosisImagesModule } from './diagnosis-images/diagnosis-images.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -63,6 +69,12 @@ const ENV = process.env.NODE_ENV;
     InitialExaminationModule,
     ClinicalCaseModule,
     StudentAcademicYearsModule,
+    SupervisorSchedulesModule,
+    ClinicalAppointmentsModule,
+    SubjectProceduresModule,
+    DiagnosisSubmissionModule,
+    PlannedProceduresModule,
+    DiagnosisImagesModule,
   ],
   controllers: [AppController],
   providers: [

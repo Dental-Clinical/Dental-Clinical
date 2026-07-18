@@ -46,15 +46,15 @@ export class WorkingDaysDataDto {
   workingDays: WorkingDayResponseDto[];
 }
 
-export class CreateScheduleResponseDto {
-  @ApiProperty({ example: 'Coordinator schedule created successfully' })
+export class CreateSupervisorScheduleResponseDto {
+  @ApiProperty({ example: 'Supervisor schedule created successfully' })
   message: string;
 
   @ApiProperty({ type: SupervisorScheduleResponseDto })
   data: SupervisorScheduleResponseDto;
 }
 
-export class GetScheduleResponseDto {
+export class GetSupervisorScheduleResponseDto {
   @ApiProperty({ example: 'Supervisor schedules retrieved successfully' })
   message: string;
 
@@ -62,7 +62,7 @@ export class GetScheduleResponseDto {
   data: WorkingDaysDataDto;
 }
 
-export class UpdateScheduleResponseDto {
+export class UpdateSupervisorScheduleResponseDto {
   @ApiProperty({ example: 'Supervisor schedule updated successfully' })
   message: string;
 
@@ -70,7 +70,7 @@ export class UpdateScheduleResponseDto {
   data: SupervisorScheduleResponseDto;
 }
 
-export class DeleteScheduleResponseDto {
+export class DeleteSupervisorScheduleResponseDto {
   @ApiProperty({ example: 'Supervisor schedule deleted successfully' })
   message: string;
 }

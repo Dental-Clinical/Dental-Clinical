@@ -33,11 +33,17 @@ export class Subject {
   @RelationId('studyYear')
   study_year_id: number;
 
-  @ApiProperty({ description: 'Subject name', example: 'Restorative Dentistry' })
+  @ApiProperty({
+    description: 'Subject name',
+    example: 'Restorative Dentistry',
+  })
   @Column({ type: 'varchar', length: 255, nullable: false })
   name: string;
 
-  @ApiPropertyOptional({ description: 'Subject description', example: 'Covers restorative procedures' })
+  @ApiPropertyOptional({
+    description: 'Subject description',
+    example: 'Covers restorative procedures',
+  })
   @Column({ type: 'text', nullable: true })
   description: string;
 
@@ -53,22 +59,34 @@ export class Subject {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @ApiPropertyOptional({ type: () => [InitialExamination], description: 'Initial examinations' })
+  @ApiPropertyOptional({
+    type: () => [InitialExamination],
+    description: 'Initial examinations',
+  })
   @OneToMany(() => InitialExamination, (examination) => examination.subject)
   initialExaminations: InitialExamination[];
 
-  @ApiPropertyOptional({ type: () => [ClinicalCase], description: 'Clinical cases' })
+  @ApiPropertyOptional({
+    type: () => [ClinicalCase],
+    description: 'Clinical cases',
+  })
   @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.subject)
   clinicalCases: ClinicalCase[];
 
-  @ApiPropertyOptional({ type: () => [SubjectProcedures], description: 'Subject procedures' })
+  @ApiPropertyOptional({
+    type: () => [SubjectProcedures],
+    description: 'Subject procedures',
+  })
   @OneToMany(
     () => SubjectProcedures,
     (subjectProcedure) => subjectProcedure.subject,
   )
   subjectProcedures: SubjectProcedures[];
 
-  @ApiPropertyOptional({ type: () => [ClinicSections], description: 'Clinic sections' })
+  @ApiPropertyOptional({
+    type: () => [ClinicSections],
+    description: 'Clinic sections',
+  })
   @OneToMany(() => ClinicSections, (clinicSection) => clinicSection.subject)
   clinicSections: ClinicSections[];
 }

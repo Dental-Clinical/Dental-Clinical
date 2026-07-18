@@ -81,37 +81,4 @@ export class SupervisorService {
       },
     });
   }
-  async getPendingReviews(user: AuthenticatedUser) {
-    const supervisor = await this.findByUserId(user.userId);
-    if (!supervisor) {
-      throw new NotFoundException('Supervisor not found');
-    }
-    const pendingReviews = await this.dataSource
-      .getRepository(DiagnosisSubmission)
-      .find({
-        where: {
-          supervisor: { id: supervisor.id },
-        },
-        relations: {
-          clinicalCase: {
-            patient: true,
-          },
-          student: { user: true },
-          plannedProcedures: { subjectProcedure: true },
-        },
-      });
-
-    return pendingReviews.map((submission) => ({
-      submissionId: submission.id,
-      clinicalCaseId: submission.clinicalCase.id,
-      patientName: submission.clinicalCase.patient.full_name,
-      studentName: submission.student.user.full_name,
-      plannedProcedures: submission.plannedProcedures.map(
-        (plannedProcedure) => ({
-          procedureName: plannedProcedure.subjectProcedure.name,
-          toothNumber: plannedProcedure.toothNumber,
-        }),
-      ),
-    }));
-  }
 }

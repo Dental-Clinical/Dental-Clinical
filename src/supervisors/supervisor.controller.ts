@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -32,10 +32,5 @@ export class SupervisorController {
     @Body() createSupervisorDto: CreateSupervisorDto,
   ) {
     return await this.supervisorService.createSupervisor(createSupervisorDto);
-  }
-  @Get('/reviews/pending')
-  @Roles([UserRole.SUPERVISOR])
-  public async getPendingReviews(@CurrentUser() user: AuthenticatedUser) {
-    return await this.supervisorService.getPendingReviews(user);
   }
 }

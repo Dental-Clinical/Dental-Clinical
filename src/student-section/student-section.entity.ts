@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  RelationId,
   Unique,
 } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
@@ -17,7 +18,10 @@ export class StudentSection {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ type: () => StudentAcademicYear, description: 'Associated student academic year' })
+  @ApiProperty({
+    type: () => StudentAcademicYear,
+    description: 'Associated student academic year',
+  })
   @ManyToOne(
     () => StudentAcademicYear,
     (studentAcademicYear) => studentAcademicYear.studentSections,
@@ -29,7 +33,14 @@ export class StudentSection {
   @JoinColumn({ name: 'student_academic_year_id' })
   studentAcademicYear: StudentAcademicYear;
 
-  @ApiProperty({ type: () => ClinicSections, description: 'Associated clinic section' })
+  @ApiProperty({ description: 'Student academic year ID', example: 1 })
+  @RelationId('studentAcademicYear')
+  student_academic_year_id: number;
+
+  @ApiProperty({
+    type: () => ClinicSections,
+    description: 'Associated clinic section',
+  })
   @ManyToOne(
     () => ClinicSections,
     (clinicSection) => clinicSection.studentSections,
@@ -40,6 +51,10 @@ export class StudentSection {
   )
   @JoinColumn({ name: 'clinic_section_id' })
   clinicSection: ClinicSections;
+
+  @ApiProperty({ description: 'Clinic section ID', example: 1 })
+  @RelationId('clinicSection')
+  clinic_section_id: number;
 
   @ApiProperty({ description: 'Creation timestamp' })
   @CreateDateColumn()

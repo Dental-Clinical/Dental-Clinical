@@ -25,10 +25,10 @@ import {
 } from '@nestjs/swagger';
 import { UpdateSupervisorScheduleDto } from './dto/update-supervisor-schedule.dto';
 import {
-  CreateScheduleResponseDto,
-  GetScheduleResponseDto,
-  UpdateScheduleResponseDto,
-  DeleteScheduleResponseDto,
+  CreateSupervisorScheduleResponseDto,
+  GetSupervisorScheduleResponseDto,
+  UpdateSupervisorScheduleResponseDto,
+  DeleteSupervisorScheduleResponseDto,
 } from './dto/supervisor-schedule-response.dto';
 
 @ApiTags('Supervisor Schedules')
@@ -43,7 +43,7 @@ export class SupervisorScheduleController {
   @Roles([UserRole.SUPERVISOR])
   @ApiOperation({ summary: 'Create a supervisor schedule' })
   @ApiCreatedResponse({
-    type: CreateScheduleResponseDto,
+    type: CreateSupervisorScheduleResponseDto,
     description: 'Schedule created successfully',
   })
   @ApiBody({ type: CreateSupervisorScheduleDto })
@@ -67,7 +67,7 @@ export class SupervisorScheduleController {
   @Roles([UserRole.SUPERVISOR])
   @ApiOperation({ summary: 'Get supervisor weekly schedule' })
   @ApiOkResponse({
-    type: GetScheduleResponseDto,
+    type: GetSupervisorScheduleResponseDto,
     description: 'Supervisor schedule retrieved successfully',
   })
   @ApiResponse({ status: 404, description: 'Supervisor not found' })
@@ -81,7 +81,7 @@ export class SupervisorScheduleController {
   @Roles([UserRole.SUPERVISOR])
   @ApiOperation({ summary: 'Update a supervisor schedule' })
   @ApiOkResponse({
-    type: UpdateScheduleResponseDto,
+    type: UpdateSupervisorScheduleResponseDto,
     description: 'Schedule updated successfully',
   })
   @ApiParam({ name: 'id', type: Number, description: 'Schedule ID' })
@@ -111,7 +111,7 @@ export class SupervisorScheduleController {
   @Roles([UserRole.SUPERVISOR])
   @ApiOperation({ summary: 'Delete a supervisor schedule' })
   @ApiOkResponse({
-    type: DeleteScheduleResponseDto,
+    type: DeleteSupervisorScheduleResponseDto,
     description: 'Schedule deleted successfully',
   })
   @ApiParam({ name: 'id', type: Number, description: 'Schedule ID' })

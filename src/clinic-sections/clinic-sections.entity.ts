@@ -8,6 +8,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  RelationId,
   UpdateDateColumn,
 } from 'typeorm';
 import { StudentSection } from 'src/student-section/student-section.entity';
@@ -24,12 +25,23 @@ export class ClinicSections {
   @JoinColumn({ name: 'subject_id' })
   subject: Subject;
 
+  @ApiProperty({ description: 'Subject ID', example: 1 })
+  @RelationId('subject')
+  subject_id: number;
+
   @ApiProperty({ type: () => Supervisor, description: 'Assigned supervisor' })
   @ManyToOne(() => Supervisor, (supervisor) => supervisor.clinicSections)
   @JoinColumn({ name: 'supervisor_id' })
   supervisor: Supervisor;
 
-  @ApiPropertyOptional({ type: () => [StudentSection], description: 'Student section enrollments' })
+  @ApiProperty({ description: 'Supervisor ID', example: 1 })
+  @RelationId('supervisor')
+  supervisor_id: number;
+
+  @ApiPropertyOptional({
+    type: () => [StudentSection],
+    description: 'Student section enrollments',
+  })
   @OneToMany(
     () => StudentSection,
     (studentSection) => studentSection.clinicSection,

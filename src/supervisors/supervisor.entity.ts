@@ -12,6 +12,7 @@ import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
 import { ClinicSections } from 'src/clinic-sections/clinic-sections.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SupervisorReview } from 'src/supervisor-reviews/supervisor-reviews.entity';
 
 @Entity('supervisors')
 export class Supervisor {
@@ -31,25 +32,47 @@ export class Supervisor {
   })
   created_at: Date;
 
-  @ApiPropertyOptional({ type: () => [SupervisorSchedule], description: 'Supervisor schedules' })
+  @ApiPropertyOptional({
+    type: () => [SupervisorSchedule],
+    description: 'Supervisor schedules',
+  })
   @OneToMany(() => SupervisorSchedule, (schedule) => schedule.supervisor)
   schedules: SupervisorSchedule[];
 
-  @ApiPropertyOptional({ type: () => [ClinicalCase], description: 'Supervised clinical cases' })
+  @ApiPropertyOptional({
+    type: () => [ClinicalCase],
+    description: 'Supervised clinical cases',
+  })
   @OneToMany(
     () => ClinicalCase,
     (clinicalCase) => clinicalCase.assignedSupervisor,
   )
   clinicalCases: ClinicalCase[];
 
-  @ApiPropertyOptional({ type: () => [DiagnosisSubmission], description: 'Reviewed diagnosis submissions' })
+  @ApiPropertyOptional({
+    type: () => [DiagnosisSubmission],
+    description: 'Reviewed diagnosis submissions',
+  })
   @OneToMany(
     () => DiagnosisSubmission,
     (diagnosisSubmission) => diagnosisSubmission.supervisor,
   )
   diagnosisSubmissions: DiagnosisSubmission[];
 
-  @ApiPropertyOptional({ type: () => [ClinicSections], description: 'Clinic sections' })
+  @ApiPropertyOptional({
+    type: () => [SupervisorReview],
+    description: 'Supervisor reviews',
+  })
+  @OneToMany(
+    () => SupervisorReview,
+    (supervisorReview) => supervisorReview.supervisor,
+  )
+  supervisorReviews: SupervisorReview[];
+
+  @ApiPropertyOptional({
+    type: () => [ClinicSections],
+    description: 'Clinic sections',
+  })
   @OneToMany(() => ClinicSections, (clinicSection) => clinicSection.supervisor)
   clinicSections: ClinicSections[];
 }

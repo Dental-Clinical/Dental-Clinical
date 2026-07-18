@@ -7,6 +7,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -17,6 +18,7 @@ import { ClinicalCaseStatus } from './enums/clinical-case-status.enum';
 import { Supervisor } from 'src/supervisors/supervisor.entity';
 import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TreatmentSession } from 'src/treatment-sessions/treatment-sessions.entity';
 
 @Entity('clinical_cases')
 export class ClinicalCase {
@@ -88,6 +90,12 @@ export class ClinicalCase {
     (diagnosisSubmission) => diagnosisSubmission.clinicalCase,
   )
   diagnosisSubmission: DiagnosisSubmission;
+
+  @OneToMany(
+    () => TreatmentSession,
+    (treatmentSession) => treatmentSession.clinicalCase,
+  )
+  treatmentSessions: TreatmentSession[];
 
   @ApiProperty({
     description: 'Case status',

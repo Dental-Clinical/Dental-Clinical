@@ -18,7 +18,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { GetAvailableSlotDto } from 'src/examination-appointments/dto/get-available-slot.dto';
+import { GetSupervisorAvailableSlotDto } from 'src/clinical-appointments/dto/get-supervisor-available-slot.dto';
 import { SupervisorAvailabilityService } from './supervisor-availability.service';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/constants/user-roles';
@@ -36,14 +36,14 @@ export class ClinicalAppointmentsController {
   constructor(
     private readonly supervisorAvailabilityService: SupervisorAvailabilityService,
     private readonly clinicalAppointmentService: ClinicalAppointmentsService,
-  ) { }
+  ) {}
   @Get('/available')
   @Roles([UserRole.STUDENT])
   @ApiOperation({ summary: 'Get available supervisor slots for a date' })
   @ApiOkResponse({ description: 'Available slots retrieved successfully' })
   @ApiResponse({ status: 400, description: 'Invalid date or past date' })
   async getAvailableAppointments(
-    @Query() dto: GetAvailableSlotDto,
+    @Query() dto: GetSupervisorAvailableSlotDto,
     @CurrentUser() currentUser: AuthenticatedUser,
   ) {
     return await this.clinicalAppointmentService.getAvailableSlots(
@@ -125,7 +125,6 @@ export class ClinicalAppointmentsController {
     );
   }
 
-
   @Patch('no-show/:id')
   @Roles([UserRole.STUDENT, UserRole.SUPERVISOR])
   @ApiOperation({ summary: 'Mark a clinical appointment as no-show' })
@@ -142,8 +141,11 @@ export class ClinicalAppointmentsController {
     description: 'Appointment does not belong to this user',
   })
   @ApiResponse({ status: 404, description: 'Appointment not found' })
-  async noShowAppointment(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthenticatedUser) {
-    return await this.clinicalAppointmentService.noShowAppointment(id, user)
+  async noShowAppointment(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.clinicalAppointmentService.noShowAppointment(id, user);
   }
 
   @Patch('cancel/:id')
@@ -164,7 +166,10 @@ export class ClinicalAppointmentsController {
     status: 409,
     description: 'Only scheduled appointments can be cancelled',
   })
-  async cancelAppointment(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: AuthenticatedUser) {
-    return await this.clinicalAppointmentService.cancelAppointment(id, user)
+  async cancelAppointment(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.clinicalAppointmentService.cancelAppointment(id, user);
   }
 }

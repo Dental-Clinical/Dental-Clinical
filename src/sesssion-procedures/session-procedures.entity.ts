@@ -6,6 +6,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -27,12 +28,6 @@ export class SessionProcedure {
   )
   @JoinColumn({ name: 'planned_procedure_id' })
   plannedProcedure: PlannedProcedures;
-
-  @Column({
-    type: 'text',
-    nullable: true,
-  })
-  notes?: string;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

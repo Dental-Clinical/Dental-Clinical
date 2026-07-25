@@ -151,6 +151,9 @@ export class DiagnosisSubmissionService {
         clinicalCase.status = ClinicalCaseStatus.DIAGNOSIS_PENDING_REVIEW;
         await manager.save(clinicalCase);
 
+        clinicalCaseAppointment.status = ClinicalAppointmentStatus.COMPLETED;
+        await manager.save(clinicalCaseAppointment);
+
         return {
           message: 'Diagnosis submitted successfully for supervisor review.',
           data: {

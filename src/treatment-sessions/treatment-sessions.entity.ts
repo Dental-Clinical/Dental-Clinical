@@ -1,6 +1,5 @@
 import { ClinicalAppointment } from 'src/clinical-appointments/clinical-appointments.entity';
 import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
-import { SessionImage } from 'src/session-images/session-images.entity';
 import { SessionMaterial } from 'src/session-materials/session-materials.entity';
 import { SessionProcedure } from 'src/sesssion-procedures/session-procedures.entity';
 import {
@@ -28,7 +27,10 @@ export class TreatmentSession {
   @JoinColumn({ name: 'clinical_case_id' })
   clinicalCase: ClinicalCase;
 
-  @OneToOne(() => ClinicalAppointment)
+  @OneToOne(
+    () => ClinicalAppointment,
+    (clinicalAppointment) => clinicalAppointment.treatmentSession,
+  )
   @JoinColumn({ name: 'clinical_appointment_id' })
   clinicalAppointment: ClinicalAppointment;
 
@@ -45,6 +47,12 @@ export class TreatmentSession {
   studentNotes?: string;
 
   @Column({
+    type: 'text',
+    nullable: true,
+  })
+  supervisorNotes?: string;
+
+  @Column({
     type: 'enum',
     enum: TreatmentSessionStatus,
     default: TreatmentSessionStatus.ACTIVE,
@@ -53,6 +61,12 @@ export class TreatmentSession {
 
   @CreateDateColumn({ name: 'started_at' })
   startedAt: Date;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 
   @Column({
     name: 'completed_at',
@@ -72,16 +86,4 @@ export class TreatmentSession {
     (sessionMaterial) => sessionMaterial.treatmentSession,
   )
   sessionMaterials: SessionMaterial[];
-
-  @OneToMany(
-    () => SessionImage,
-    (sessionImage) => sessionImage.treatmentSession,
-  )
-  sessionImages: SessionImage[];
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
 }

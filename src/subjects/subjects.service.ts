@@ -10,6 +10,7 @@ import { StudyYear } from 'src/study-years/study-years.entity';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { GetSubjectsQueryDto } from './dto/get-subjects-query.dto';
+import { GetSubjectMaterialsResponseDto } from './dto/get-subject-materials-response.dto';
 
 @Injectable()
 export class SubjectsService {
@@ -210,6 +211,30 @@ export class SubjectsService {
         procedureId: procedure.id,
         procedureName: procedure.name,
         description: procedure.description,
+      })),
+    };
+  }
+
+  async getSubjectMaterials(
+    subjectId: number,
+  ): Promise<GetSubjectMaterialsResponseDto> {
+    const subject = await this.subjectRepository.findOne({
+      where: { id: subjectId },
+      relations: {
+        materials: true,
+      },
+    });
+
+    if (!subject) {
+      throw new NotFoundException('Subject not found');
+    }
+
+    return {
+      subjectId: subject.id,
+      subjectName: subject.name,
+      materials: subject.materials.map((material) => ({
+        materialId: material.id,
+        materialName: material.name,
       })),
     };
   }

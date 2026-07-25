@@ -12,6 +12,7 @@ import {
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SessionProcedure } from 'src/sesssion-procedures/session-procedures.entity';
+import { PlannedProceduresStatus } from './enum/planned-procedures-status.enum';
 
 @Entity('planned_procedures')
 export class PlannedProcedures {
@@ -51,16 +52,17 @@ export class PlannedProcedures {
   @Column({ type: 'int', name: 'tooth_number' })
   toothNumber: number;
 
-  @ApiPropertyOptional({
-    description: 'Completion timestamp',
-    example: '2023-01-01T00:00:00.000Z',
+  // todo Status instead of completedAt, to track the status of the procedure (planned, in progress, completed, etc.)
+  @ApiProperty({
+    description: 'Status of the planned procedure',
+    example: PlannedProceduresStatus.PLANNED,
   })
   @Column({
-    type: 'timestamp',
-    name: 'completed_at',
-    nullable: true,
+    type: 'enum',
+    enum: PlannedProceduresStatus,
+    default: PlannedProceduresStatus.PLANNED,
   })
-  completedAt?: Date;
+  status: PlannedProceduresStatus;
 
   @ApiProperty({ description: 'Creation timestamp' })
   @CreateDateColumn({ name: 'created_at' })

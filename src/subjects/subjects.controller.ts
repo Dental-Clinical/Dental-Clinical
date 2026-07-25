@@ -34,6 +34,7 @@ import {
   ApiCreatedResponse,
   ApiResponse,
 } from '@nestjs/swagger';
+import { GetSubjectMaterialsResponseDto } from './dto/get-subject-materials-response.dto';
 
 @ApiTags('Subjects')
 @ApiBearerAuth('JWT-auth')
@@ -147,5 +148,17 @@ export class SubjectsController {
   @ApiNotFoundResponse({ description: 'Subject not found' })
   async deleteSubject(@Param('id', ParseIntPipe) id: number) {
     return await this.subjectsService.deleteSubject(id);
+  }
+
+  @Get(':id/materials')
+  @ApiOperation({ summary: 'Get materials for a subject' })
+  @ApiParam({ name: 'id', type: Number, description: 'Subject ID' })
+  @ApiOkResponse({
+    type: GetSubjectMaterialsResponseDto,
+    description: 'Subject materials retrieved successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Subject not found' })
+  async getSubjectMaterials(@Param('id', ParseIntPipe) subjectId: number) {
+    return await this.subjectsService.getSubjectMaterials(subjectId);
   }
 }

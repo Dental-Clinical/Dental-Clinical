@@ -23,10 +23,4 @@ export class SessionMaterial {
   @ManyToOne(() => Material, (material) => material.sessionMaterials)
   @JoinColumn({ name: 'material_id' })
   material: Material;
-
-  @Column({
-    type: 'int',
-    nullable: true,
-  })
-  quantity?: number;
 }

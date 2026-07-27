@@ -22,7 +22,7 @@ export class SupervisorController {
 
   @Post()
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Create a new supervisor' })
+  @ApiOperation({ summary: '[Admin] Create a new supervisor' })
   @ApiCreatedResponse({
     type: CreateSupervisorResponseDto,
     description: 'Supervisor created',

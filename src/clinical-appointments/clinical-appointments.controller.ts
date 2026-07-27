@@ -12,6 +12,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiExtension,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -27,7 +28,14 @@ import { ClinicalAppointmentsService } from './clinical-appointments.service';
 import { UpdateStudentClinicalAppointmentDto } from './dto/update-student-clinical-appointment.dto';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
-import { User } from 'src/users/user.entity';
+import {
+  CancelAppointmentResponseDto,
+  CreateClinicalAppointmentResponseDto,
+  GetAvailableSupervisorSlotsResponseDto,
+  GetTodayAppointmentsResponseDto,
+  NoShowAppointmentResponseDto,
+  UpdateClinicalAppointmentResponseDto,
+} from './dto/clinical-appointment-response.dto';
 
 @ApiTags('Clinical Appointments')
 @ApiBearerAuth('JWT-auth')
@@ -37,11 +45,22 @@ export class ClinicalAppointmentsController {
     private readonly supervisorAvailabilityService: SupervisorAvailabilityService,
     private readonly clinicalAppointmentService: ClinicalAppointmentsService,
   ) {}
+
   @Get('/available')
   @Roles([UserRole.STUDENT])
-  @ApiOperation({ summary: 'Get available supervisor slots for a date' })
-  @ApiOkResponse({ description: 'Available slots retrieved successfully' })
+  @ApiOperation({
+    summary: '[Student] Get available supervisor slots for a date',
+  })
+  @ApiOkResponse({
+    type: GetAvailableSupervisorSlotsResponseDto,
+    description: 'Available slots retrieved successfully',
+  })
   @ApiResponse({ status: 400, description: 'Invalid date or past date' })
+  @ApiResponse({ status: 404, description: 'Clinical case not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Clinical case is not open or already assigned',
+  })
   async getAvailableAppointments(
     @Query() dto: GetSupervisorAvailableSlotDto,
     @CurrentUser() currentUser: AuthenticatedUser,
@@ -56,9 +75,10 @@ export class ClinicalAppointmentsController {
   @Get('/today')
   @Roles([UserRole.STUDENT])
   @ApiOperation({
-    summary: "Get today's clinical appointments for the current user",
+    summary: "[Student] Get today's clinical appointments for the current user",
   })
   @ApiOkResponse({
+    type: GetTodayAppointmentsResponseDto,
     description: "Today's clinical appointments retrieved successfully",
   })
   @ApiResponse({ status: 404, description: 'No appointments found for today' })
@@ -67,13 +87,15 @@ export class ClinicalAppointmentsController {
       currentUser,
     );
   }
+
   @Post()
   @Roles([UserRole.STUDENT])
   @ApiOperation({
-    summary: 'Create a clinical appointment for a clinical case',
+    summary: '[Student] Create a clinical appointment for a clinical case',
   })
   @ApiBody({ type: CreateStudentClinicalAppointmentDto })
   @ApiCreatedResponse({
+    type: CreateClinicalAppointmentResponseDto,
     description: 'Clinical appointment created successfully',
   })
   @ApiResponse({
@@ -96,9 +118,11 @@ export class ClinicalAppointmentsController {
   }
 
   @Post(':id')
-  // for now, we still don't know who does this
   @Roles([UserRole.STUDENT, UserRole.PATIENT, UserRole.SUPERVISOR])
-  @ApiOperation({ summary: 'Update the status of a clinical appointment' })
+  @ApiOperation({
+    summary:
+      '[Student] [Patient] [Supervisor] Update the status of a clinical appointment',
+  })
   @ApiParam({
     name: 'id',
     type: Number,
@@ -106,6 +130,7 @@ export class ClinicalAppointmentsController {
   })
   @ApiBody({ type: UpdateStudentClinicalAppointmentDto })
   @ApiCreatedResponse({
+    type: UpdateClinicalAppointmentResponseDto,
     description: 'Clinical appointment updated successfully',
   })
   @ApiResponse({
@@ -127,13 +152,16 @@ export class ClinicalAppointmentsController {
 
   @Patch('no-show/:id')
   @Roles([UserRole.STUDENT, UserRole.SUPERVISOR])
-  @ApiOperation({ summary: 'Mark a clinical appointment as no-show' })
+  @ApiOperation({
+    summary: '[Student] [Supervisor] Mark a clinical appointment as no-show',
+  })
   @ApiParam({
     name: 'id',
     type: Number,
     description: 'Clinical appointment ID',
   })
   @ApiOkResponse({
+    type: NoShowAppointmentResponseDto,
     description: 'Clinical appointment marked as no-show successfully',
   })
   @ApiResponse({
@@ -150,13 +178,18 @@ export class ClinicalAppointmentsController {
 
   @Patch('cancel/:id')
   @Roles([UserRole.STUDENT, UserRole.SUPERVISOR, UserRole.PATIENT])
-  @ApiOperation({ summary: 'Cancel a clinical appointment' })
+  @ApiOperation({
+    summary: '[Student] [Supervisor] [Patient] Cancel a clinical appointment',
+  })
   @ApiParam({
     name: 'id',
     type: Number,
     description: 'Clinical appointment ID',
   })
-  @ApiOkResponse({ description: 'Clinical appointment cancelled successfully' })
+  @ApiOkResponse({
+    type: CancelAppointmentResponseDto,
+    description: 'Clinical appointment cancelled successfully',
+  })
   @ApiResponse({
     status: 403,
     description: 'Appointment does not belong to this user',

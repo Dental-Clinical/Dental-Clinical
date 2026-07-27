@@ -79,6 +79,8 @@ export class AuthService {
       await this.patientService.createPatient({
         phone: registration.phone,
         full_name: `${registerDto.full_name}`,
+        dateOfBirth: registerDto.dateOfBirth,
+        gender: registerDto.gender,
         userId: user.id,
       });
     }

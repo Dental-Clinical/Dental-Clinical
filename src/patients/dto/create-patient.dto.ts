@@ -1,5 +1,6 @@
 import {
   IsBoolean,
+  IsDateString,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -32,6 +33,23 @@ export class CreatePatientDto {
   @ApiProperty({ description: 'Syrian phone number', example: '963912345678' })
   @IsPhoneNumber('SY')
   phone: string;
+
+  @ApiProperty({
+    description: 'Date of birth',
+    example: '1990-01-01',
+  })
+  @IsNotEmpty()
+  @IsDateString()
+  dateOfBirth: Date;
+
+  @ApiProperty({
+    description: 'Gender',
+    enum: ['male', 'female'],
+    example: 'female',
+  })
+  @IsNotEmpty()
+  @IsString()
+  gender: string;
 
   @ApiPropertyOptional({
     description: 'Medical history',

@@ -41,7 +41,7 @@ export class AcademicYearsController {
 
   @Post()
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Create an academic year' })
+  @ApiOperation({ summary: '[Admin] Create an academic year' })
   @ApiBody({ type: CreateAcademicYearDto })
   @ApiCreatedResponse({
     type: CreateAcademicYearResponseDto,
@@ -57,7 +57,8 @@ export class AcademicYearsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get a paginated list of academic years' })
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get a paginated list of academic years' })
   @ApiOkResponse({
     type: GetAcademicYearsResponseDto,
     description: 'Academic years retrieved successfully',
@@ -67,7 +68,8 @@ export class AcademicYearsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get an academic year by ID' })
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get an academic year by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'Academic year ID' })
   @ApiOkResponse({
     type: AcademicYearItemResponseDto,
@@ -80,7 +82,7 @@ export class AcademicYearsController {
 
   @Patch(':id')
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Update an academic year' })
+  @ApiOperation({ summary: '[Admin] Update an academic year' })
   @ApiParam({ name: 'id', type: Number, description: 'Academic year ID' })
   @ApiBody({ type: UpdateAcademicYearDto })
   @ApiOkResponse({
@@ -102,7 +104,7 @@ export class AcademicYearsController {
 
   @Delete(':id')
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Delete an academic year' })
+  @ApiOperation({ summary: '[Admin] Delete an academic year' })
   @ApiParam({ name: 'id', type: Number, description: 'Academic year ID' })
   @ApiOkResponse({
     type: DeleteAcademicYearResponseDto,

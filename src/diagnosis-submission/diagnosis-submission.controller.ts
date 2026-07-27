@@ -26,6 +26,10 @@ import {
   ApiResponse,
   ApiNotFoundResponse,
 } from '@nestjs/swagger';
+import {
+  GetDiagnosisSubmissionResponseDto,
+  SubmitDiagnosisResponseDto,
+} from './dto/diagnosis-submission-response.dto';
 
 @ApiTags('Diagnosis Submission')
 @ApiBearerAuth('JWT-auth')
@@ -34,6 +38,7 @@ export class DiagnosisSubmissionController {
   constructor(
     private readonly diagnosisSubmissionService: DiagnosisSubmissionService,
   ) {}
+
   @Post()
   @Roles([UserRole.STUDENT])
   @UseInterceptors(
@@ -43,7 +48,7 @@ export class DiagnosisSubmissionController {
       maxCount: 10,
     }),
   )
-  @ApiOperation({ summary: 'Submit a diagnosis for a clinical case' })
+  @ApiOperation({ summary: '[Student] Submit a diagnosis for a clinical case' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -90,26 +95,8 @@ export class DiagnosisSubmissionController {
     },
   })
   @ApiCreatedResponse({
+    type: SubmitDiagnosisResponseDto,
     description: 'Diagnosis submitted successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        message: {
-          type: 'string',
-          example: 'Diagnosis submitted successfully for supervisor review.',
-        },
-        data: {
-          type: 'object',
-          properties: {
-            diagnosisSubmissionId: { type: 'number', example: 1 },
-            clinicalCaseId: { type: 'number', example: 1 },
-            status: { type: 'string', example: 'diagnosis_pending_review' },
-            plannedProcedures: { type: 'number', example: 2 },
-            uploadedImages: { type: 'number', example: 3 },
-          },
-        },
-      },
-    },
   })
   @ApiResponse({
     status: 404,
@@ -130,6 +117,7 @@ export class DiagnosisSubmissionController {
       files,
     );
   }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a diagnosis submission by ID' })
   @ApiParam({
@@ -137,7 +125,10 @@ export class DiagnosisSubmissionController {
     description: 'Diagnosis submission ID',
     type: Number,
   })
-  @ApiOkResponse({ description: 'Diagnosis submission retrieved successfully' })
+  @ApiOkResponse({
+    type: GetDiagnosisSubmissionResponseDto,
+    description: 'Diagnosis submission retrieved successfully',
+  })
   @ApiNotFoundResponse({ description: 'Diagnosis submission not found' })
   async getDiagnosisSubmission(@Param('id') id: number) {
     return await this.diagnosisSubmissionService.getDiagnosisSubmission(id);

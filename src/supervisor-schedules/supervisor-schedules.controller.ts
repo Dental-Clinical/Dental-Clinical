@@ -41,7 +41,7 @@ export class SupervisorScheduleController {
 
   @Post()
   @Roles([UserRole.SUPERVISOR])
-  @ApiOperation({ summary: 'Create a supervisor schedule' })
+  @ApiOperation({ summary: '[Supervisor] Create a supervisor schedule' })
   @ApiCreatedResponse({
     type: CreateSupervisorScheduleResponseDto,
     description: 'Schedule created successfully',
@@ -65,7 +65,7 @@ export class SupervisorScheduleController {
 
   @Get()
   @Roles([UserRole.SUPERVISOR])
-  @ApiOperation({ summary: 'Get supervisor weekly schedule' })
+  @ApiOperation({ summary: '[Supervisor] Get supervisor weekly schedule' })
   @ApiOkResponse({
     type: GetSupervisorScheduleResponseDto,
     description: 'Supervisor schedule retrieved successfully',
@@ -79,7 +79,7 @@ export class SupervisorScheduleController {
 
   @Patch(':id')
   @Roles([UserRole.SUPERVISOR])
-  @ApiOperation({ summary: 'Update a supervisor schedule' })
+  @ApiOperation({ summary: '[Supervisor] Update a supervisor schedule' })
   @ApiOkResponse({
     type: UpdateSupervisorScheduleResponseDto,
     description: 'Schedule updated successfully',
@@ -109,7 +109,7 @@ export class SupervisorScheduleController {
 
   @Delete(':id')
   @Roles([UserRole.SUPERVISOR])
-  @ApiOperation({ summary: 'Delete a supervisor schedule' })
+  @ApiOperation({ summary: '[Supervisor] Delete a supervisor schedule' })
   @ApiOkResponse({
     type: DeleteSupervisorScheduleResponseDto,
     description: 'Schedule deleted successfully',

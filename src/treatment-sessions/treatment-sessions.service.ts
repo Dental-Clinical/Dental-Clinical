@@ -567,7 +567,7 @@ export class TreatmentSessionsService {
 
     if (!remainingPlannedProcedures) {
       await manager.getRepository(ClinicalCase).update(clinicalCaseId, {
-        status: ClinicalCaseStatus.PROCEDURE_PENDING_REVIEW,
+        status: ClinicalCaseStatus.AWAITING_CASE_REVIEW,
       });
     }
   }

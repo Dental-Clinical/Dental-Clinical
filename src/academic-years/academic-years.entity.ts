@@ -27,7 +27,10 @@ export class AcademicYear {
   @Column({ type: 'date', nullable: false })
   end_date: Date;
 
-  @ApiProperty({ description: 'Whether the academic year is active', example: true })
+  @ApiProperty({
+    description: 'Whether the academic year is active',
+    example: true,
+  })
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
 
@@ -39,7 +42,10 @@ export class AcademicYear {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @ApiPropertyOptional({ type: () => [StudentAcademicYear], description: 'Student enrollments' })
+  @ApiPropertyOptional({
+    type: () => [StudentAcademicYear],
+    description: 'Student enrollments',
+  })
   @OneToMany(
     () => StudentAcademicYear,
     (studentAcademicYear) => studentAcademicYear.academicYear,

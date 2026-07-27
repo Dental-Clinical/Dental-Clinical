@@ -41,7 +41,7 @@ export class StudentSectionController {
 
   @Post()
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Assign a student to a clinic section' })
+  @ApiOperation({ summary: '[Admin] Assign a student to a clinic section' })
   @ApiBody({ type: CreateStudentSectionDto })
   @ApiCreatedResponse({
     type: CreateStudentSectionResponseDto,
@@ -61,7 +61,8 @@ export class StudentSectionController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get a paginated list of student sections' })
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get a paginated list of student sections' })
   @ApiOkResponse({
     type: GetStudentSectionsResponseDto,
     description: 'Student sections retrieved successfully',
@@ -71,7 +72,8 @@ export class StudentSectionController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a student section by ID' })
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get a student section by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'Student section ID' })
   @ApiOkResponse({
     type: StudentSectionItemResponseDto,
@@ -84,7 +86,7 @@ export class StudentSectionController {
 
   @Patch(':id')
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Update a student section' })
+  @ApiOperation({ summary: '[Admin] Update a student section' })
   @ApiParam({ name: 'id', type: Number, description: 'Student section ID' })
   @ApiBody({ type: UpdateStudentSectionDto })
   @ApiOkResponse({
@@ -110,7 +112,7 @@ export class StudentSectionController {
 
   @Delete(':id')
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Delete a student section' })
+  @ApiOperation({ summary: '[Admin] Delete a student section' })
   @ApiParam({ name: 'id', type: Number, description: 'Student section ID' })
   @ApiOkResponse({
     type: DeleteStudentSectionResponseDto,

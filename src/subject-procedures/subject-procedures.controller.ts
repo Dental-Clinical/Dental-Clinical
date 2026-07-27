@@ -43,7 +43,7 @@ export class SubjectProceduresController {
 
   @Post()
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Create a subject procedure' })
+  @ApiOperation({ summary: '[Admin] Create a subject procedure' })
   @ApiBody({ type: CreateSubjectProcedureDto })
   @ApiCreatedResponse({
     type: CreateSubjectProcedureResponseDto,
@@ -60,7 +60,10 @@ export class SubjectProceduresController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get a paginated list of subject procedures' })
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({
+    summary: '[Admin] Get a paginated list of subject procedures',
+  })
   @ApiOkResponse({
     type: GetSubjectProceduresResponseDto,
     description: 'Subject procedures retrieved successfully',
@@ -70,7 +73,8 @@ export class SubjectProceduresController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a subject procedure by ID' })
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get a subject procedure by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'Subject procedure ID' })
   @ApiOkResponse({
     type: SubjectProcedureItemResponseDto,
@@ -83,7 +87,7 @@ export class SubjectProceduresController {
 
   @Patch(':id')
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Update a subject procedure' })
+  @ApiOperation({ summary: '[Admin] Update a subject procedure' })
   @ApiParam({ name: 'id', type: Number, description: 'Subject procedure ID' })
   @ApiBody({ type: UpdateSubjectProcedureDto })
   @ApiOkResponse({
@@ -108,7 +112,7 @@ export class SubjectProceduresController {
 
   @Delete(':id')
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Delete a subject procedure' })
+  @ApiOperation({ summary: '[Admin] Delete a subject procedure' })
   @ApiParam({ name: 'id', type: Number, description: 'Subject procedure ID' })
   @ApiOkResponse({
     type: DeleteSubjectProcedureResponseDto,

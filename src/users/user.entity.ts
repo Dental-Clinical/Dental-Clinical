@@ -33,7 +33,10 @@ export class User {
   })
   father_name: string;
 
-  @ApiPropertyOptional({ description: 'Phone number', example: '+963912345678' })
+  @ApiPropertyOptional({
+    description: 'Phone number',
+    example: '+963912345678',
+  })
   @Column({
     type: 'varchar',
     nullable: true,
@@ -41,7 +44,10 @@ export class User {
   })
   phone: string;
 
-  @ApiPropertyOptional({ description: 'Email address', example: 'john@example.com' })
+  @ApiPropertyOptional({
+    description: 'Email address',
+    example: 'john@example.com',
+  })
   @Column({
     type: 'varchar',
     nullable: true,
@@ -56,7 +62,11 @@ export class User {
   })
   password_hash: string;
 
-  @ApiProperty({ description: 'User role', enum: ['admin', 'patient', 'supervisor', 'student', 'coordinator'], example: 'student' })
+  @ApiProperty({
+    description: 'User role',
+    enum: ['admin', 'patient', 'supervisor', 'student', 'coordinator'],
+    example: 'student',
+  })
   @Column({
     type: 'enum',
     enum: ['admin', 'patient', 'supervisor', 'student', 'coordinator'],
@@ -84,19 +94,31 @@ export class User {
   })
   created_at: Date;
 
-  @ApiPropertyOptional({ type: () => Student, description: 'Associated student profile' })
+  @ApiPropertyOptional({
+    type: () => Student,
+    description: 'Associated student profile',
+  })
   @OneToOne(() => Student, (student) => student.user)
   student?: Student;
 
-  @ApiPropertyOptional({ type: () => Supervisor, description: 'Associated supervisor profile' })
+  @ApiPropertyOptional({
+    type: () => Supervisor,
+    description: 'Associated supervisor profile',
+  })
   @OneToOne(() => Supervisor, (supervisor) => supervisor.user)
   supervisor?: Supervisor;
 
-  @ApiPropertyOptional({ type: () => Coordinator, description: 'Associated coordinator profile' })
+  @ApiPropertyOptional({
+    type: () => Coordinator,
+    description: 'Associated coordinator profile',
+  })
   @OneToOne(() => Coordinator, (coordinator) => coordinator.user)
   coordinator?: Coordinator;
 
-  @ApiPropertyOptional({ type: () => Patient, description: 'Associated patient profile' })
+  @ApiPropertyOptional({
+    type: () => Patient,
+    description: 'Associated patient profile',
+  })
   @OneToOne(() => Patient, (patient) => patient.user)
   patient?: Patient;
 

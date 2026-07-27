@@ -37,6 +37,23 @@ export class Patient {
   @Column()
   phone: string;
 
+  // should not be nullable, but for now we will make it nullable to avoid errors
+  @ApiProperty({ description: 'Date of birth', example: '1990-01-01' })
+  @Column({
+    type: 'date',
+    nullable: true,
+  })
+  dateOfBirth: Date;
+
+  // should not be nullable, but for now we will make it nullable to avoid errors
+  @ApiProperty({ description: 'Gender', example: 'Female' })
+  @Column({
+    type: 'enum',
+    enum: ['Male', 'Female', 'male', 'female'],
+    nullable: true,
+  })
+  gender: string;
+
   @ApiProperty({ description: 'Walk-in patient flag', example: false })
   @Column({
     default: false,

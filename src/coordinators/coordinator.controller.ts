@@ -24,7 +24,7 @@ export class CoordinatorController {
 
   @Post()
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Create a new coordinator' })
+  @ApiOperation({ summary: '[Admin] Create a new coordinator' })
   @ApiCreatedResponse({
     type: CreateCoordinatorResponseDto,
     description: 'Coordinator created',
@@ -39,7 +39,9 @@ export class CoordinatorController {
   }
   @Get('appointments/today')
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Get today appointments for coordinator' })
+  @ApiOperation({
+    summary: '[Coordinator] Get today appointments for coordinator',
+  })
   @ApiOkResponse({ description: 'Appointments retrieved' })
   @ApiResponse({ status: 404, description: 'Coordinator not found' })
   public async getCoordinatorAppointments(
@@ -51,7 +53,9 @@ export class CoordinatorController {
   }
   @Get('appointments/upcoming')
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Get upcoming appointments for coordinator' })
+  @ApiOperation({
+    summary: '[Coordinator] Get upcoming appointments for coordinator',
+  })
   @ApiOkResponse({ description: 'Appointments retrieved' })
   @ApiResponse({ status: 404, description: 'Coordinator not found' })
   public async getUpcomingAppointments(
@@ -63,7 +67,9 @@ export class CoordinatorController {
   }
   @Get('appointments/:appointmentId')
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Get appointment details for coordinator' })
+  @ApiOperation({
+    summary: '[Coordinator] Get appointment details for coordinator',
+  })
   @ApiParam({
     name: 'appointmentId',
     type: Number,

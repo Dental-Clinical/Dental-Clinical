@@ -41,7 +41,7 @@ export class ClinicSectionsController {
 
   @Post()
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Create a clinic section' })
+  @ApiOperation({ summary: '[Admin] Create a clinic section' })
   @ApiBody({ type: CreateClinicSectionDto })
   @ApiCreatedResponse({
     type: CreateClinicSectionResponseDto,
@@ -58,7 +58,8 @@ export class ClinicSectionsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get a paginated list of clinic sections' })
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get a paginated list of clinic sections' })
   @ApiOkResponse({
     type: GetClinicSectionsResponseDto,
     description: 'Clinic sections retrieved successfully',
@@ -68,7 +69,8 @@ export class ClinicSectionsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a clinic section by ID' })
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get a clinic section by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'Clinic section ID' })
   @ApiOkResponse({
     type: ClinicSectionItemResponseDto,
@@ -81,7 +83,7 @@ export class ClinicSectionsController {
 
   @Patch(':id')
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Update a clinic section' })
+  @ApiOperation({ summary: '[Admin] Update a clinic section' })
   @ApiParam({ name: 'id', type: Number, description: 'Clinic section ID' })
   @ApiBody({ type: UpdateClinicSectionDto })
   @ApiOkResponse({
@@ -106,7 +108,7 @@ export class ClinicSectionsController {
 
   @Delete(':id')
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Delete a clinic section' })
+  @ApiOperation({ summary: '[Admin] Delete a clinic section' })
   @ApiParam({ name: 'id', type: Number, description: 'Clinic section ID' })
   @ApiOkResponse({
     type: DeleteClinicSectionResponseDto,

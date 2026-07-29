@@ -23,11 +23,14 @@ import { SessionMaterial } from 'src/session-materials/session-materials.entity'
 import { PlannedProceduresStatus } from 'src/planned-procedures/enum/planned-procedures-status.enum';
 import { PerformedProceduresDto } from './dto/performed-procedures.dto';
 import { Student } from 'src/students/student.entity';
+import { SupervisorService } from 'src/supervisors/supervisor.service';
+import { ReviewTreatmentSessionDto } from './dto/review-treatment-session.dto';
 
 @Injectable()
 export class TreatmentSessionsService {
   constructor(
     private readonly studentService: StudentService,
+    private readonly supervisorService: SupervisorService,
     @InjectRepository(ClinicalCase)
     private readonly clinicalCaseRepository: Repository<ClinicalCase>,
     @InjectRepository(TreatmentSession)
@@ -275,6 +278,52 @@ export class TreatmentSessionsService {
       dto,
       plannedProcedures,
     );
+  }
+  public async reviewTreatmentSession(
+    userId: number,
+    treatmentSessionId: number,
+    dto: ReviewTreatmentSessionDto,
+  ) {
+    const superivsor = await this.supervisorService.findByUserId(userId);
+
+    if (!superivsor) {
+      throw new NotFoundException('Supervisor not found');
+    }
+
+    const treatmentSession = await this.treatmentSessionRepository.findOne({
+      where: { id: treatmentSessionId },
+      relations: {
+        clinicalCase: { assignedSupervisor: true },
+      },
+    });
+
+    if (!treatmentSession) {
+      throw new NotFoundException('Treatment session not found');
+    }
+    if (treatmentSession.clinicalCase.assignedSupervisor.id != superivsor.id) {
+      throw new ConflictException(
+        'Treatment session does not belong to this supervisor',
+      );
+    }
+
+    if (treatmentSession.status !== TreatmentSessionStatus.COMPLETED) {
+      throw new ConflictException(
+        'Treatment session is not completed and cannot be reviewed.',
+      );
+    }
+    if (treatmentSession.supervisorNotes) {
+      throw new ConflictException(
+        'Treatment session has already been reviewed.',
+      );
+    }
+
+    treatmentSession.supervisorNotes = dto.supervisorNotes;
+    await this.treatmentSessionRepository.save(treatmentSession);
+    return {
+      message: 'Treatment session reviewed successfully.',
+      treatmentSessionId: treatmentSession.id,
+      supervisorNotes: treatmentSession.supervisorNotes,
+    };
   }
   private async prepareSessionMaterials(
     manager: EntityManager,

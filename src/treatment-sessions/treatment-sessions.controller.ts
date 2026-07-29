@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
 } from '@nestjs/common';
 import {
@@ -28,6 +29,7 @@ import {
   CreateTreatmentSessionResponseDto,
   GetTreatmentSessionProceduresResponseDto,
 } from './dto/treatment-session-response.dto';
+import { ReviewTreatmentSessionDto } from './dto/review-treatment-session.dto';
 
 @ApiTags('Treatment Sessions')
 @ApiBearerAuth('JWT-auth')
@@ -123,6 +125,48 @@ export class TreatmentSessionsController {
     @Body() dto: CompleteTreatmentSessionDto,
   ) {
     return await this.treatmentSessionsService.completeTreatmentSession(
+      user.userId,
+      treatmentSessionId,
+      dto,
+    );
+  }
+
+  @Patch(':treatmentSessionId/review')
+  @Roles([UserRole.SUPERVISOR])
+  @ApiOperation({
+    summary: '[Supervisor] Review a completed treatment session',
+  })
+  @ApiParam({
+    name: 'treatmentSessionId',
+    type: Number,
+    description: 'Treatment session ID',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Treatment session reviewed successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Supervisor or treatment session not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Treatment session does not belong to this supervisor',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Treatment session is not completed and cannot be reviewed.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Treatment session has already been reviewed..',
+  })
+  async reviewTreatmentSession(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('treatmentSessionId', ParseIntPipe) treatmentSessionId: number,
+    @Body() dto: ReviewTreatmentSessionDto,
+  ) {
+    return await this.treatmentSessionsService.reviewTreatmentSession(
       user.userId,
       treatmentSessionId,
       dto,

@@ -10,6 +10,7 @@ import { SessionProcedure } from 'src/sesssion-procedures/session-procedures.ent
 import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.entity';
 import { ClinicalAppointmentsModule } from 'src/clinical-appointments/clinical-appointments.module';
 import { Material } from 'src/materials/materials.entity';
+import { SupervisorModule } from 'src/supervisors/supervisor.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { Material } from 'src/materials/materials.entity';
       Material,
     ]),
     StudentModule,
+    SupervisorModule,
     ClinicalAppointmentsModule,
   ],
   controllers: [TreatmentSessionsController],

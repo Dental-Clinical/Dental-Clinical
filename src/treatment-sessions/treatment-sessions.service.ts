@@ -98,18 +98,38 @@ export class TreatmentSessionsService {
         throw new NotFoundException('Clinical case not found');
       }
 
-      const activeSession = await manager
+      const hasPendingSession = await manager
         .getRepository(TreatmentSession)
         .exists({
           where: {
             clinicalCase: { id: lockedClinicalCase.id },
-            status: TreatmentSessionStatus.ACTIVE,
+            status: In([
+              TreatmentSessionStatus.ACTIVE,
+              TreatmentSessionStatus.UPCOMING,
+            ]),
           },
         });
 
-      if (activeSession) {
+      if (hasPendingSession) {
         throw new ConflictException(
-          'There is already an active treatment session.',
+          'There is already an active or upcoming treatment session for this clinical case.',
+        );
+      }
+
+      const duplicateAppointment = await manager
+        .getRepository(ClinicalAppointment)
+        .exists({
+          where: {
+            clinicalCase: { id: lockedClinicalCase.id },
+            appointmentDate: new Date(dto.appointmentDate!),
+            appointmentStart: dto.appointmentStart,
+            status: ClinicalAppointmentStatus.SCHEDULED,
+          },
+        });
+
+      if (duplicateAppointment) {
+        throw new ConflictException(
+          'An appointment already exists for this date and time.',
         );
       }
       const existingSession = await manager
@@ -412,8 +432,8 @@ export class TreatmentSessionsService {
           subject: true,
           assignedSupervisor: true,
           patient: true,
-          clinicalAppointments: { treatmentSession: true },
         },
+        clinicalAppointment: true,
       },
     });
 
@@ -583,6 +603,18 @@ export class TreatmentSessionsService {
       }
       await manager.getRepository(SessionProcedure).save(sessionProcedures);
       await manager.getRepository(TreatmentSession).save(treatmentSession);
+
+      // update clinical appointment status to completed
+      const appointment = await manager
+        .getRepository(ClinicalAppointment)
+        .findOne({
+          where: { id: treatmentSession.clinicalAppointment.id },
+        });
+
+      if (appointment) {
+        appointment.status = ClinicalAppointmentStatus.COMPLETED;
+        await manager.getRepository(ClinicalAppointment).save(appointment);
+      }
 
       // Check if all procedures are completed
       await this.updateClinicalCaseStatusIfNeeded(

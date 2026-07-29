@@ -17,7 +17,7 @@ export const connectionSource = new DataSource({
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   synchronize: false,
-  logging: ['query', 'error'],
+  logging: ['error'],
 });
 
 // export const connectionSource = new DataSource({

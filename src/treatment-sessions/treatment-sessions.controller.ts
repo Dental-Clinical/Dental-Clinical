@@ -96,7 +96,7 @@ export class TreatmentSessionsController {
     );
   }
 
-  @Post(':treatmentSessionId/complete')
+  @Patch(':treatmentSessionId/complete')
   @Roles([UserRole.STUDENT])
   @ApiOperation({
     summary: '[Student] Complete a treatment session with performed procedures',

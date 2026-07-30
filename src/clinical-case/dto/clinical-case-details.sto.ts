@@ -55,7 +55,7 @@ export class ClinicalCaseDetailsDto {
   patient: ClinicalCaseDetailsPatientDto;
 
   @ApiProperty({ type: ClinicalCaseDetailsRequestDto })
-  request: ClinicalCaseDetailsRequestDto;
+  patient_request: ClinicalCaseDetailsRequestDto;
 
   @ApiProperty({ type: ClinicalCaseDetailsSubjectDto })
   subject: ClinicalCaseDetailsSubjectDto;

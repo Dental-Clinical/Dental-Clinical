@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsInt, IsDateString, IsEnum } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsInt,
+  IsDateString,
+  IsEnum,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ClinicalCaseStatus } from '../enums/clinical-case-status.enum';

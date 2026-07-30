@@ -1,10 +1,17 @@
 import { Student } from '../students/student.entity';
 import { ClinicalCase } from '../clinical-case/clinical-case.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Patient } from '../patients/patient.entity';
 import { Supervisor } from '../supervisors/supervisor.entity';
 import { ClinicalAppointmentStatus } from './enums/clinical-appointment.enum';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TreatmentSession } from 'src/treatment-sessions/treatment-sessions.entity';
 
 @Entity('clinical_appointments')
 export class ClinicalAppointment {
@@ -12,8 +19,14 @@ export class ClinicalAppointment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ApiProperty({ type: () => ClinicalCase, description: 'Associated clinical case' })
-  @ManyToOne(() => ClinicalCase)
+  @ApiProperty({
+    type: () => ClinicalCase,
+    description: 'Associated clinical case',
+  })
+  @ManyToOne(
+    () => ClinicalCase,
+    (clinicalCase) => clinicalCase.clinicalAppointments,
+  )
   clinicalCase: ClinicalCase;
 
   @ApiProperty({ type: () => Student, description: 'Assigned student' })
@@ -28,6 +41,16 @@ export class ClinicalAppointment {
   @ManyToOne(() => Supervisor)
   supervisor: Supervisor;
 
+  @ApiPropertyOptional({
+    description: 'Associated treatment session',
+    type: () => TreatmentSession,
+  })
+  @OneToOne(
+    () => TreatmentSession,
+    (treatmentSession) => treatmentSession.clinicalAppointment,
+  )
+  treatmentSession?: TreatmentSession;
+
   @ApiProperty({ description: 'Appointment date', example: '2025-01-15' })
   @Column({ type: 'date' })
   appointmentDate: Date;
@@ -40,7 +63,11 @@ export class ClinicalAppointment {
   @Column({ type: 'time' })
   appointmentEnd: string;
 
-  @ApiProperty({ description: 'Appointment status', enum: ClinicalAppointmentStatus, example: ClinicalAppointmentStatus.SCHEDULED })
+  @ApiProperty({
+    description: 'Appointment status',
+    enum: ClinicalAppointmentStatus,
+    example: ClinicalAppointmentStatus.SCHEDULED,
+  })
   @Column({
     type: 'enum',
     enum: ClinicalAppointmentStatus,

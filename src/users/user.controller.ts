@@ -27,7 +27,7 @@ export class UserController {
 
   @Get()
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Get all users (paginated)' })
+  @ApiOperation({ summary: '[Admin] Get all users (paginated)' })
   @ApiOkResponse({
     type: PaginatedUsersResponseDto,
     description: 'Paginated list of users',
@@ -38,7 +38,7 @@ export class UserController {
 
   @Get(':id')
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Get user by ID' })
+  @ApiOperation({ summary: '[Admin] Get user by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'User ID' })
   @ApiOkResponse({ type: UserResponseDto, description: 'User details' })
   @ApiResponse({ status: 404, description: 'User not found' })
@@ -48,7 +48,7 @@ export class UserController {
 
   @Patch(':id/status')
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Update user active status' })
+  @ApiOperation({ summary: '[Admin] Update user active status' })
   @ApiParam({ name: 'id', type: Number, description: 'User ID' })
   @ApiBody({
     schema: {

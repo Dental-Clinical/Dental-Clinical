@@ -5,6 +5,8 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -16,6 +18,7 @@ import { ClinicalCase } from '../clinical-case/clinical-case.entity';
 import { SubjectProcedures } from 'src/subject-procedures/subject-procedures.entity';
 import { ClinicSections } from 'src/clinic-sections/clinic-sections.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Material } from 'src/materials/materials.entity';
 
 @Entity('subjects')
 @Unique(['studyYear', 'name'])
@@ -89,4 +92,18 @@ export class Subject {
   })
   @OneToMany(() => ClinicSections, (clinicSection) => clinicSection.subject)
   clinicSections: ClinicSections[];
+
+  @ManyToMany(() => Material, (material) => material.subjects)
+  @JoinTable({
+    name: 'subject_materials',
+    joinColumn: {
+      name: 'subject_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'material_id',
+      referencedColumnName: 'id',
+    },
+  })
+  materials: Material[];
 }

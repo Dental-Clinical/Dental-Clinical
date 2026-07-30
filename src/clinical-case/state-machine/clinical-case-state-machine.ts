@@ -10,9 +10,8 @@ export const ClinicalCaseStateMachine: Record<
     ClinicalCaseStatus.TREATMENT_IN_PROGRESS,
   ],
   [ClinicalCaseStatus.TREATMENT_IN_PROGRESS]: [
-    ClinicalCaseStatus.PROCEDURE_PENDING_REVIEW,
+    ClinicalCaseStatus.AWAITING_CASE_REVIEW,
   ],
-  [ClinicalCaseStatus.PROCEDURE_PENDING_REVIEW]: [ClinicalCaseStatus.COMPLETED],
-  [ClinicalCaseStatus.COMPLETED]: [ClinicalCaseStatus.CLOSED],
-  [ClinicalCaseStatus.CLOSED]: [],
+  [ClinicalCaseStatus.AWAITING_CASE_REVIEW]: [ClinicalCaseStatus.COMPLETED],
+  [ClinicalCaseStatus.COMPLETED]: [],
 };

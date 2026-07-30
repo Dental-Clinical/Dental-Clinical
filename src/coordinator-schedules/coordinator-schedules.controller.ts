@@ -41,7 +41,7 @@ export class CoordinatorScheduleController {
 
   @Post()
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Create a coordinator schedule' })
+  @ApiOperation({ summary: '[Coordinator] Create a coordinator schedule' })
   @ApiCreatedResponse({
     type: CreateScheduleResponseDto,
     description: 'Schedule created successfully',
@@ -65,7 +65,7 @@ export class CoordinatorScheduleController {
 
   @Get()
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Get coordinator weekly schedule' })
+  @ApiOperation({ summary: '[Coordinator] Get coordinator weekly schedule' })
   @ApiOkResponse({
     type: GetScheduleResponseDto,
     description: 'Coordinator schedule retrieved successfully',
@@ -79,7 +79,7 @@ export class CoordinatorScheduleController {
 
   @Patch(':id')
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Update a coordinator schedule' })
+  @ApiOperation({ summary: '[Coordinator] Update a coordinator schedule' })
   @ApiOkResponse({
     type: UpdateScheduleResponseDto,
     description: 'Schedule updated successfully',
@@ -109,7 +109,7 @@ export class CoordinatorScheduleController {
 
   @Delete(':id')
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Delete a coordinator schedule' })
+  @ApiOperation({ summary: '[Coordinator] Delete a coordinator schedule' })
   @ApiOkResponse({
     type: DeleteScheduleResponseDto,
     description: 'Schedule deleted successfully',

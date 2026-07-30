@@ -1,4 +1,5 @@
 import {
+  IsDateString,
   IsInt,
   IsNotEmpty,
   IsString,
@@ -43,12 +44,12 @@ export class RegisterDto {
   father_name: string;
 
   @ApiProperty({
-    description: 'Age of the patient',
-    example: 25,
+    description: 'Date of birth of the patient',
+    example: '1990-01-01',
   })
   @IsNotEmpty()
-  @IsInt()
-  age: number;
+  @IsDateString()
+  dateOfBirth: Date;
 
   @ApiProperty({
     description: 'Gender of the patient',

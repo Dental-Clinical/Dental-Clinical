@@ -11,6 +11,7 @@ import {
 import { JoinColumn } from 'typeorm/browser';
 import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ClinicalCaseEvaluation } from 'src/clinical-case-evaluation/clinical-case-evaluation.entity';
 
 @Entity('students')
 export class Student {
@@ -64,4 +65,11 @@ export class Student {
     (diagnosisSubmission) => diagnosisSubmission.student,
   )
   diagnosisSubmissions: DiagnosisSubmission[];
+
+  @ApiPropertyOptional({
+    type: () => [ClinicalCaseEvaluation],
+    description: 'Clinical case evaluations',
+  })
+  @OneToMany(() => ClinicalCaseEvaluation, (evaluation) => evaluation.student)
+  clinicalCaseEvaluations: ClinicalCaseEvaluation[];
 }

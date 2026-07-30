@@ -13,6 +13,7 @@ import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submissi
 import { ClinicSections } from 'src/clinic-sections/clinic-sections.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SupervisorReview } from 'src/supervisor-reviews/supervisor-reviews.entity';
+import { ClinicalCaseEvaluation } from 'src/clinical-case-evaluation/clinical-case-evaluation.entity';
 
 @Entity('supervisors')
 export class Supervisor {
@@ -68,6 +69,16 @@ export class Supervisor {
     (supervisorReview) => supervisorReview.supervisor,
   )
   supervisorReviews: SupervisorReview[];
+
+  @ApiPropertyOptional({
+    type: () => [ClinicalCaseEvaluation],
+    description: 'Clinical case evaluations',
+  })
+  @OneToMany(
+    () => ClinicalCaseEvaluation,
+    (evaluation) => evaluation.supervisor,
+  )
+  clinicalCaseEvaluations: ClinicalCaseEvaluation[];
 
   @ApiPropertyOptional({
     type: () => [ClinicSections],

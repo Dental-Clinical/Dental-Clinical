@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Post,
@@ -30,6 +29,11 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 import { FileUploadInterceptor } from 'src/common/interceptors/files.interceptor';
+import {
+  CreateExaminationRequestResponseDto,
+  GetAllExaminationRequestsResponseDto,
+  GetExaminationRequestResponseDto,
+} from './dto/examination-request-response.dto';
 
 @ApiTags('Examination Requests')
 @ApiBearerAuth('JWT-auth')
@@ -47,7 +51,9 @@ export class ExaminationRequestsController {
       maxCount: 5,
     }),
   )
-  @ApiOperation({ summary: 'Create an examination request with attachments' })
+  @ApiOperation({
+    summary: '[Patient] Create an examination request with attachments',
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -92,6 +98,7 @@ export class ExaminationRequestsController {
     },
   })
   @ApiCreatedResponse({
+    type: CreateExaminationRequestResponseDto,
     description: 'Examination request created successfully',
   })
   @ApiResponse({
@@ -118,9 +125,13 @@ export class ExaminationRequestsController {
   @Get()
   @Roles([UserRole.PATIENT, UserRole.COORDINATOR])
   @ApiOperation({
-    summary: 'Get all examination requests for the current user',
+    summary:
+      '[Patient] [Coordinator] Get all examination requests for the current user',
   })
-  @ApiOkResponse({ description: 'List of examination requests retrieved' })
+  @ApiOkResponse({
+    type: GetAllExaminationRequestsResponseDto,
+    description: 'Examination requests retrieved successfully',
+  })
   @ApiResponse({ status: 404, description: 'Patient not found' })
   async getAllExaminationRequestsForAUser(
     @CurrentUser() user: AuthenticatedUser,
@@ -132,17 +143,25 @@ export class ExaminationRequestsController {
 
   @Get('/all')
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Get all examination requests' })
-  @ApiOkResponse({ description: 'List of examination requests retrieved' })
+  @ApiOperation({ summary: '[Coordinator] Get all examination requests' })
+  @ApiOkResponse({
+    type: GetAllExaminationRequestsResponseDto,
+    description: 'Examination requests retrieved successfully',
+  })
   async getAllExaminationRequests() {
     return this.examinationRequestsService.getAllExaminationRequests();
   }
 
   @Get(':id')
   @Roles([UserRole.PATIENT, UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Get examination request by ID' })
+  @ApiOperation({
+    summary: '[Patient] [Coordinator] Get examination request by ID',
+  })
   @ApiParam({ name: 'id', type: Number, description: 'Examination request ID' })
-  @ApiOkResponse({ description: 'Examination request details retrieved' })
+  @ApiOkResponse({
+    type: GetExaminationRequestResponseDto,
+    description: 'Examination request details retrieved successfully',
+  })
   @ApiResponse({ status: 404, description: 'Examination request not found' })
   async getExaminationRequest(
     @Param('id', ParseIntPipe) id: number,

@@ -34,6 +34,7 @@ import {
   ApiCreatedResponse,
   ApiResponse,
 } from '@nestjs/swagger';
+import { GetSubjectMaterialsResponseDto } from './dto/get-subject-materials-response.dto';
 
 @ApiTags('Subjects')
 @ApiBearerAuth('JWT-auth')
@@ -43,7 +44,7 @@ export class SubjectsController {
 
   @Post()
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Create a subject' })
+  @ApiOperation({ summary: '[Admin] Create a subject' })
   @ApiBody({ type: CreateSubjectDto })
   @ApiCreatedResponse({
     type: CreateSubjectResponseDto,
@@ -60,7 +61,8 @@ export class SubjectsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get a paginated list of subjects' })
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get a paginated list of subjects' })
   @ApiOkResponse({
     type: GetSubjectsResponseDto,
     description: 'Subjects retrieved successfully',
@@ -70,7 +72,6 @@ export class SubjectsController {
   }
 
   @Get('/:id/procedures')
-  @AllowAnonymous()
   @ApiOperation({ summary: 'Get procedures for a subject' })
   @ApiParam({ name: 'id', description: 'Subject ID', type: Number })
   @ApiOkResponse({
@@ -116,7 +117,7 @@ export class SubjectsController {
 
   @Patch(':id')
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Update a subject' })
+  @ApiOperation({ summary: '[Admin] Update a subject' })
   @ApiParam({ name: 'id', type: Number, description: 'Subject ID' })
   @ApiBody({ type: UpdateSubjectDto })
   @ApiOkResponse({
@@ -138,7 +139,7 @@ export class SubjectsController {
 
   @Delete(':id')
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Delete a subject' })
+  @ApiOperation({ summary: '[Admin] Delete a subject' })
   @ApiParam({ name: 'id', type: Number, description: 'Subject ID' })
   @ApiOkResponse({
     type: DeleteSubjectResponseDto,
@@ -147,5 +148,17 @@ export class SubjectsController {
   @ApiNotFoundResponse({ description: 'Subject not found' })
   async deleteSubject(@Param('id', ParseIntPipe) id: number) {
     return await this.subjectsService.deleteSubject(id);
+  }
+
+  @Get(':id/materials')
+  @ApiOperation({ summary: 'Get materials for a subject' })
+  @ApiParam({ name: 'id', type: Number, description: 'Subject ID' })
+  @ApiOkResponse({
+    type: GetSubjectMaterialsResponseDto,
+    description: 'Subject materials retrieved successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Subject not found' })
+  async getSubjectMaterials(@Param('id', ParseIntPipe) subjectId: number) {
+    return await this.subjectsService.getSubjectMaterials(subjectId);
   }
 }

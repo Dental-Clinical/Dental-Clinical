@@ -31,7 +31,11 @@ export class SupervisorSchedule {
   @RelationId((schedule: SupervisorSchedule) => schedule.supervisor)
   supervisor_id: number;
 
-  @ApiProperty({ description: 'Day of week', enum: DayOfWeek, example: DayOfWeek.SUNDAY })
+  @ApiProperty({
+    description: 'Day of week',
+    enum: DayOfWeek,
+    example: DayOfWeek.SUNDAY,
+  })
   @Column({
     type: 'enum',
     enum: DayOfWeek,

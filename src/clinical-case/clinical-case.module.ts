@@ -5,10 +5,21 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClinicalCase } from './clinical-case.entity';
 import { InitialExamination } from 'src/initial-examination/initial-examination.entity';
 import { StudentModule } from 'src/students/student.module';
+import { ClinicalAppointment } from 'src/clinical-appointments/clinical-appointments.entity';
+import { TreatmentSession } from 'src/treatment-sessions/treatment-sessions.entity';
+import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
+import { SessionMaterial } from 'src/session-materials/session-materials.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ClinicalCase, InitialExamination]),
+    TypeOrmModule.forFeature([
+      ClinicalCase,
+      InitialExamination,
+      DiagnosisSubmission,
+      TreatmentSession,
+      ClinicalAppointment,
+      SessionMaterial,
+    ]),
     StudentModule,
   ],
   providers: [ClinicalCaseService],

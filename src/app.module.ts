@@ -34,6 +34,7 @@ import { DiagnosisImagesModule } from './diagnosis-images/diagnosis-images.modul
 import { ClinicSectionsModule } from './clinic-sections/clinic-sections.module';
 import { StudentSectionModule } from './student-section/student-section.module';
 import { SupervisorReviewsModule } from './supervisor-reviews/supervisor-reviews.module';
+import { TreatmentSessionsModule } from './treatment-sessions/treatment-sessions.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -86,6 +87,7 @@ const ENV = process.env.NODE_ENV;
     ClinicSectionsModule,
     StudentSectionModule,
     SupervisorReviewsModule,
+    TreatmentSessionsModule,
   ],
   controllers: [AppController],
   providers: [

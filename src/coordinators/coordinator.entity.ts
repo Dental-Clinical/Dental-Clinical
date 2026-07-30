@@ -29,11 +29,17 @@ export class Coordinator {
   })
   created_at: Date;
 
-  @ApiPropertyOptional({ type: () => [CoordinatorSchedule], description: 'Coordinator schedules' })
+  @ApiPropertyOptional({
+    type: () => [CoordinatorSchedule],
+    description: 'Coordinator schedules',
+  })
   @OneToMany(() => CoordinatorSchedule, (schedule) => schedule.coordinator)
   schedules: CoordinatorSchedule[];
 
-  @ApiPropertyOptional({ type: () => [InitialExamination], description: 'Conducted initial examinations' })
+  @ApiPropertyOptional({
+    type: () => [InitialExamination],
+    description: 'Conducted initial examinations',
+  })
   @OneToMany(() => InitialExamination, (examination) => examination.coordinator)
   initialExaminations: InitialExamination[];
 }

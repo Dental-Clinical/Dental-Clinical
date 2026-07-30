@@ -17,11 +17,17 @@ export class StudyYear {
   @Column({ type: 'int', nullable: false })
   level: number;
 
-  @ApiPropertyOptional({ type: () => [Subject], description: 'Subjects in this study year' })
+  @ApiPropertyOptional({
+    type: () => [Subject],
+    description: 'Subjects in this study year',
+  })
   @OneToMany(() => Subject, (subject) => subject.studyYear)
   subjects: Subject[];
 
-  @ApiPropertyOptional({ type: () => [StudentAcademicYear], description: 'Student enrollments' })
+  @ApiPropertyOptional({
+    type: () => [StudentAcademicYear],
+    description: 'Student enrollments',
+  })
   @OneToMany(
     () => StudentAcademicYear,
     (studentAcademicYear) => studentAcademicYear.studyYear,

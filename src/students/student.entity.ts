@@ -38,18 +38,27 @@ export class Student {
   })
   created_at: Date;
 
-  @ApiPropertyOptional({ type: () => [ClinicalCase], description: 'Assigned clinical cases' })
+  @ApiPropertyOptional({
+    type: () => [ClinicalCase],
+    description: 'Assigned clinical cases',
+  })
   @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.assignedStudent)
   clinicalCases: ClinicalCase[];
 
-  @ApiPropertyOptional({ type: () => [StudentAcademicYear], description: 'Academic year enrollments' })
+  @ApiPropertyOptional({
+    type: () => [StudentAcademicYear],
+    description: 'Academic year enrollments',
+  })
   @OneToMany(
     () => StudentAcademicYear,
     (studentAcademicYear) => studentAcademicYear.student,
   )
   studentAcademicYears: StudentAcademicYear[];
 
-  @ApiPropertyOptional({ type: () => [DiagnosisSubmission], description: 'Diagnosis submissions' })
+  @ApiPropertyOptional({
+    type: () => [DiagnosisSubmission],
+    description: 'Diagnosis submissions',
+  })
   @OneToMany(
     () => DiagnosisSubmission,
     (diagnosisSubmission) => diagnosisSubmission.student,

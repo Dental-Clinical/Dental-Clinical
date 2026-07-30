@@ -33,7 +33,7 @@ export class InitialExaminationController {
 
   @Post()
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Create an initial examination' })
+  @ApiOperation({ summary: '[Coordinator] Create an initial examination' })
   @ApiCreatedResponse({
     type: InitialExaminationResponseDto,
     description: 'Initial examination created successfully',
@@ -53,7 +53,7 @@ export class InitialExaminationController {
 
   @Get('student/:id')
   @Roles([UserRole.STUDENT])
-  @ApiOperation({ summary: 'Get initial examination for a student' })
+  @ApiOperation({ summary: '[Student] Get initial examination for a student' })
   @ApiParam({ name: 'id', type: Number, description: 'Student ID' })
   @ApiResponse({ status: 404, description: 'Initial examination not found' })
   async getInitialExaminationForStudent(@Param('id', ParseIntPipe) id: number) {
@@ -61,7 +61,7 @@ export class InitialExaminationController {
   }
   @Get(':id')
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Get an initial examination by ID' })
+  @ApiOperation({ summary: '[Coordinator] Get an initial examination by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'Initial examination ID' })
   @ApiOkResponse({
     type: InitialExaminationResponseDto,
@@ -74,7 +74,7 @@ export class InitialExaminationController {
 
   @Patch(':id')
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Update an initial examination' })
+  @ApiOperation({ summary: '[Coordinator] Update an initial examination' })
   @ApiParam({ name: 'id', type: Number, description: 'Initial examination ID' })
   @ApiBody({ type: UpdateInitialExaminationDto })
   @ApiOkResponse({
@@ -93,7 +93,7 @@ export class InitialExaminationController {
 
   @Get()
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Get all initial examinations' })
+  @ApiOperation({ summary: '[Coordinator] Get all initial examinations' })
   @ApiOkResponse({
     type: [InitialExaminationSummaryDto],
     description: 'List of initial examinations retrieved',

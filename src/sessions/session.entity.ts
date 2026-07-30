@@ -19,7 +19,10 @@ export class Session {
   @JoinColumn()
   user: User;
 
-  @ApiProperty({ description: 'JWT token ID', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' })
+  @ApiProperty({
+    description: 'JWT token ID',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
   @Column({
     type: 'varchar',
     nullable: false,
@@ -27,7 +30,10 @@ export class Session {
   })
   jti: string;
 
-  @ApiProperty({ description: 'Device information', example: 'Chrome 120.0 on Windows 10' })
+  @ApiProperty({
+    description: 'Device information',
+    example: 'Chrome 120.0 on Windows 10',
+  })
   @Column({
     type: 'varchar',
     nullable: false,

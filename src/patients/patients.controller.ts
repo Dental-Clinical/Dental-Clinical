@@ -31,7 +31,7 @@ export class PatientsController {
 
   @Post()
   @Roles([UserRole.STUDENT])
-  @ApiOperation({ summary: 'Create a walk-in patient' })
+  @ApiOperation({ summary: '[Student] Create a walk-in patient' })
   @ApiCreatedResponse({
     type: PatientResponseDto,
     description: 'Walk-in patient created',
@@ -42,7 +42,7 @@ export class PatientsController {
 
   @Get('me')
   @Roles([UserRole.PATIENT])
-  @ApiOperation({ summary: 'Get my patient profile' })
+  @ApiOperation({ summary: '[Patient] Get my profile' })
   @ApiOkResponse({
     type: PatientProfileResponseDto,
     description: 'Patient profile',
@@ -54,7 +54,7 @@ export class PatientsController {
 
   @Patch('me')
   @Roles([UserRole.PATIENT])
-  @ApiOperation({ summary: 'Update my patient profile' })
+  @ApiOperation({ summary: '[Patient] Update my profile' })
   @ApiOkResponse({
     type: UpdatePatientProfileResponseDto,
     description: 'Profile updated',
@@ -69,7 +69,7 @@ export class PatientsController {
 
   @Patch(':id/medical-records')
   @Roles([UserRole.COORDINATOR])
-  @ApiOperation({ summary: 'Update patient medical records' })
+  @ApiOperation({ summary: '[Coordinator] Update patient medical records' })
   @ApiParam({ name: 'id', type: Number, description: 'Patient ID' })
   @ApiBody({ type: UpdatePatientMedicalRecordsDto })
   @ApiOkResponse({

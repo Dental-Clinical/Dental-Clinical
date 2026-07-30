@@ -1,6 +1,6 @@
-import { IsEnum, IsOptional } from "class-validator";
-import { ApiPropertyOptional } from "@nestjs/swagger";
-import { ClinicalAppointmentStatus } from "../enums/clinical-appointment.enum";
+import { IsEnum, IsOptional } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ClinicalAppointmentStatus } from '../enums/clinical-appointment.enum';
 
 export class UpdateStudentClinicalAppointmentDto {
   @ApiPropertyOptional({
@@ -9,6 +9,5 @@ export class UpdateStudentClinicalAppointmentDto {
   })
   @IsOptional()
   @IsEnum(ClinicalAppointmentStatus)
-  status: ClinicalAppointmentStatus
-
+  status: ClinicalAppointmentStatus;
 }

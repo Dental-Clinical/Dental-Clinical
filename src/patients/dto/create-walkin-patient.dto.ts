@@ -1,4 +1,5 @@
 import {
+  IsDateString,
   IsNotEmpty,
   IsOptional,
   IsPhoneNumber,
@@ -22,6 +23,23 @@ export class CreatePatientWalkinDto {
   @IsPhoneNumber('SY')
   @IsNotEmpty()
   phone: string;
+
+  @ApiProperty({
+    description: 'Date of birth of the walk-in patient',
+    example: '1990-01-01',
+  })
+  @IsNotEmpty()
+  @IsDateString()
+  dateOfBirth: Date;
+
+  @ApiProperty({
+    description: 'Gender of the walk-in patient',
+    enum: ['male', 'female'],
+    example: 'female',
+  })
+  @IsNotEmpty()
+  @IsString()
+  gender: string;
 
   @ApiPropertyOptional({
     description: 'Patient medical history',

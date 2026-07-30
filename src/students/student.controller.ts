@@ -30,7 +30,7 @@ export class StudentController {
 
   @Post()
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: 'Create a new student' })
+  @ApiOperation({ summary: '[Admin] Create a new student' })
   @ApiCreatedResponse({
     type: CreateStudentResponseDto,
     description: 'Student created',
@@ -43,7 +43,7 @@ export class StudentController {
   @Post('import')
   @Roles([UserRole.ADMIN])
   @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Import students from Excel file' })
+  @ApiOperation({ summary: '[Admin] Import students from Excel file' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {

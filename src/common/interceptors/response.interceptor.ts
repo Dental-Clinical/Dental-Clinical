@@ -14,14 +14,27 @@ export class ResponseInterceptor implements NestInterceptor {
   ): Observable<any> {
     const response = context.switchToHttp().getResponse();
     return next.handle().pipe(
-      map((data) => {
-        const { message = 'Success', ...responseData } = data ?? {};
+      map((result) => {
+        if (
+          Array.isArray(result) ||
+          result === null ||
+          typeof result !== 'object'
+        ) {
+          return {
+            success: true,
+            statusCode: response.statusCode,
+            message: 'Success',
+            data: result,
+            timestamp: new Date().toISOString(),
+          };
+        }
+        const { message = 'Success', ...payload } = result;
 
         return {
           success: true,
           statusCode: response.statusCode,
           message,
-          data: responseData,
+          data: payload,
           timestamp: new Date().toISOString(),
         };
       }),

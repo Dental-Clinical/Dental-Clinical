@@ -17,6 +17,7 @@ import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.i
 import { FilterClinicalCasesDto } from './dto/get-filtered-clinical-cases.dto';
 import { OpenCasesSummary } from './dto/open-clinical-cases-summary.dto';
 import { StudentCasesSummaryDto } from './dto/student-cases-summary.dto';
+import { StudentAssignedCaseDetailsDto } from './dto/student-assigned-case-details.dto';
 
 @ApiTags('Clinical Cases')
 @ApiBearerAuth('JWT-auth')
@@ -32,13 +33,13 @@ export class ClinicalCaseController {
   async getClinicalCases(@Query() dto: FilterClinicalCasesDto) {
     return this.clinicalCaseService.findAll(dto);
   }
-  @Get('open')
+  @Get('open') // before being assigned
   @ApiOperation({
     summary:
       '[Student] Get open, unassigned clinical cases for the student study year',
   })
   @ApiOkResponse({
-    type: [OpenCasesSummary],
+    type: OpenCasesSummary,
     description: 'List of open clinical cases retrieved',
   })
   @ApiResponse({
@@ -49,18 +50,35 @@ export class ClinicalCaseController {
   async getOpenClinicalCases(@CurrentUser() user: AuthenticatedUser) {
     return this.clinicalCaseService.findOpenCases(user.userId);
   }
-  @Get('my-cases')
+  @Get('my-cases') // get all student cases
   @ApiOperation({
     summary: '[Student] Get clinical cases assigned to the current student',
   })
   @ApiOkResponse({
-    type: [StudentCasesSummaryDto],
+    type: StudentCasesSummaryDto,
     description: 'List of clinical cases retrieved',
   })
   @ApiResponse({ status: 404, description: 'Student not found' })
   @Roles([UserRole.STUDENT])
   async getStudentClinicalCases(@CurrentUser() user: AuthenticatedUser) {
     return this.clinicalCaseService.findStudentCases(user.userId);
+  }
+  @Get('my/:id/assigned')
+  @ApiOperation({ summary: '[Student] Get a clinical case by ID' })
+  @ApiParam({ name: 'id', type: Number, description: 'Clinical case ID' })
+  @ApiOkResponse({
+    type: ClinicalCaseDetailsDto,
+    description: 'Details of a clinical case',
+  })
+  @ApiResponse({ status: 404, description: 'Clinical Case not found' })
+  async getStudentAssignedClinicalCase(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.clinicalCaseService.findStudentAssignedClinicalCase(
+      id,
+      user.userId,
+    );
   }
   @Get('open/:id')
   @ApiOperation({ summary: '[Student] Get a clinical case by ID' })
@@ -71,7 +89,7 @@ export class ClinicalCaseController {
   })
   @ApiResponse({ status: 404, description: 'Clinical Case not found' })
   async getClinicalCase(@Param('id', ParseIntPipe) id: number) {
-    return this.clinicalCaseService.findOne(id);
+    return this.clinicalCaseService.findOpenClinicalCaseDetails(id);
   }
   @Get('my/:id')
   @ApiOperation({
@@ -79,7 +97,7 @@ export class ClinicalCaseController {
   })
   @ApiParam({ name: 'id', type: Number, description: 'Clinical case ID' })
   @ApiOkResponse({
-    type: ClinicalCaseDetailsDto,
+    type: StudentAssignedCaseDetailsDto,
     description: 'Details of a clinical case',
   })
   @ApiResponse({ status: 404, description: 'Clinical Case not found' })

@@ -64,6 +64,7 @@ export class CoordinatorService {
       const savedCoordinator = await manager.save(newCoordinator);
       return {
         coordinatorId: savedCoordinator.id,
+        tempPassword,
       };
     });
   }

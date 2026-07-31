@@ -5,9 +5,10 @@ import { createClient } from 'redis';
 export class RedisHealthService implements OnModuleInit {
   async onModuleInit() {
     const client = createClient({
-      url: process.env.REDIS_URL,
+      // url: process.env.REDIS_URL,
       socket: {
-        tls: true,
+        host: process.env.REDIS_HOST,
+        port: parseInt(process.env.REDIS_PORT || '6379'),
       },
     });
 

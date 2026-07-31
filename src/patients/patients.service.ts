@@ -35,6 +35,8 @@ export class PatientsService {
       phone: patient.phone,
       user: patient.userId ? { id: patient.userId } : undefined,
       allergies: patient.allergies,
+      dateOfBirth: patient.dateOfBirth,
+      gender: patient.gender,
       medical_history: patient.medical_history,
       current_medications: patient.current_medications,
       is_walkin: !patient.userId,

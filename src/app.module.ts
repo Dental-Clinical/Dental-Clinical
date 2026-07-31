@@ -36,6 +36,7 @@ import { StudentSectionModule } from './student-section/student-section.module';
 import { SupervisorReviewsModule } from './supervisor-reviews/supervisor-reviews.module';
 import { TreatmentSessionsModule } from './treatment-sessions/treatment-sessions.module';
 import { RedisHealthService } from './redis-health.service';
+import redisConfig from './config/redis.config';
 
 const ENV = process.env.NODE_ENV;
 @Module({

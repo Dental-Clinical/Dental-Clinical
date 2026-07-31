@@ -12,6 +12,7 @@ import { User } from 'src/users/user.entity';
 import { UserRole } from 'src/constants/user-roles';
 import { GetClinicalCaseEvaluationsQueryDto } from './dto/get-clinical-case-evaluations-query.dto';
 import { StudentService } from 'src/students/student.service';
+import { StudentProgressService } from 'src/student-progress/student-progress.service';
 
 @Injectable()
 export class ClinicalCaseEvaluationService {
@@ -20,6 +21,7 @@ export class ClinicalCaseEvaluationService {
     @InjectRepository(ClinicalCase) readonly clinicalCaseRepository: Repository<ClinicalCase>,
     private readonly supervisorService: SupervisorService,
     private readonly studentService: StudentService,
+    private readonly studentProgressService: StudentProgressService,
     private readonly dataSource: DataSource,
   ) { }
   async createClinicalCaseEvaluation(
@@ -79,6 +81,14 @@ export class ClinicalCaseEvaluationService {
         comment: dto.comment,
       })
       await manager.getRepository(ClinicalCaseEvaluation).save(evaluation)
+
+      // Academic credit is awarded in the same transaction, so the evaluation, the
+      // student's progress and the completed status commit or roll back together.
+      await this.studentProgressService.awardProcedureCredit(
+        manager,
+        student.id,
+        clinicalCase.id,
+      )
 
       clinicalCase.status = ClinicalCaseStatus.COMPLETED
       await manager.getRepository(ClinicalCase).save(clinicalCase)
@@ -194,9 +204,6 @@ export class ClinicalCaseEvaluationService {
   }
 
   async getAllClinicalCasesEvaluations(user: AuthenticatedUser, dto: GetClinicalCaseEvaluationsQueryDto) {
-    if (dto.minGrade !== undefined && dto.maxGrade !== undefined && dto.minGrade > dto.maxGrade) {
-      throw new BadRequestException("minGrade cannot be greater than maxGrade")
-    }
     if (dto.fromDate !== undefined && dto.toDate !== undefined && dto.fromDate > dto.toDate) {
       throw new BadRequestException("fromDate cannot be later than toDate")
     }
@@ -217,28 +224,12 @@ export class ClinicalCaseEvaluationService {
     if (dto.subjectId !== undefined) {
       qb.andWhere('clinicalCase.subject_id = :subjectId', { subjectId: dto.subjectId })
     }
-    if (dto.minGrade !== undefined) {
-      qb.andWhere('evaluation.grade >= :minGrade', { minGrade: dto.minGrade })
-    }
-    if (dto.maxGrade !== undefined) {
-      qb.andWhere('evaluation.grade <= :maxGrade', { maxGrade: dto.maxGrade })
-    }
     if (dto.fromDate !== undefined) {
       qb.andWhere('evaluation.createdAt >= :fromDate', { fromDate: dto.fromDate })
     }
     if (dto.toDate !== undefined) {
       qb.andWhere('evaluation.createdAt <= :toDate', { toDate: dto.toDate })
     }
-
-    // Aggregate over the whole filtered set, so pagination never skews the average.
-    const summaryRaw = await qb
-      .clone()
-      .select('COUNT(evaluation.id)', 'count')
-      .addSelect('AVG(evaluation.grade)', 'average')
-      .getRawOne<{ count: string; average: string | null }>()
-
-    const summaryCount = Number(summaryRaw?.count ?? 0)
-    const summaryAverage = summaryRaw?.average ?? null
 
     const [evaluations, total] = await qb
       .select([
@@ -275,9 +266,9 @@ export class ClinicalCaseEvaluationService {
         createdAt: evaluation.createdAt,
         updatedAt: evaluation.updatedAt,
       })),
+      // Counted over the whole filtered set, so pagination never skews it.
       summary: {
-        count: summaryCount,
-        averageGrade: summaryAverage === null ? null : Math.round(Number(summaryAverage) * 100) / 100,
+        count: total,
       },
       meta: {
         page: dto.page,

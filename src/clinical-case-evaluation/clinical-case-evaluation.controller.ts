@@ -101,7 +101,7 @@ export class ClinicalCaseEvaluationController {
     type: GetClinicalCaseEvaluationsResponseDto,
     description: 'Clinical case evaluations retrieved successfully',
   })
-  @ApiResponse({ status: 400, description: 'Invalid grade or date range' })
+  @ApiResponse({ status: 400, description: 'Invalid date range' })
   @ApiResponse({ status: 404, description: 'Student not found' })
   public async getAllClinicalCasesEvaluations(
     @CurrentUser() user: AuthenticatedUser,

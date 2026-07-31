@@ -1,12 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsInt, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsEnum, IsOptional, IsString } from "class-validator";
+import { Grade } from "../enums/grade.enum";
 
 export class CreateClinicalCaseEvaluationDto {
-  @ApiProperty({ description: 'Overall grade out of 100', example: 85 })
-  @IsInt()
-  @Min(0)
-  @Max(100)
-  grade: number
+  @ApiProperty({
+    enum: Grade,
+    description: 'Overall letter grade',
+    example: Grade.A,
+  })
+  @IsEnum(Grade)
+  grade: Grade
 
   @ApiPropertyOptional({
     description: 'Supervisor comments on the case',

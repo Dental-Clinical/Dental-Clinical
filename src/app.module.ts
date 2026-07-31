@@ -36,6 +36,7 @@ import { StudentSectionModule } from './student-section/student-section.module';
 import { SupervisorReviewsModule } from './supervisor-reviews/supervisor-reviews.module';
 import { TreatmentSessionsModule } from './treatment-sessions/treatment-sessions.module';
 import { ClinicalCaseEvaluationModule } from './clinical-case-evaluation/clinical-case-evaluation.module';
+import { StudentProgressModule } from './student-progress/student-progress.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -90,6 +91,7 @@ const ENV = process.env.NODE_ENV;
     SupervisorReviewsModule,
     TreatmentSessionsModule,
     ClinicalCaseEvaluationModule,
+    StudentProgressModule,
   ],
   controllers: [AppController],
   providers: [

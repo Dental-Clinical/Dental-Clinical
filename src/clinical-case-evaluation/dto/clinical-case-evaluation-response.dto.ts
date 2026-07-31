@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status.enum';
+import { Grade } from '../enums/grade.enum';
 
 export class ClinicalCaseEvaluationDataDto {
   @ApiProperty({ example: 1 })
@@ -14,8 +15,8 @@ export class ClinicalCaseEvaluationDataDto {
   @ApiProperty({ example: 1 })
   supervisorId: number;
 
-  @ApiProperty({ example: 85 })
-  grade: number;
+  @ApiProperty({ enum: Grade, example: Grade.A })
+  grade: Grade;
 
   @ApiPropertyOptional({
     example: 'Very good diagnosis and treatment execution.',
@@ -56,8 +57,8 @@ export class StudentClinicalCaseEvaluationItemDto {
   @ApiProperty({ example: 'Dr. Sarah Malek' })
   supervisorName: string;
 
-  @ApiProperty({ example: 85 })
-  grade: number;
+  @ApiProperty({ enum: Grade, example: Grade.A })
+  grade: Grade;
 
   @ApiPropertyOptional({
     example: 'Very good diagnosis and treatment execution.',
@@ -77,14 +78,6 @@ export class ClinicalCaseEvaluationsSummaryDto {
     example: 4,
   })
   count: number;
-
-  @ApiProperty({
-    description:
-      'Average grade across all matching evaluations, or null when there are none',
-    example: 82.75,
-    nullable: true,
-  })
-  averageGrade: number | null;
 }
 
 export class PaginationMetaDto {

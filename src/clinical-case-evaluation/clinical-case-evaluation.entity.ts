@@ -2,7 +2,6 @@ import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 import { Student } from 'src/students/student.entity';
 import { Supervisor } from 'src/supervisors/supervisor.entity';
 import {
-  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -12,9 +11,9 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Grade } from './enums/grade.enum';
 
 @Entity('clinical_case_evaluations')
-@Check('"grade" >= 0 AND "grade" <= 100')
 export class ClinicalCaseEvaluation {
   @PrimaryGeneratedColumn()
   id: number;
@@ -42,10 +41,11 @@ export class ClinicalCaseEvaluation {
   supervisor: Supervisor;
 
   @Column({
-    type: 'int',
+    type: 'enum',
+    enum: Grade,
     nullable: false,
   })
-  grade: number;
+  grade: Grade;
 
   @Column({
     type: 'text',

@@ -12,6 +12,7 @@ import { JoinColumn } from 'typeorm/browser';
 import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ClinicalCaseEvaluation } from 'src/clinical-case-evaluation/clinical-case-evaluation.entity';
+import { StudentProgress } from 'src/student-progress/student-progress.entity';
 
 @Entity('students')
 export class Student {
@@ -72,4 +73,11 @@ export class Student {
   })
   @OneToMany(() => ClinicalCaseEvaluation, (evaluation) => evaluation.student)
   clinicalCaseEvaluations: ClinicalCaseEvaluation[];
+
+  @ApiPropertyOptional({
+    type: () => [StudentProgress],
+    description: 'Subject procedure progress',
+  })
+  @OneToMany(() => StudentProgress, (progress) => progress.student)
+  procedureProgress: StudentProgress[];
 }

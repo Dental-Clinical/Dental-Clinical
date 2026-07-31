@@ -1,6 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class OpenCasesSummary {
+  openCases: OpenCaseDto[];
+}
+
+export class OpenCaseDto {
   @ApiProperty({ example: 1 })
   id: number;
   @ApiProperty({ example: 'Ahmad Srour' })

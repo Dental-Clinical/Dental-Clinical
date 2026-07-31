@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -25,9 +27,11 @@ import { PerformedProceduresDto } from './dto/performed-procedures.dto';
 import { Student } from 'src/students/student.entity';
 import { SupervisorService } from 'src/supervisors/supervisor.service';
 import { ReviewTreatmentSessionDto } from './dto/review-treatment-session.dto';
+import { UpdateTreatmentSessionDto } from './dto/update-treatment-session.dto';
 
 @Injectable()
 export class TreatmentSessionsService {
+  private readonly TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
   constructor(
     private readonly studentService: StudentService,
     private readonly supervisorService: SupervisorService,
@@ -46,6 +50,71 @@ export class TreatmentSessionsService {
     @InjectRepository(Material)
     private readonly materialRepository: Repository<Material>,
   ) {}
+  public async getTreatmentSessionProcedures(
+    userId: number,
+    treatmentSessionId: number,
+  ) {
+    const student = await this.studentService.findByUserId(userId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    const treatmentSession = await this.treatmentSessionRepository.findOne({
+      where: { id: treatmentSessionId },
+      relations: {
+        clinicalCase: { assignedStudent: true },
+      },
+    });
+    if (!treatmentSession) {
+      throw new NotFoundException('Treatment session not found');
+    }
+    if (treatmentSession.clinicalCase.assignedStudent.id !== student.id) {
+      throw new ConflictException(
+        'Treatment session does not belong to this student',
+      );
+    }
+    if (treatmentSession.status !== TreatmentSessionStatus.ACTIVE) {
+      throw new ConflictException('Treatment session is not active.');
+    }
+    const submission = await this.diagnosisSubmissionRepository.findOne({
+      where: {
+        clinicalCase: {
+          id: treatmentSession.clinicalCase.id,
+        },
+      },
+      relations: {
+        plannedProcedures: { subjectProcedure: true },
+      },
+    });
+    if (!submission) {
+      throw new NotFoundException(
+        'Diagnosis submission not found for this clinical case',
+      );
+    }
+
+    const totalProcedures = submission.plannedProcedures.length;
+    const completedProcedures = submission.plannedProcedures.filter(
+      (procedure) => procedure.status === PlannedProceduresStatus.COMPLETED,
+    ).length;
+
+    return {
+      treatmentSessionId: treatmentSession.id,
+      clinicalCaseId: treatmentSession.clinicalCase.id,
+      progress: {
+        completed: completedProcedures,
+        total: totalProcedures,
+        percentage:
+          totalProcedures > 0
+            ? (completedProcedures / totalProcedures) * 100
+            : 0,
+      },
+      procedures: submission?.plannedProcedures.map((procedure) => ({
+        plannedProcedureId: procedure.id,
+        name: procedure.subjectProcedure.name,
+        toothNumber: procedure.toothNumber,
+        status: procedure.status,
+      })),
+    };
+  }
   public async createTreatmentSession(
     userId: number,
     dto: CreateTreatmentSessionDto,
@@ -201,71 +270,6 @@ export class TreatmentSessionsService {
       });
     });
   }
-  public async getTreatmentSessionProcedures(
-    userId: number,
-    treatmentSessionId: number,
-  ) {
-    const student = await this.studentService.findByUserId(userId);
-    if (!student) {
-      throw new NotFoundException('Student not found');
-    }
-    const treatmentSession = await this.treatmentSessionRepository.findOne({
-      where: { id: treatmentSessionId },
-      relations: {
-        clinicalCase: { assignedStudent: true },
-      },
-    });
-    if (!treatmentSession) {
-      throw new NotFoundException('Treatment session not found');
-    }
-    if (treatmentSession.clinicalCase.assignedStudent.id !== student.id) {
-      throw new ConflictException(
-        'Treatment session does not belong to this student',
-      );
-    }
-    if (treatmentSession.status !== TreatmentSessionStatus.ACTIVE) {
-      throw new ConflictException('Treatment session is not active.');
-    }
-    const submission = await this.diagnosisSubmissionRepository.findOne({
-      where: {
-        clinicalCase: {
-          id: treatmentSession.clinicalCase.id,
-        },
-      },
-      relations: {
-        plannedProcedures: { subjectProcedure: true },
-      },
-    });
-    if (!submission) {
-      throw new NotFoundException(
-        'Diagnosis submission not found for this clinical case',
-      );
-    }
-
-    const totalProcedures = submission.plannedProcedures.length;
-    const completedProcedures = submission.plannedProcedures.filter(
-      (procedure) => procedure.status === PlannedProceduresStatus.COMPLETED,
-    ).length;
-
-    return {
-      treatmentSessionId: treatmentSession.id,
-      clinicalCaseId: treatmentSession.clinicalCase.id,
-      progress: {
-        completed: completedProcedures,
-        total: totalProcedures,
-        percentage:
-          totalProcedures > 0
-            ? (completedProcedures / totalProcedures) * 100
-            : 0,
-      },
-      procedures: submission?.plannedProcedures.map((procedure) => ({
-        plannedProcedureId: procedure.id,
-        name: procedure.subjectProcedure.name,
-        toothNumber: procedure.toothNumber,
-        status: procedure.status,
-      })),
-    };
-  }
   public async completeTreatmentSession(
     userId: number,
     treatmentSessionId: number,
@@ -343,6 +347,96 @@ export class TreatmentSessionsService {
       message: 'Treatment session reviewed successfully.',
       treatmentSessionId: treatmentSession.id,
       supervisorNotes: treatmentSession.supervisorNotes,
+    };
+  }
+  public async updateTreatmentSession(
+    userId: number,
+    treatmentSessionId: number,
+    dto: UpdateTreatmentSessionDto,
+  ) {
+    const student = await this.validateAndGetStudent(userId);
+    const treatmentSession = await this.treatmentSessionRepository.findOne({
+      where: {
+        id: treatmentSessionId,
+      },
+      relations: {
+        clinicalCase: {
+          assignedStudent: true,
+        },
+        clinicalAppointment: true,
+      },
+    });
+    if (!treatmentSession) {
+      throw new NotFoundException('Treatment session not found');
+    }
+
+    if (treatmentSession.clinicalCase.assignedStudent.id !== student.id) {
+      throw new ForbiddenException(
+        'Treatment session does not belong to this student',
+      );
+    }
+
+    if (treatmentSession.status !== TreatmentSessionStatus.UPCOMING) {
+      throw new ConflictException(
+        'Only upcoming treatment sessions can be updated.',
+      );
+    }
+
+    if (
+      (dto.appointmentDate && !dto.appointmentStart) ||
+      (!dto.appointmentDate && dto.appointmentStart)
+    ) {
+      throw new BadRequestException(
+        'Appointment date and start time must be provided together.',
+      );
+    }
+    if (dto.appointmentDate && dto.appointmentStart) {
+      const appointmentChanged =
+        new Date(dto.appointmentDate).getTime() !==
+          treatmentSession.clinicalAppointment.appointmentDate.getTime() ||
+        dto.appointmentStart !==
+          treatmentSession.clinicalAppointment.appointmentStart;
+      if (!appointmentChanged) {
+        throw new ConflictException(
+          'The provided appointment date and start time are the same as the current values.',
+        );
+      }
+      const appointmentDateTime = new Date(
+        `${treatmentSession.clinicalAppointment.appointmentDate}T${treatmentSession.clinicalAppointment.appointmentStart}:00`,
+      );
+      if (appointmentDateTime.getTime() - Date.now() < this.TWENTY_FOUR_HOURS) {
+        throw new ConflictException(
+          'Cannot update appointment less than 24 hours before the scheduled time.',
+        );
+      }
+      const { startTime, endTime } =
+        await this.supervisorAvailabilityService.validateSlotAvailability(
+          new Date(dto.appointmentDate),
+          dto.appointmentStart,
+          treatmentSession.clinicalCase.assignedSupervisor.id,
+          this.datasource.manager,
+        );
+      treatmentSession.clinicalAppointment.appointmentDate = new Date(
+        dto.appointmentDate,
+      );
+      treatmentSession.clinicalAppointment.appointmentStart = startTime;
+      treatmentSession.clinicalAppointment.appointmentEnd = endTime;
+      await this.datasource.manager
+        .getRepository(ClinicalAppointment)
+        .save(treatmentSession.clinicalAppointment);
+    }
+
+    if (dto.title !== undefined) {
+      treatmentSession.title = dto.title;
+    }
+
+    await this.treatmentSessionRepository.save(treatmentSession);
+    return {
+      message: 'Treatment session updated successfully.',
+      treatmentSessionId: treatmentSession.id,
+      title: treatmentSession.title,
+      appointmentDate: treatmentSession.clinicalAppointment.appointmentDate,
+      appointmentStart: treatmentSession.clinicalAppointment.appointmentStart,
     };
   }
   private async prepareSessionMaterials(

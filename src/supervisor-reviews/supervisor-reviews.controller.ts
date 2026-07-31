@@ -24,8 +24,8 @@ import { SupervisorReviewsService } from './supervisor-reviews.service';
 import { ApproveReviewDto } from './dto/approve-review.dto';
 import {
   ApproveReviewResponseDto,
-  GetPendingReviewDetailsResponseDto,
   GetPendingReviewsResponseDto,
+  SupervisorReviewDetailDataDto,
 } from './dto/supervisor-review-response.dto';
 
 @ApiTags('Supervisor Reviews')
@@ -62,7 +62,7 @@ export class SupervisorReviewsController {
     description: 'Diagnosis submission ID',
   })
   @ApiOkResponse({
-    type: GetPendingReviewDetailsResponseDto,
+    type: SupervisorReviewDetailDataDto,
     description: 'Review details retrieved successfully',
   })
   @ApiResponse({ status: 404, description: 'Submission not found' })

@@ -33,7 +33,7 @@ export class ReviewImageDto {
   url: string;
 }
 
-export class ReviewDetailDataDto {
+export class SupervisorReviewDetailDataDto {
   @ApiProperty({ example: 1 })
   id: number;
 
@@ -57,19 +57,8 @@ export class ReviewDetailDataDto {
 }
 
 export class GetPendingReviewsResponseDto {
-  @ApiProperty({ example: 'Pending reviews retrieved successfully' })
-  message: string;
-
   @ApiProperty({ type: [PendingReviewItemDto] })
-  data: PendingReviewItemDto[];
-}
-
-export class GetPendingReviewDetailsResponseDto {
-  @ApiProperty({ example: 'Review details retrieved successfully' })
-  message: string;
-
-  @ApiProperty({ type: ReviewDetailDataDto })
-  data: ReviewDetailDataDto;
+  pendingReviews: PendingReviewItemDto[];
 }
 
 export class ApproveReviewResponseDto {

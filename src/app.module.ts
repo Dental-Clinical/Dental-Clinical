@@ -35,6 +35,7 @@ import { ClinicSectionsModule } from './clinic-sections/clinic-sections.module';
 import { StudentSectionModule } from './student-section/student-section.module';
 import { SupervisorReviewsModule } from './supervisor-reviews/supervisor-reviews.module';
 import { TreatmentSessionsModule } from './treatment-sessions/treatment-sessions.module';
+import { RedisHealthService } from './redis-health.service';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -51,12 +52,12 @@ const ENV = process.env.NODE_ENV;
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         store: await redisStore({
-          socket: {
-            host: configService.get('redis.host'),
-            port: configService.get('redis.port'),
-            tls: configService.get('redis.tls') === 'true',
-          },
-          password: configService.get('redis.password'),
+          // for local development, you can use the following configuration to connect to a Redis instance running on localhost
+          // host: configService.get('redis.host'),
+          // port: configService.get('redis.port'),
+          // for deployment in production, you can use the following configuration to connect to a Redis instance with TLS enabled
+          url: configService.get('redis.url'),
+          tls: configService.get('redis.tls') === 'true',
         }),
         ttl: configService.get('redis.ttl'),
         isGlobal: true,

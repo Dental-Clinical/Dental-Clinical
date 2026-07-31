@@ -1,8 +1,9 @@
-import { Body, Controller, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -14,7 +15,12 @@ import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.i
 import { UserRole } from 'src/constants/user-roles';
 import { ClinicalCaseEvaluationService } from './clinical-case-evaluation.service';
 import { CreateClinicalCaseEvaluationDto } from './dto/create-clinical-case-evaluation.dto';
-import { CreateClinicalCaseEvaluationResponseDto } from './dto/clinical-case-evaluation-response.dto';
+import {
+  CreateClinicalCaseEvaluationResponseDto,
+  GetClinicalCaseEvaluationsResponseDto,
+} from './dto/clinical-case-evaluation-response.dto';
+import { UpdateClinicalCaseEvaluationDto } from './dto/update-clinical-case-evaluation.dto';
+import { GetClinicalCaseEvaluationsQueryDto } from './dto/get-clinical-case-evaluations-query.dto';
 
 @ApiTags('Clinical Case Evaluations')
 @ApiBearerAuth('JWT-auth')
@@ -22,7 +28,7 @@ import { CreateClinicalCaseEvaluationResponseDto } from './dto/clinical-case-eva
 export class ClinicalCaseEvaluationController {
   constructor(
     private readonly clinicalCaseEvaluationService: ClinicalCaseEvaluationService,
-  ) {}
+  ) { }
 
   @Post(':id/evaluation')
   @Roles([UserRole.SUPERVISOR])
@@ -57,5 +63,71 @@ export class ClinicalCaseEvaluationController {
       clinicalCaseId,
       dto,
     );
+  }
+
+  @Patch('evaluations/:id')
+  @Roles([UserRole.SUPERVISOR])
+  @ApiOperation({
+    summary: '[Supervisor] Update an existing clinical case evaluation',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Evaluation ID' })
+  @ApiBody({ type: UpdateClinicalCaseEvaluationDto })
+  @ApiOkResponse({
+    description: 'Clinical case evaluation updated successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'No fields to update',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Supervisor does not supervise this clinical case',
+  })
+  @ApiResponse({ status: 404, description: 'Evaluation not found' })
+  public async updateClinicalCaseEvaluation(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateClinicalCaseEvaluationDto
+  ) {
+    return await this.clinicalCaseEvaluationService.updateClinicalCaseEvaluation(id, user, dto)
+  }
+
+  @Get('evaluations')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary: "[Student] Get all of the current student's clinical case evaluations",
+  })
+  @ApiOkResponse({
+    type: GetClinicalCaseEvaluationsResponseDto,
+    description: 'Clinical case evaluations retrieved successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid grade or date range' })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  public async getAllClinicalCasesEvaluations(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() dto: GetClinicalCaseEvaluationsQueryDto,
+  ) {
+    return await this.clinicalCaseEvaluationService.getAllClinicalCasesEvaluations(user, dto)
+  }
+
+  @Get('evaluations/:id')
+  @Roles([UserRole.SUPERVISOR, UserRole.STUDENT])
+  @ApiOperation({
+    summary: '[Supervisor | Student] Get a clinical case evaluation',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Evaluation ID' })
+  @ApiOkResponse({
+    description: 'Clinical case evaluation retrieved successfully',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'User is not the student or supervisor of this evaluation',
+  })
+  @ApiResponse({ status: 404, description: 'Evaluation not found' })
+  public async getClinicalCaseEvaluation(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return await this.clinicalCaseEvaluationService.getClinicalCaseEvaluation(id, user)
   }
 }

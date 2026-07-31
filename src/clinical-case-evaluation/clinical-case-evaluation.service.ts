@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClinicalCaseEvaluation } from './clinical-case-evaluation.entity';
 import { DataSource, Repository } from 'typeorm';
@@ -7,6 +7,11 @@ import { CreateClinicalCaseEvaluationDto } from './dto/create-clinical-case-eval
 import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status.enum';
 import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 import { SupervisorService } from 'src/supervisors/supervisor.service';
+import { UpdateClinicalCaseEvaluationDto } from './dto/update-clinical-case-evaluation.dto';
+import { User } from 'src/users/user.entity';
+import { UserRole } from 'src/constants/user-roles';
+import { GetClinicalCaseEvaluationsQueryDto } from './dto/get-clinical-case-evaluations-query.dto';
+import { StudentService } from 'src/students/student.service';
 
 @Injectable()
 export class ClinicalCaseEvaluationService {
@@ -14,6 +19,7 @@ export class ClinicalCaseEvaluationService {
     @InjectRepository(ClinicalCaseEvaluation) readonly clinicalCaseEvaluationRepository: Repository<ClinicalCaseEvaluation>,
     @InjectRepository(ClinicalCase) readonly clinicalCaseRepository: Repository<ClinicalCase>,
     private readonly supervisorService: SupervisorService,
+    private readonly studentService: StudentService,
     private readonly dataSource: DataSource,
   ) { }
   async createClinicalCaseEvaluation(
@@ -88,6 +94,198 @@ export class ClinicalCaseEvaluationService {
         createdAt: evaluation.createdAt,
       }
     })
+  }
+
+  async updateClinicalCaseEvaluation(id: number, user: AuthenticatedUser, dto: UpdateClinicalCaseEvaluationDto) {
+    const changes: Partial<ClinicalCaseEvaluation> = {}
+    if (dto.grade !== undefined) {
+      changes.grade = dto.grade
+    }
+    if (dto.comment !== undefined) {
+      changes.comment = dto.comment
+    }
+    if (Object.keys(changes).length === 0) {
+      throw new BadRequestException("No fields to update")
+    }
+
+    const evaluation = await this.clinicalCaseEvaluationRepository.findOne({
+      where: { id },
+      relations: {
+        clinicalCase: { assignedSupervisor: { user: true } },
+      },
+      select: {
+        id: true,
+        grade: true,
+        comment: true,
+        clinicalCase: {
+          id: true,
+          assignedSupervisor: {
+            id: true,
+            user: { id: true },
+          },
+        },
+      },
+    })
+    if (!evaluation) {
+      throw new NotFoundException("Evaluation Not Found")
+    }
+
+    const assignedSupervisor = evaluation.clinicalCase.assignedSupervisor
+    if (assignedSupervisor?.user?.id !== user.userId) {
+      throw new ForbiddenException("You are not authorized to make this edit")
+    }
+
+    await this.clinicalCaseEvaluationRepository.update(id, changes)
+
+    return {
+      message: 'Clinical case evaluation updated successfully.',
+      id: evaluation.id,
+      clinicalCaseId: evaluation.clinicalCase.id,
+      supervisorId: assignedSupervisor.id,
+      grade: changes.grade ?? evaluation.grade,
+      comment: changes.comment ?? evaluation.comment,
+    }
+  }
+
+  async getClinicalCaseEvaluation(id: number, user: AuthenticatedUser) {
+    const isSupervisor = user.role === UserRole.SUPERVISOR
+    const isStudent = user.role === UserRole.STUDENT
+
+    const evaluation = await this.clinicalCaseEvaluationRepository.findOne({
+      where: { id },
+      relations: {
+        clinicalCase: true,
+        student: { user: true },
+        supervisor: { user: true },
+      },
+      select: {
+        id: true,
+        grade: true,
+        comment: true,
+        createdAt: true,
+        updatedAt: true,
+        clinicalCase: { id: true, status: true },
+        student: { id: true, user: { id: true, full_name: true } },
+        supervisor: { id: true, user: { id: true, full_name: true } },
+      },
+    })
+    if (!evaluation) {
+      throw new NotFoundException("Evaluation Not Found")
+    }
+
+    const owner = isStudent ? evaluation.student : evaluation.supervisor
+    if (owner?.user?.id !== user.userId) {
+      throw new ForbiddenException("You are not allowed to view this evaluation")
+    }
+
+    return {
+      id: evaluation.id,
+      clinicalCaseId: evaluation.clinicalCase.id,
+      clinicalCaseStatus: evaluation.clinicalCase.status,
+      studentId: evaluation.student.id,
+      studentName: evaluation.student.user.full_name,
+      supervisorId: evaluation.supervisor.id,
+      supervisorName: evaluation.supervisor.user.full_name,
+      grade: evaluation.grade,
+      comment: evaluation.comment,
+      createdAt: evaluation.createdAt,
+      updatedAt: evaluation.updatedAt,
+    }
+  }
+
+  async getAllClinicalCasesEvaluations(user: AuthenticatedUser, dto: GetClinicalCaseEvaluationsQueryDto) {
+    if (dto.minGrade !== undefined && dto.maxGrade !== undefined && dto.minGrade > dto.maxGrade) {
+      throw new BadRequestException("minGrade cannot be greater than maxGrade")
+    }
+    if (dto.fromDate !== undefined && dto.toDate !== undefined && dto.fromDate > dto.toDate) {
+      throw new BadRequestException("fromDate cannot be later than toDate")
+    }
+
+    const student = await this.studentService.findByUserId(user.userId)
+    if (!student) {
+      throw new NotFoundException("Student not found")
+    }
+
+    const qb = this.clinicalCaseEvaluationRepository
+      .createQueryBuilder('evaluation')
+      .innerJoin('evaluation.clinicalCase', 'clinicalCase')
+      .innerJoin('clinicalCase.subject', 'subject')
+      .innerJoin('evaluation.supervisor', 'supervisor')
+      .innerJoin('supervisor.user', 'supervisorUser')
+      .where('evaluation.student_id = :studentId', { studentId: student.id })
+
+    if (dto.subjectId !== undefined) {
+      qb.andWhere('clinicalCase.subject_id = :subjectId', { subjectId: dto.subjectId })
+    }
+    if (dto.minGrade !== undefined) {
+      qb.andWhere('evaluation.grade >= :minGrade', { minGrade: dto.minGrade })
+    }
+    if (dto.maxGrade !== undefined) {
+      qb.andWhere('evaluation.grade <= :maxGrade', { maxGrade: dto.maxGrade })
+    }
+    if (dto.fromDate !== undefined) {
+      qb.andWhere('evaluation.createdAt >= :fromDate', { fromDate: dto.fromDate })
+    }
+    if (dto.toDate !== undefined) {
+      qb.andWhere('evaluation.createdAt <= :toDate', { toDate: dto.toDate })
+    }
+
+    // Aggregate over the whole filtered set, so pagination never skews the average.
+    const summaryRaw = await qb
+      .clone()
+      .select('COUNT(evaluation.id)', 'count')
+      .addSelect('AVG(evaluation.grade)', 'average')
+      .getRawOne<{ count: string; average: string | null }>()
+
+    const summaryCount = Number(summaryRaw?.count ?? 0)
+    const summaryAverage = summaryRaw?.average ?? null
+
+    const [evaluations, total] = await qb
+      .select([
+        'evaluation.id',
+        'evaluation.grade',
+        'evaluation.comment',
+        'evaluation.createdAt',
+        'evaluation.updatedAt',
+        'clinicalCase.id',
+        'clinicalCase.status',
+        'subject.id',
+        'subject.name',
+        'supervisor.id',
+        'supervisorUser.id',
+        'supervisorUser.full_name',
+      ])
+      .orderBy('evaluation.createdAt', 'DESC')
+      .skip((dto.page - 1) * dto.limit)
+      .take(dto.limit)
+      .getManyAndCount()
+
+    return {
+      message: 'Clinical case evaluations retrieved successfully.',
+      data: evaluations.map((evaluation) => ({
+        id: evaluation.id,
+        clinicalCaseId: evaluation.clinicalCase.id,
+        clinicalCaseStatus: evaluation.clinicalCase.status,
+        subjectId: evaluation.clinicalCase.subject.id,
+        subjectName: evaluation.clinicalCase.subject.name,
+        supervisorId: evaluation.supervisor.id,
+        supervisorName: evaluation.supervisor.user.full_name,
+        grade: evaluation.grade,
+        comment: evaluation.comment,
+        createdAt: evaluation.createdAt,
+        updatedAt: evaluation.updatedAt,
+      })),
+      summary: {
+        count: summaryCount,
+        averageGrade: summaryAverage === null ? null : Math.round(Number(summaryAverage) * 100) / 100,
+      },
+      meta: {
+        page: dto.page,
+        limit: dto.limit,
+        total,
+        totalPages: Math.ceil(total / dto.limit),
+      },
+    }
   }
 
 }

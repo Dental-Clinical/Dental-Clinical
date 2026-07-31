@@ -60,6 +60,7 @@ export class SupervisorService {
       const savedSupervisor = await manager.save(newSupervisor);
       return {
         supervisorId: savedSupervisor.id,
+        tempPassword,
       };
     });
   }

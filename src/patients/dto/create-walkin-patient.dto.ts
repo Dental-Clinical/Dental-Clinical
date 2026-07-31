@@ -30,7 +30,7 @@ export class CreatePatientWalkinDto {
   })
   @IsNotEmpty()
   @IsDateString()
-  dateOfBirth: Date;
+  dateOfBirth: string;
 
   @ApiProperty({
     description: 'Gender of the walk-in patient',

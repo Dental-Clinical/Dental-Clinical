@@ -15,6 +15,7 @@ import { randomBytes } from 'crypto';
 import { PasswordService } from 'src/common/services/password.service';
 import * as xlsx from 'xlsx';
 import { StudentSection } from 'src/student-section/student-section.entity';
+import { Subject } from '../subjects/subjects.entity';
 
 @Injectable()
 export class StudentService {
@@ -26,6 +27,8 @@ export class StudentService {
     private readonly dataSource: DataSource,
     @InjectRepository(StudentSection)
     private readonly studentSectionRepository: Repository<StudentSection>,
+    @InjectRepository(Subject)
+    private readonly subjectRepository: Repository<Subject>,
   ) {}
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
@@ -72,44 +75,79 @@ export class StudentService {
     }
     return currentEnrollment.studyYear;
   }
-  public async getStudentSectionForSubject(
+  public async getClinicSectionForSubject(
     userId: number,
     subjectId: number,
     manager?: EntityManager,
   ) {
-    const studentSection = await (
-      manager
-        ? manager.getRepository(StudentSection)
-        : this.studentSectionRepository
+    const subject = await (
+      manager ? manager.getRepository(Subject) : this.subjectRepository
     ).findOne({
       where: {
-        studentAcademicYear: {
-          isCurrent: true,
-          student: {
-            user: {
-              id: userId,
+        id: subjectId,
+        section: {
+          studentSections: {
+            studentAcademicYear: {
+              isCurrent: true,
+              student: {
+                user: {
+                  id: userId,
+                },
+              },
             },
-          },
-        },
-        clinicSection: {
-          subject: {
-            id: subjectId,
           },
         },
       },
       relations: {
-        clinicSection: {
+        section: {
           supervisor: true,
-          subject: true,
+          studentSections: true,
         },
       },
     });
-    if (!studentSection) {
+    if (!subject) {
       throw new NotFoundException(
         'Current student section not found for the given subject',
       );
     }
-    return studentSection;
+    return subject.section;
+  }
+  public async getMySubjects(userId: number) {
+    const subjects = await this.subjectRepository.find({
+      where: {
+        is_active: true,
+        section: {
+          studentSections: {
+            studentAcademicYear: {
+              isCurrent: true,
+              student: {
+                user: {
+                  id: userId,
+                },
+              },
+            },
+          },
+        },
+        studyYear: {
+          studentAcademicYears: {
+            isCurrent: true,
+            student: {
+              user: {
+                id: userId,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const result = subjects.map((subject) => ({
+      id: subject.id,
+      name: subject.name,
+    }));
+    return {
+      subjects: result,
+    };
   }
   public async createStudent(student: CreateStudentDto) {
     return await this.dataSource.transaction(async (manager) => {

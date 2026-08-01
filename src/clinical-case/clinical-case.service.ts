@@ -409,7 +409,13 @@ export class ClinicalCaseService {
       where: {
         status: ClinicalCaseStatus.OPEN,
         assignedStudent: IsNull(),
+        initialExamination: {
+          coordinator: {
+            user: true,
+          },
+        },
         subject: {
+          section: true,
           is_active: true,
           studyYear: {
             id: studyYear.id,
@@ -420,9 +426,6 @@ export class ClinicalCaseService {
         patient: true,
         subject: true,
         request: true,
-        assignedSupervisor: {
-          user: true,
-        },
       },
     });
     return openCases.map((clinicalCase) => {
@@ -430,7 +433,7 @@ export class ClinicalCaseService {
         id: clinicalCase.id,
         patient: clinicalCase.patient.full_name,
         subject: clinicalCase.subject.name,
-        supervisor: clinicalCase.assignedSupervisor.user.full_name,
+        coordinator: clinicalCase.initialExamination.coordinator.user.full_name,
         chiefComplaint: clinicalCase.request.chief_complaint,
       };
     });

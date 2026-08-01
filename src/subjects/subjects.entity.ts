@@ -90,8 +90,9 @@ export class Subject {
     type: () => [ClinicSections],
     description: 'Clinic sections',
   })
-  @OneToMany(() => ClinicSections, (clinicSection) => clinicSection.subject)
-  clinicSections: ClinicSections[];
+  @ManyToOne(() => ClinicSections, (clinicSection) => clinicSection.subjects)
+  @JoinColumn({ name: 'section_id' })
+  section: ClinicSections;
 
   @ManyToMany(() => Material, (material) => material.subjects)
   @JoinTable({

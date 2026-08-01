@@ -8,7 +8,7 @@ export class OpenCasesSummary {
   @ApiProperty({ example: 'Operative Dentistry' })
   subject: string;
   @ApiProperty({ example: 'Dr. John Doe' })
-  supervisor: string;
+  coordinator: string;
   @ApiProperty({ example: 'Toothache' })
   chiefComplaint: string;
 }

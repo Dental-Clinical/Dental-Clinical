@@ -1,38 +1,33 @@
 import {
+  BadRequestException,
   Injectable,
   NestInterceptor,
-  mixin,
-  BadRequestException,
   Type,
+  mixin,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { v4 as uuid } from 'uuid';
-import { mkdirSync } from 'fs';
-import { UploadOptions } from '../interfaces/upload-options.interface';
+import { memoryStorage } from 'multer';
+
+export interface UploadOptions {
+  fieldName?: string;
+  maxCount?: number;
+  allowedMimeTypes?: string[];
+  maxFileSize?: number;
+}
 
 export function FileUploadInterceptor(
   options: UploadOptions,
 ): Type<NestInterceptor> {
   const {
-    uploadPath,
     fieldName = 'files',
     maxCount = 5,
     allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'],
     maxFileSize = 5 * 1024 * 1024,
   } = options;
 
-  mkdirSync(uploadPath, { recursive: true });
-
   @Injectable()
   class MixinInterceptor extends FilesInterceptor(fieldName, maxCount, {
-    storage: diskStorage({
-      destination: uploadPath,
-      filename: (req, file, cb) => {
-        cb(null, `${uuid()}${extname(file.originalname)}`);
-      },
-    }),
+    storage: memoryStorage(),
 
     limits: {
       fileSize: maxFileSize,
@@ -40,7 +35,10 @@ export function FileUploadInterceptor(
 
     fileFilter: (req, file, cb) => {
       if (!allowedMimeTypes.includes(file.mimetype)) {
-        return cb(new BadRequestException('Unsupported file type'), false);
+        return cb(
+          new BadRequestException(`Unsupported file type: ${file.mimetype}`),
+          false,
+        );
       }
 
       cb(null, true);

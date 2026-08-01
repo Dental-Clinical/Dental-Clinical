@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -25,9 +26,14 @@ import { PerformedProceduresDto } from './dto/performed-procedures.dto';
 import { Student } from 'src/students/student.entity';
 import { SupervisorService } from 'src/supervisors/supervisor.service';
 import { ReviewTreatmentSessionDto } from './dto/review-treatment-session.dto';
+import { DateTimeUtils } from 'src/utils/date-time.utils';
+import { UpdateTreatmentSessionDto } from './dto/update-treatment-session.dto';
 
 @Injectable()
 export class TreatmentSessionsService {
+  readonly MAX_START_DELAY = 30 * 60 * 1000; // 30 minutes
+  readonly MIN_START_ADVANCE = 15 * 60 * 1000; // 15 minutes
+  readonly MIN_UPDATE_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
   constructor(
     private readonly studentService: StudentService,
     private readonly supervisorService: SupervisorService,
@@ -266,6 +272,260 @@ export class TreatmentSessionsService {
       })),
     };
   }
+  public async startTreatmentSession(
+    userId: number,
+    treatmentSessionId: number,
+  ) {
+    const student = await this.studentService.findByUserId(userId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+
+    return await this.datasource.transaction(async (manager) => {
+      const lockedTreatmentSession = await manager
+        .getRepository(TreatmentSession)
+        .createQueryBuilder('ts')
+        .setLock('pessimistic_write')
+        .where('ts.id = :id', { id: treatmentSessionId })
+        .getOne();
+      if (!lockedTreatmentSession) {
+        throw new NotFoundException('Treatment session not found');
+      }
+
+      const treatmentSession = await manager
+        .getRepository(TreatmentSession)
+        .findOne({
+          where: { id: lockedTreatmentSession?.id },
+          relations: {
+            clinicalCase: {
+              assignedStudent: true,
+            },
+            clinicalAppointment: true,
+          },
+        });
+
+      if (!treatmentSession) {
+        throw new NotFoundException('Treatment session not found');
+      }
+      if (treatmentSession.clinicalCase.assignedStudent.id !== student.id) {
+        throw new ConflictException(
+          'Treatment session does not belong to this student',
+        );
+      }
+      if (treatmentSession.status !== TreatmentSessionStatus.UPCOMING) {
+        throw new ConflictException(
+          'Treatment session is not in an upcoming state.',
+        );
+      }
+
+      if (
+        treatmentSession.clinicalCase.status !==
+        ClinicalCaseStatus.TREATMENT_IN_PROGRESS
+      ) {
+        throw new ConflictException(
+          'Clinical case is not in treatment progress.',
+        );
+      }
+      const appointmentDateTime = DateTimeUtils.combine(
+        treatmentSession.clinicalAppointment.appointmentDate,
+        treatmentSession.clinicalAppointment.appointmentStart,
+      );
+      const allowedStartTime = new Date(
+        appointmentDateTime.getTime() - this.MIN_START_ADVANCE,
+      ); // 15 minutes before the appointment
+
+      const now = new Date();
+
+      if (allowedStartTime > now) {
+        throw new ConflictException(
+          'Treatment session can only be started within 15 minutes before the scheduled appointment.',
+        );
+      }
+      if (now > new Date(treatmentSession.clinicalAppointment.appointmentEnd)) {
+        throw new ConflictException(
+          'Treatment session cannot be started after the scheduled appointment end time.',
+        );
+      }
+
+      const activeSessionExists = await manager
+        .getRepository(TreatmentSession)
+        .exists({
+          where: {
+            clinicalCase: {
+              id: treatmentSession.clinicalCase.id,
+            },
+            status: TreatmentSessionStatus.ACTIVE,
+          },
+        });
+      if (activeSessionExists) {
+        throw new ConflictException(
+          'There is already an active treatment session for this clinical case.',
+        );
+      }
+
+      treatmentSession.status = TreatmentSessionStatus.ACTIVE;
+      treatmentSession.startedAt = new Date();
+      await manager.getRepository(TreatmentSession).save(treatmentSession);
+      return {
+        message: 'Treatment session started successfully.',
+        treatmentSessionId: treatmentSession.id,
+        status: treatmentSession.status,
+      };
+    });
+  }
+  public async updateTreatmentSession(
+    userId: number,
+    treatmentSessionId: number,
+    dto: UpdateTreatmentSessionDto,
+  ) {
+    const student = await this.validateAndGetStudent(userId);
+
+    const treatmentSession = await this.validateAndGetTreatmentSession(
+      treatmentSessionId,
+      student.id,
+      TreatmentSessionStatus.UPCOMING, // allow updating even if not active
+    );
+
+    if (
+      dto.title === undefined &&
+      dto.appointmentDate === undefined &&
+      dto.appointmentStart === undefined
+    ) {
+      throw new BadRequestException('At least one field must be provided.');
+    }
+    if (dto.title !== undefined) {
+      treatmentSession.title = dto.title;
+    }
+
+    const appointmentChanged =
+      dto.appointmentDate !== undefined || dto.appointmentStart !== undefined;
+
+    const appointment = treatmentSession.clinicalAppointment;
+    if (appointmentChanged) {
+      // validate both provided
+      if (
+        (dto.appointmentDate && !dto.appointmentStart) ||
+        (!dto.appointmentDate && dto.appointmentStart)
+      ) {
+        throw new BadRequestException(
+          'Appointment date and start time must be provided together.',
+        );
+      }
+
+      // reject same appointment
+      const currentAppointment = DateTimeUtils.combine(
+        appointment.appointmentDate,
+        appointment.appointmentStart,
+      );
+
+      const newAppointment = DateTimeUtils.combine(
+        new Date(dto.appointmentDate!),
+        dto.appointmentStart!,
+      );
+
+      if (currentAppointment.getTime() === newAppointment.getTime()) {
+        throw new BadRequestException(
+          'The new appointment date and time are the same as the current ones.',
+        );
+      }
+
+      // validate 24h rule
+      const now = new Date();
+      const appointmentDateTime = new Date(
+        currentAppointment.getFullYear(),
+        currentAppointment.getMonth(),
+        currentAppointment.getDate(),
+        parseInt(appointment.appointmentStart.split(':')[0]),
+        parseInt(appointment.appointmentStart.split(':')[1]),
+      );
+      if (
+        appointmentDateTime.getTime() - now.getTime() <
+        this.MIN_UPDATE_INTERVAL
+      ) {
+        throw new ConflictException(
+          'Appointments cannot be updated within 24 hours of the scheduled time.',
+        );
+      }
+      const appointmentDateObj = dto.appointmentDate
+        ? new Date(dto.appointmentDate)
+        : currentAppointment;
+      const appointmentStart =
+        dto.appointmentStart || appointment.appointmentStart;
+
+      return await this.datasource.transaction(async (manager) => {
+        // Acquire pessimistic lock on the appointment row
+        const lockedAppointment = await manager
+          .getRepository(ClinicalAppointment)
+          .createQueryBuilder('appointment')
+          .setLock('pessimistic_write')
+          .where('appointment.id = :id', { id: appointment.id })
+          .getOne();
+
+        if (!lockedAppointment) {
+          throw new NotFoundException('Appointment not found');
+        }
+        if (lockedAppointment.status !== ClinicalAppointmentStatus.SCHEDULED) {
+          throw new ConflictException(
+            'Appointment is not in a scheduled state and cannot be updated.',
+          );
+        }
+
+        // Re-validate the 24h rule with locked data to ensure consistency
+        const lockedAppointmentDateTime = DateTimeUtils.combine(
+          lockedAppointment.appointmentDate,
+          lockedAppointment.appointmentStart,
+        );
+        const now = new Date();
+        if (
+          lockedAppointmentDateTime.getTime() - now.getTime() <
+          this.MIN_UPDATE_INTERVAL
+        ) {
+          throw new ConflictException(
+            'Appointments cannot be updated within 24 hours of the scheduled time.',
+          );
+        }
+
+        // Re-validate the slot availability with locked data
+        const { startTime, endTime } =
+          await this.supervisorAvailabilityService.validateSlotAvailability(
+            lockedAppointmentDateTime,
+            appointmentStart,
+            treatmentSession.clinicalCase.assignedSupervisor.id,
+            manager,
+          );
+
+        // Update the appointment
+        lockedAppointment.appointmentDate = appointmentDateObj;
+        lockedAppointment.appointmentStart = startTime;
+        lockedAppointment.appointmentEnd = endTime;
+
+        await manager
+          .getRepository(ClinicalAppointment)
+          .save(lockedAppointment);
+
+        // Update treatment session with the locked appointment reference
+        treatmentSession.clinicalAppointment = lockedAppointment;
+        await manager.getRepository(TreatmentSession).save(treatmentSession);
+
+        return {
+          message: 'Treatment session updated successfully.',
+          treatmentSessionId: treatmentSession.id,
+          status: treatmentSession.status,
+        };
+      });
+    }
+
+    // If appointment didn't change, just update treatment session
+    return await this.datasource.transaction(async (manager) => {
+      await manager.getRepository(TreatmentSession).save(treatmentSession);
+
+      return {
+        message: 'Treatment session updated successfully.',
+        treatmentSessionId: treatmentSession.id,
+        status: treatmentSession.status,
+      };
+    });
+  }
   public async completeTreatmentSession(
     userId: number,
     treatmentSessionId: number,
@@ -278,6 +538,7 @@ export class TreatmentSessionsService {
     const treatmentSession = await this.validateAndGetTreatmentSession(
       treatmentSessionId,
       student.id,
+      TreatmentSessionStatus.ACTIVE,
     );
 
     // Validate procedures
@@ -423,6 +684,7 @@ export class TreatmentSessionsService {
   private async validateAndGetTreatmentSession(
     treatmentSessionId: number,
     studentId: number,
+    expectedStatus: TreatmentSessionStatus = TreatmentSessionStatus.ACTIVE,
   ): Promise<TreatmentSession> {
     const treatmentSession = await this.treatmentSessionRepository.findOne({
       where: { id: treatmentSessionId },
@@ -449,8 +711,19 @@ export class TreatmentSessionsService {
     }
 
     // Check status
-    if (treatmentSession.status !== TreatmentSessionStatus.ACTIVE) {
-      throw new ConflictException('Treatment session is not active.');
+    if (expectedStatus && treatmentSession.status !== expectedStatus) {
+      throw new ConflictException(
+        `Treatment session must be ${expectedStatus}.`,
+      );
+    }
+
+    if (
+      treatmentSession.clinicalCase.status !==
+      ClinicalCaseStatus.TREATMENT_IN_PROGRESS
+    ) {
+      throw new ConflictException(
+        'Clinical case is not in treatment progress.',
+      );
     }
 
     return treatmentSession;

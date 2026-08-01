@@ -27,4 +27,13 @@ export class DateTimeUtils {
 
     return age;
   }
+  static combine(date: Date, time: string): Date {
+    const result = new Date(date);
+
+    const [hours, minutes, seconds = 0] = time.split(':').map(Number);
+
+    result.setHours(hours, minutes, seconds, 0);
+
+    return result;
+  }
 }

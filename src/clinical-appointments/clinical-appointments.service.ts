@@ -98,15 +98,15 @@ export class ClinicalAppointmentsService {
         );
       }
 
-      const studentCurrentSection =
-        await this.studentService.getStudentSectionForSubject(
+      const clinicSection =
+        await this.studentService.getClinicSectionForSubject(
           student.id,
           loadedCase.subject.id,
           manager,
         );
 
       const { patient } = loadedCase;
-      const { supervisor } = studentCurrentSection.clinicSection;
+      const supervisor = clinicSection.supervisor;
 
       const { startTime, endTime } = await this.checkSupervisorAvailability(
         dto.appointmentDate,
@@ -215,15 +215,14 @@ export class ClinicalAppointmentsService {
       throw new ConflictException('Clinical case has already been assigned');
     }
 
-    const studentSection =
-      await this.studentService.getStudentSectionForSubject(
-        currentUser.userId,
-        clinicalCase.subject.id,
-      );
+    const clinicSection = await this.studentService.getClinicSectionForSubject(
+      currentUser.userId,
+      clinicalCase.subject.id,
+    );
 
     return await this.supervisorAvailibilityService.getAvailableSlots(
       date,
-      studentSection.clinicSection.supervisor.id,
+      clinicSection.supervisor.id,
     );
   }
   async getTodayAppointments(currentUser: AuthenticatedUser) {

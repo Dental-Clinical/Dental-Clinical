@@ -89,7 +89,7 @@ export class SupervisorReviewsService {
       }),
       images: submission.images.map((image) => ({
         id: image.id,
-        url: image.file_path,
+        url: image.fileUrl,
       })),
     };
   }

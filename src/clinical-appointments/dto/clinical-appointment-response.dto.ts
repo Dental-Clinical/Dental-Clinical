@@ -80,6 +80,80 @@ export class GetTodayAppointmentsResponseDto {
   data: TodayAppointmentDto[];
 }
 
+export class UpcomingAppointmentDto {
+  @ApiProperty({ example: 1 })
+  appointmentId: number;
+
+  @ApiProperty({ example: 7 })
+  clinicalCaseId: number;
+
+  @ApiProperty({ example: '2025-12-25' })
+  appointmentDate: Date;
+
+  @ApiProperty({ example: '09:00' })
+  appointmentStart: string;
+
+  @ApiProperty({ example: '11:00' })
+  appointmentEnd: string;
+
+  @ApiProperty({ example: 'Sara Ali' })
+  studentName: string;
+
+  @ApiProperty({ example: 'Dr. Ahmed Hassan' })
+  supervisorName: string;
+
+  @ApiProperty({
+    example: 'scheduled',
+    enum: ['scheduled', 'completed', 'cancelled', 'no_show'],
+  })
+  status: string;
+}
+
+export class GetUpcomingAppointmentsResponseDto {
+  @ApiProperty({ example: 'Upcoming appointments retrieved successfully' })
+  message: string;
+
+  @ApiProperty({ type: [UpcomingAppointmentDto] })
+  data: UpcomingAppointmentDto[];
+}
+
+export class PastAppointmentDto {
+  @ApiProperty({ example: 1 })
+  appointmentId: number;
+
+  @ApiProperty({ example: 7 })
+  clinicalCaseId: number;
+
+  @ApiProperty({ example: '2025-12-25' })
+  appointmentDate: Date;
+
+  @ApiProperty({ example: '09:00' })
+  appointmentStart: string;
+
+  @ApiProperty({ example: '11:00' })
+  appointmentEnd: string;
+
+  @ApiProperty({ example: 'Sara Ali' })
+  studentName: string;
+
+  @ApiProperty({ example: 'Dr. Ahmed Hassan' })
+  supervisorName: string;
+
+  @ApiProperty({
+    example: 'completed',
+    enum: ['scheduled', 'completed', 'cancelled', 'no_show'],
+  })
+  status: string;
+}
+
+export class GetPastAppointmentsResponseDto {
+  @ApiProperty({ example: 'Past appointments retrieved successfully' })
+  message: string;
+
+  @ApiProperty({ type: [PastAppointmentDto] })
+  data: PastAppointmentDto[];
+}
+
 export class NoShowAppointmentResponseDto {
   @ApiProperty({ example: 'Appointment marked as no-show successfully' })
   message: string;

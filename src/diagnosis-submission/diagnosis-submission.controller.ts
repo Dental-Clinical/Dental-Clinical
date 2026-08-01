@@ -4,7 +4,7 @@ import {
   Get,
   Param,
   Post,
-  UploadedFile,
+  UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
 import { DiagnosisSubmissionService } from './diagnosis-submission.service';
@@ -109,7 +109,7 @@ export class DiagnosisSubmissionController {
   async submitDiagnosis(
     @Body() dto: CreateDiagnosisSubmissionDto,
     @CurrentUser() user: AuthenticatedUser,
-    @UploadedFile() files: Express.Multer.File[],
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
     return await this.diagnosisSubmissionService.submitDiagnosis(
       dto,

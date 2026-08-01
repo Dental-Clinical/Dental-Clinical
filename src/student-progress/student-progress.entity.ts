@@ -56,10 +56,11 @@ export class StudentProgress {
     example: 3,
   })
   @Column({
+    name: 'completed_count',
     type: 'int',
     default: 0,
   })
-  completed_count: number;
+  completedCount: number;
 
   @ApiProperty({ description: 'Creation timestamp' })
   @CreateDateColumn({ name: 'created_at' })

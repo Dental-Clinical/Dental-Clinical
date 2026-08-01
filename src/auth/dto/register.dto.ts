@@ -49,7 +49,7 @@ export class RegisterDto {
   })
   @IsNotEmpty()
   @IsDateString()
-  dateOfBirth: Date;
+  dateOfBirth: string;
 
   @ApiProperty({
     description: 'Gender of the patient',

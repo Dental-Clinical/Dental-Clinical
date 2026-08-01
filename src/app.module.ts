@@ -37,12 +37,15 @@ import { SupervisorReviewsModule } from './supervisor-reviews/supervisor-reviews
 import { TreatmentSessionsModule } from './treatment-sessions/treatment-sessions.module';
 import { ClinicalCaseEvaluationModule } from './clinical-case-evaluation/clinical-case-evaluation.module';
 import { StudentProgressModule } from './student-progress/student-progress.module';
+import redisConfig from './config/redis.config';
+import { RedisHealthService } from './redis-health.service';
 
 const ENV = process.env.NODE_ENV;
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: !ENV ? '.env' : `.env.${ENV}`,
+      load: [redisConfig],
       isGlobal: true,
     }),
     HttpModule.register({ global: true }),
@@ -53,12 +56,9 @@ const ENV = process.env.NODE_ENV;
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         store: await redisStore({
-          socket: {
-            host: configService.get('redis.host'),
-            port: configService.get('redis.port'),
-            tls: configService.get('redis.tls') === 'true',
-          },
-          password: configService.get('redis.password'),
+          url: configService.get('redis.url'),
+          // host: configService.get('redis.host'),
+          // port: configService.get('redis.port'),
         }),
         ttl: configService.get('redis.ttl'),
         isGlobal: true,
@@ -103,6 +103,7 @@ const ENV = process.env.NODE_ENV;
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+    RedisHealthService,
   ],
 })
 export class AppModule {}

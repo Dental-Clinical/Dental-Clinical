@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { StudentProgress } from './student-progress.entity';
@@ -7,6 +11,7 @@ import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.ent
 import { PlannedProceduresStatus } from 'src/planned-procedures/enum/planned-procedures-status.enum';
 import { StudentService } from 'src/students/student.service';
 import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
+import { AwardedProcedureCredit } from './interfaces/award-procedure-credit.interface';
 
 @Injectable()
 export class StudentProgressService {
@@ -27,26 +32,50 @@ export class StudentProgressService {
     studentId: number,
     clinicalCaseId: number,
   ) {
-    const completedProcedures = await manager
+    // const completedProcedures = await manager
+    //   .getRepository(PlannedProcedures)
+    //   .createQueryBuilder('plannedProcedure')
+    //   .innerJoinAndSelect(
+    //     'plannedProcedure.subjectProcedure',
+    //     'subjectProcedure',
+    //   )
+    //   .innerJoin('plannedProcedure.diagnosisSubmission', 'diagnosisSubmission')
+    //   .where('diagnosisSubmission.clinical_case_id = :clinicalCaseId', {
+    //     clinicalCaseId,
+    //   })
+    //   .andWhere('plannedProcedure.status = :status', {
+    //     status: PlannedProceduresStatus.COMPLETED,
+    //   })
+    //   .getMany();
+    const raw = (await manager
       .getRepository(PlannedProcedures)
-      .createQueryBuilder('plannedProcedure')
-      .innerJoinAndSelect('plannedProcedure.subjectProcedure', 'subjectProcedure')
-      .innerJoin('plannedProcedure.diagnosisSubmission', 'diagnosisSubmission')
-      .where('diagnosisSubmission.clinical_case_id = :clinicalCaseId', {
-        clinicalCaseId,
-      })
-      .andWhere('plannedProcedure.status = :status', {
+      .createQueryBuilder('pp')
+      .select('pp.subject_procedure_id', 'subjectProcedureId')
+      .addSelect('COUNT(*)', 'awarded')
+      .innerJoin('pp.diagnosisSubmission', 'ds')
+      .where('ds.clinical_case_id = :clinicalCaseId', { clinicalCaseId })
+      .andWhere('pp.status = :status', {
         status: PlannedProceduresStatus.COMPLETED,
       })
-      .getMany();
+      .groupBy('pp.subject_procedure_id')
+      .getRawMany()) as AwardedProcedureCredit[];
 
-    const groupedProcedures = this.groupCompletedProcedures(completedProcedures);
-    await this.updateProgress(manager, studentId, groupedProcedures);
-
-    return [...groupedProcedures].map(([subjectProcedureId, awarded]) => ({
-      subjectProcedureId,
-      awarded,
+    const groupedProcedures: AwardedProcedureCredit[] = raw.map((row) => ({
+      subjectProcedureId: Number(row.subjectProcedureId),
+      awarded: Number(row.awarded),
     }));
+
+    if (groupedProcedures.length === 0) {
+      throw new ConflictException(
+        'No completed procedures found for this clinical case.',
+      );
+    }
+
+    await this.awardAcademicCredit(manager, studentId, groupedProcedures);
+
+    return {
+      awardedCredits: groupedProcedures,
+    };
   }
 
   /**
@@ -66,12 +95,12 @@ export class StudentProgressService {
   /**
    * Increments the student's completed counts, creating the progress rows on first credit.
    */
-  public async updateProgress(
+  public async awardAcademicCredit(
     manager: EntityManager,
     studentId: number,
-    groupedProcedures: Map<number, number>,
+    awards: AwardedProcedureCredit[],
   ) {
-    if (groupedProcedures.size === 0) {
+    if (awards.length === 0) {
       return;
     }
 
@@ -82,25 +111,27 @@ export class StudentProgressService {
       .insert()
       .into(StudentProgress)
       .values(
-        [...groupedProcedures.keys()].map((subjectProcedureId) => ({
+        awards.map((award) => ({
           student: { id: studentId },
-          subjectProcedure: { id: subjectProcedureId },
-          completed_count: 0,
+          subjectProcedure: { id: award.subjectProcedureId },
+          completedCount: 0,
         })),
       )
       .orIgnore()
       .execute();
 
+    // Each subject procedure receives a different awarded count,
+    // therefore each progress row is incremented individually.
     // Increment in SQL rather than read-modify-write, so concurrent awards cannot lose credit.
-    for (const [subjectProcedureId, awarded] of groupedProcedures) {
+    for (const award of awards) {
       await manager
         .createQueryBuilder()
         .update(StudentProgress)
-        .set({ completed_count: () => 'completed_count + :awarded' })
-        .setParameter('awarded', awarded)
+        .set({ completedCount: () => `"completed_count" + :awarded` })
+        .setParameter('awarded', award.awarded)
         .where('student_id = :studentId', { studentId })
         .andWhere('subject_procedure_id = :subjectProcedureId', {
-          subjectProcedureId,
+          subjectProcedureId: award.subjectProcedureId,
         })
         .execute();
     }
@@ -115,7 +146,9 @@ export class StudentProgressService {
     if (!student) {
       throw new NotFoundException('Student not found');
     }
-    const studyYear = await this.studentService.getCurrentStudyYear(user.userId);
+    const studyYear = await this.studentService.getCurrentStudyYear(
+      user.userId,
+    );
 
     const subjectProcedures = await this.subjectProceduresRepository
       .createQueryBuilder('subjectProcedure')
@@ -163,14 +196,14 @@ export class StudentProgressService {
       subjects.get(subject.id)!.procedures.push({
         subjectProcedureId: subjectProcedure.id,
         procedure: subjectProcedure.name,
-        completed: subjectProcedure.studentProgress[0]?.completed_count ?? 0,
+        completed: subjectProcedure.studentProgress[0]?.completedCount ?? 0,
         required: subjectProcedure.required_count,
       });
     }
 
     return {
       message: 'Procedure progress retrieved successfully.',
-      data: [...subjects.values()],
+      progress: [...subjects.values()],
     };
   }
 }

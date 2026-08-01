@@ -40,7 +40,7 @@ export class CreatePatientDto {
   })
   @IsNotEmpty()
   @IsDateString()
-  dateOfBirth: Date;
+  dateOfBirth: string;
 
   @ApiProperty({
     description: 'Gender',

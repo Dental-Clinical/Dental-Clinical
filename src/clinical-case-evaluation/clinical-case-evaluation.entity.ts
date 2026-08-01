@@ -12,6 +12,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Grade } from './enums/grade.enum';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('clinical_case_evaluations')
 export class ClinicalCaseEvaluation {
@@ -57,5 +58,5 @@ export class ClinicalCaseEvaluation {
   createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date
+  updatedAt: Date;
 }

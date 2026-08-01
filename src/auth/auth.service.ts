@@ -108,7 +108,7 @@ export class AuthService {
     };
   }
   // send registration OTP
-  public async sendRegistrationOtp(otpDto: SendOtpDto): Promise<void> {
+  public async sendRegistrationOtp(otpDto: SendOtpDto) {
     otpDto.phone = otpDto.phone.replace(/\D/g, ''); // Normalize phone number
     const user = await this.userService.findByPhone(otpDto.phone);
     if (user) {
@@ -132,6 +132,9 @@ export class AuthService {
     await this.otpService.storeOtp(otpDto.phone, otp);
 
     await this.otpService.setCooldown(otpDto.phone);
+    return {
+      otp,
+    };
   }
   // verify registration OTP
   public async verifyRegistrationOtp(verifyDto: VerifyOtpDto) {
@@ -154,7 +157,7 @@ export class AuthService {
     };
   }
   // send login OTP
-  public async sendLoginOtp(otpDto: SendOtpDto): Promise<void> {
+  public async sendLoginOtp(otpDto: SendOtpDto) {
     otpDto.phone = otpDto.phone.replace(/\D/g, '');
     const user = await this.userService.findByPhone(otpDto.phone);
     if (!user) {
@@ -181,6 +184,9 @@ export class AuthService {
     await this.otpService.storeOtp(otpDto.phone, otp);
 
     await this.otpService.setCooldown(otpDto.phone);
+    return {
+      otp,
+    };
   }
   // verify login OTP
   public async verifyLoginOtp(verifyDto: VerifyOtpDto) {

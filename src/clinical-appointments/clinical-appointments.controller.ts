@@ -32,7 +32,9 @@ import {
   CancelAppointmentResponseDto,
   CreateClinicalAppointmentResponseDto,
   GetAvailableSupervisorSlotsResponseDto,
+  GetPastAppointmentsResponseDto,
   GetTodayAppointmentsResponseDto,
+  GetUpcomingAppointmentsResponseDto,
   NoShowAppointmentResponseDto,
   UpdateClinicalAppointmentResponseDto,
 } from './dto/clinical-appointment-response.dto';
@@ -84,6 +86,39 @@ export class ClinicalAppointmentsController {
   @ApiResponse({ status: 404, description: 'No appointments found for today' })
   async getTodayAppointments(@CurrentUser() currentUser: AuthenticatedUser) {
     return await this.clinicalAppointmentService.getTodayAppointments(
+      currentUser,
+    );
+  }
+
+  @Get('/upcoming')
+  @Roles([UserRole.PATIENT])
+  @ApiOperation({
+    summary:
+      "[Patient] Get the current patient's upcoming clinical appointments",
+  })
+  @ApiOkResponse({
+    type: GetUpcomingAppointmentsResponseDto,
+    description: 'Upcoming appointments retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Patient not found' })
+  async getUpcomingAppointments(@CurrentUser() currentUser: AuthenticatedUser) {
+    return await this.clinicalAppointmentService.getUpcomingAppointments(
+      currentUser,
+    );
+  }
+
+  @Get('/past')
+  @Roles([UserRole.PATIENT])
+  @ApiOperation({
+    summary: "[Patient] Get the current patient's past clinical appointments",
+  })
+  @ApiOkResponse({
+    type: GetPastAppointmentsResponseDto,
+    description: 'Past appointments retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Patient not found' })
+  async getPastAppointments(@CurrentUser() currentUser: AuthenticatedUser) {
+    return await this.clinicalAppointmentService.getPastAppointments(
       currentUser,
     );
   }

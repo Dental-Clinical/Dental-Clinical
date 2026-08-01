@@ -2,6 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ClinicalCaseStatus } from '../enums/clinical-case-status.enum';
 
 export class StudentCasesSummaryDto {
+  cases: StudentCaseDto[];
+}
+
+export class StudentCaseDto {
   @ApiProperty({
     description: 'The ID of the clinical case',
     example: 1,
@@ -32,5 +36,5 @@ export class StudentCasesSummaryDto {
       'The number of treatment sessions associated with the clinical case',
     example: 5,
   })
-  sessionCount: number;
+  sessionCount: number | null; // This can be null if the case is not yet assigned
 }

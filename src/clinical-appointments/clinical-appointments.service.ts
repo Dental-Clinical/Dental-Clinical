@@ -204,11 +204,13 @@ export class ClinicalAppointmentsService {
     if (!clinicalCase) {
       throw new NotFoundException('Clinical case not found');
     }
-
-    if (clinicalCase.status !== ClinicalCaseStatus.OPEN) {
-      throw new ConflictException(
-        'Clinical case is no longer available for scheduling',
-      );
+    if (
+      ![
+        ClinicalCaseStatus.OPEN,
+        ClinicalCaseStatus.TREATMENT_IN_PROGRESS,
+      ].includes(clinicalCase.status)
+    ) {
+      throw new ConflictException('This clinical case cannot be scheduled.');
     }
 
     if (clinicalCase.assignedStudent) {

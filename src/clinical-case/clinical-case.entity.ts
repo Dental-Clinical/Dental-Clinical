@@ -20,6 +20,7 @@ import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submissi
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TreatmentSession } from 'src/treatment-sessions/treatment-sessions.entity';
 import { ClinicalAppointment } from 'src/clinical-appointments/clinical-appointments.entity';
+import { ClinicalCaseEvaluation } from 'src/clinical-case-evaluation/clinical-case-evaluation.entity';
 
 @Entity('clinical_cases')
 export class ClinicalCase {
@@ -103,6 +104,16 @@ export class ClinicalCase {
     (clinicalAppointment) => clinicalAppointment.clinicalCase,
   )
   clinicalAppointments: ClinicalAppointment[];
+
+  @ApiPropertyOptional({
+    type: () => ClinicalCaseEvaluation,
+    description: 'Final evaluation',
+  })
+  @OneToOne(
+    () => ClinicalCaseEvaluation,
+    (evaluation) => evaluation.clinicalCase,
+  )
+  evaluation: ClinicalCaseEvaluation;
 
   @ApiProperty({
     description: 'Case status',

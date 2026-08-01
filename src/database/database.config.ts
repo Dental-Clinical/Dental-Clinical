@@ -7,7 +7,6 @@ config({
   path: join(process.cwd(), envFile),
 });
 
-// local development configuration
 // export const connectionSource = new DataSource({
 //   type: 'postgres',
 //   port: parseInt(process.env.DB_PORT || '5432'),
@@ -21,7 +20,6 @@ config({
 //   logging: ['error'],
 // });
 
-// production configuration
 export const connectionSource = new DataSource({
   type: 'postgres',
   url: process.env.DB_URL,

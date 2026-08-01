@@ -35,13 +35,16 @@ import { ClinicSectionsModule } from './clinic-sections/clinic-sections.module';
 import { StudentSectionModule } from './student-section/student-section.module';
 import { SupervisorReviewsModule } from './supervisor-reviews/supervisor-reviews.module';
 import { TreatmentSessionsModule } from './treatment-sessions/treatment-sessions.module';
-import { RedisHealthService } from './redis-health.service';
+import { ClinicalCaseEvaluationModule } from './clinical-case-evaluation/clinical-case-evaluation.module';
+import { StudentProgressModule } from './student-progress/student-progress.module';
 import redisConfig from './config/redis.config';
+import { RedisHealthService } from './redis-health.service';
 
 const ENV = process.env.NODE_ENV;
 @Module({
   imports: [
     ConfigModule.forRoot({
+      envFilePath: !ENV ? '.env' : `.env.${ENV}`,
       isGlobal: true,
       load: [redisConfig],
     }),
@@ -87,6 +90,8 @@ const ENV = process.env.NODE_ENV;
     StudentSectionModule,
     SupervisorReviewsModule,
     TreatmentSessionsModule,
+    ClinicalCaseEvaluationModule,
+    StudentProgressModule,
   ],
   controllers: [AppController],
   providers: [
@@ -98,7 +103,7 @@ const ENV = process.env.NODE_ENV;
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
-    // RedisHealthService,
+    RedisHealthService,
   ],
 })
 export class AppModule {}

@@ -1,4 +1,5 @@
 import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.entity';
+import { StudentProgress } from 'src/student-progress/student-progress.entity';
 import { Subject } from 'src/subjects/subjects.entity';
 import {
   Column,
@@ -39,6 +40,16 @@ export class SubjectProcedures {
     (plannedProcedure) => plannedProcedure.subjectProcedure,
   )
   plannedProcedures: PlannedProcedures[];
+
+  @ApiPropertyOptional({
+    type: () => [StudentProgress],
+    description: 'Per-student progress on this subject procedure',
+  })
+  @OneToMany(
+    () => StudentProgress,
+    (studentProgress) => studentProgress.subjectProcedure,
+  )
+  studentProgress: StudentProgress[];
 
   @ApiProperty({ description: 'Procedure name', example: 'Composite Filling' })
   @Column({

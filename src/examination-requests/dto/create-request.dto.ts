@@ -1,9 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDate,
   IsInt,
+  IsOptional,
   IsString,
   Matches,
   MinLength,
@@ -53,4 +54,19 @@ export class CreateExaminationRequestDto {
   })
   @IsArray()
   teeth: number[];
+
+  /**
+   * Placeholder for the multipart `attachments` part. Real files are consumed by
+   * FileUploadInterceptor and injected via @UploadedFiles(); this exists only so a
+   * client sending an empty or text-valued `attachments` field is not rejected by
+   * the global ValidationPipe (forbidNonWhitelisted: true).
+   */
+  @ApiPropertyOptional({
+    type: 'array',
+    items: { type: 'string', format: 'binary' },
+    description: 'Attachments (images or PDF, max 5, up to 5MB each)',
+  })
+  @IsOptional()
+  @Transform(() => undefined)
+  attachments?: unknown;
 }

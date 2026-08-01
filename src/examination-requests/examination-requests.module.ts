@@ -8,6 +8,7 @@ import { ExaminationRequestAttachments } from './entities/examination-request-at
 import { ExaminationAppointment } from '../examination-appointments/examination-appointment.entity';
 import { Patient } from 'src/patients/patient.entity';
 import { ExaminationAppointmentsModule } from 'src/examination-appointments/examination-appointments.module';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
 @Module({
   providers: [ExaminationRequestsService],
@@ -21,6 +22,7 @@ import { ExaminationAppointmentsModule } from 'src/examination-appointments/exam
       ExaminationRequestAttachments,
     ]),
     ExaminationAppointmentsModule,
+    CloudinaryModule,
   ],
 })
 export class ExaminationRequestsModule {}

@@ -27,20 +27,24 @@ export class DiagnosisImages {
   @JoinColumn({ name: 'diagnosis_submission_id' })
   diagnosisSubmission: DiagnosisSubmission;
 
+  @ApiProperty({ description: 'Cloudinary public ID', example: 'abc123' })
+  @Column({ name: 'public_id' })
+  publicId: string;
+
   @ApiProperty({
-    description: 'File path',
-    example: 'uploads/diagnosis-submissions/image.jpg',
+    description: 'Cloudinary file URL',
+    example: 'https://res.cloudinary.com/.../image.jpg',
   })
-  @Column()
-  file_path: string;
+  @Column({ name: 'file_url' })
+  fileUrl: string;
 
   @ApiProperty({ description: 'File name', example: 'xray-tooth-36.jpg' })
-  @Column()
-  file_name: string;
+  @Column({ name: 'file_name' })
+  fileName: string;
 
   @ApiProperty({ description: 'MIME type', example: 'image/jpeg' })
-  @Column()
-  mime_type: string;
+  @Column({ name: 'mime_type' })
+  mimeType: string;
 
   @ApiProperty({ description: 'Upload timestamp' })
   @CreateDateColumn({ name: 'uploaded_at' })

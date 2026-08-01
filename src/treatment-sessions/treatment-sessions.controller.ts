@@ -97,6 +97,74 @@ export class TreatmentSessionsController {
     );
   }
 
+  @Patch(':treatmentSessionId/start')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary: '[Student] Start a treatment session',
+  })
+  @ApiParam({
+    name: 'treatmentSessionId',
+    type: Number,
+    description: 'Treatment session ID',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Treatment session started successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Student or treatment session not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Treatment session does not belong to student or is not in a startable state',
+  })
+  async startTreatmentSession(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('treatmentSessionId', ParseIntPipe) treatmentSessionId: number,
+  ) {
+    return await this.treatmentSessionsService.startTreatmentSession(
+      user.userId,
+      treatmentSessionId,
+    );
+  }
+
+  @Patch(':treatmentSessionId/edit')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary: '[Student] Edit a treatment session',
+  })
+  @ApiParam({
+    name: 'treatmentSessionId',
+    type: Number,
+    description: 'Treatment session ID',
+  })
+  @ApiBody({ type: UpdateTreatmentSessionDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Treatment session edited successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Student or treatment session not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Treatment session does not belong to student or is not in an editable state',
+  })
+  async editTreatmentSession(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('treatmentSessionId', ParseIntPipe) treatmentSessionId: number,
+    @Body() dto: UpdateTreatmentSessionDto,
+  ) {
+    return await this.treatmentSessionsService.updateTreatmentSession(
+      user.userId,
+      treatmentSessionId,
+      dto,
+    );
+  }
   @Patch(':treatmentSessionId/complete')
   @Roles([UserRole.STUDENT])
   @ApiOperation({

@@ -84,22 +84,18 @@ export class ClinicSectionsService {
   }
 
   async createClinicSection(dto: CreateClinicSectionDto) {
-    const subject = await this.resolveSubject(dto.subject_id);
     const supervisor = await this.resolveSupervisor(dto.supervisor_id);
 
     const existing = await this.clinicSectionRepository.findOne({
-      where: { subject: { id: dto.subject_id }, name: dto.name },
+      where: { name: dto.name },
     });
     if (existing) {
-      throw new ConflictException(
-        'A section with this name already exists for this subject',
-      );
+      throw new ConflictException('A section with this name already exists');
     }
 
     const clinicSection = this.clinicSectionRepository.create({
       name: dto.name,
       is_active: dto.is_active,
-      subject,
       supervisor,
     });
 
@@ -119,30 +115,20 @@ export class ClinicSectionsService {
       throw new NotFoundException('Clinic section not found');
     }
 
-    if (dto.subject_id !== undefined) {
-      clinicSection.subject = await this.resolveSubject(dto.subject_id);
-    }
     if (dto.supervisor_id !== undefined) {
       clinicSection.supervisor = await this.resolveSupervisor(
         dto.supervisor_id,
       );
     }
 
-    const targetSubjectId = dto.subject_id ?? clinicSection.subject_id;
     const targetName = dto.name ?? clinicSection.name;
 
-    if (
-      (dto.name !== undefined || dto.subject_id !== undefined) &&
-      (targetName !== clinicSection.name ||
-        targetSubjectId !== clinicSection.subject_id)
-    ) {
+    if (dto.name !== undefined && targetName !== clinicSection.name) {
       const existing = await this.clinicSectionRepository.findOne({
-        where: { subject: { id: targetSubjectId }, name: targetName },
+        where: { name: targetName },
       });
       if (existing && existing.id !== id) {
-        throw new ConflictException(
-          'A section with this name already exists for this subject',
-        );
+        throw new ConflictException('A section with this name already exists');
       }
     }
 

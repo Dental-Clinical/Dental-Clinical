@@ -43,7 +43,6 @@ export class DiagnosisSubmissionController {
   @Roles([UserRole.STUDENT])
   @UseInterceptors(
     FileUploadInterceptor({
-      uploadPath: './uploads/diagnosis-submissions',
       fieldName: 'images',
       maxCount: 10,
     }),

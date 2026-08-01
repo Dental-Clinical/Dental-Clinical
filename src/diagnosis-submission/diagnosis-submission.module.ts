@@ -6,6 +6,7 @@ import { DiagnosisSubmission } from './diagnosis-submission.entity';
 import { StudentModule } from 'src/students/student.module';
 import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.entity';
 import { DiagnosisImages } from 'src/diagnosis-images/diagnosis-images.entity';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { DiagnosisImages } from 'src/diagnosis-images/diagnosis-images.entity';
       DiagnosisImages,
     ]),
     StudentModule,
+    CloudinaryModule,
   ],
   controllers: [DiagnosisSubmissionController],
   providers: [DiagnosisSubmissionService],

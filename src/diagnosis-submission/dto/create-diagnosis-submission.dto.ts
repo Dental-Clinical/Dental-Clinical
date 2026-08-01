@@ -1,8 +1,9 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Min,
   ValidateNested,
@@ -22,4 +23,14 @@ export class CreateDiagnosisSubmissionDto {
   @Type(() => CreatePlannedProcedureDto)
   @ArrayMinSize(1)
   plannedProcedures: CreatePlannedProcedureDto[];
+
+  /**
+   * Placeholder for the multipart `images` part. Real files are consumed by
+   * FileUploadInterceptor and injected via @UploadedFiles(); this exists only so a
+   * client sending an empty or text-valued `images` field is not rejected by the
+   * global ValidationPipe (forbidNonWhitelisted: true).
+   */
+  @IsOptional()
+  @Transform(() => undefined)
+  images?: unknown;
 }

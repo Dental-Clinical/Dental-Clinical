@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   UploadedFile,
   UseInterceptors,
@@ -21,6 +22,8 @@ import { CreateStudentDto } from './dto/create-student.dto';
 import { CreateStudentResponseDto } from './dto/create-student-response.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import 'multer';
+import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 
 @ApiTags('Students')
 @ApiBearerAuth('JWT-auth')
@@ -61,5 +64,22 @@ export class StudentController {
   @ApiResponse({ status: 409, description: 'Student already exists' })
   async importStudents(@UploadedFile() file: Express.Multer.File) {
     return this.studentService.importStudents(file);
+  }
+
+  @Get('me/subjects')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary: "[Student] Get the current student's subjects and study year",
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Subjects and study year retrieved successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Student or current enrollment not found',
+  })
+  public async getMySubjects(@CurrentUser() user: AuthenticatedUser) {
+    return await this.studentService.getMySubjects(user.userId);
   }
 }

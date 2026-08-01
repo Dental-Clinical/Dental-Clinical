@@ -4,8 +4,8 @@ export class ExaminationRequestAttachmentDto {
   @ApiProperty({ example: 1 })
   id: number;
 
-  @ApiProperty({ example: '/uploads/examination-requests/file1.jpg' })
-  file_path: string;
+  @ApiProperty({ example: 'https://res.cloudinary.com/.../image.jpg' })
+  file_url: string;
 
   @ApiProperty({ example: 'xray.jpg' })
   file_name: string;

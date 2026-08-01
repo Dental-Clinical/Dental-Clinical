@@ -10,12 +10,6 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateClinicSectionDto {
-  @ApiProperty({ description: 'Associated subject ID', example: 1 })
-  @IsNotEmpty()
-  @IsInt()
-  @IsPositive()
-  subject_id: number;
-
   @ApiProperty({ description: 'Assigned supervisor ID', example: 1 })
   @IsNotEmpty()
   @IsInt()

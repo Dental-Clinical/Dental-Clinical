@@ -21,6 +21,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TreatmentSession } from 'src/treatment-sessions/treatment-sessions.entity';
 import { ClinicalAppointment } from 'src/clinical-appointments/clinical-appointments.entity';
 import { ClinicalCaseEvaluation } from 'src/clinical-case-evaluation/clinical-case-evaluation.entity';
+import { ClinicalCaseMedia } from 'src/clinical-case-media/clinical-case-media.entity';
 
 @Entity('clinical_cases')
 export class ClinicalCase {
@@ -114,6 +115,13 @@ export class ClinicalCase {
     (evaluation) => evaluation.clinicalCase,
   )
   evaluation: ClinicalCaseEvaluation;
+
+  @ApiPropertyOptional({
+    type: () => ClinicalCaseMedia,
+    description: 'Associated media files',
+  })
+  @OneToMany(() => ClinicalCaseMedia, (media) => media.clinicalCase)
+  media: ClinicalCaseMedia[];
 
   @ApiProperty({
     description: 'Case status',

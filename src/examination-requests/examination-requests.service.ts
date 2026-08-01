@@ -15,6 +15,7 @@ import { unlink } from 'fs/promises';
 import { CoordinatorAvailabilityService } from '../examination-appointments/coordinator-availability.service';
 import { ExaminationAppointmentsService } from 'src/examination-appointments/examination-appointments.service';
 import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class ExaminationRequestsService {
@@ -25,6 +26,7 @@ export class ExaminationRequestsService {
     private readonly patientRepository: Repository<Patient>,
     private readonly CoordinatorAvailabilityService: CoordinatorAvailabilityService,
     private readonly appointmentService: ExaminationAppointmentsService,
+    private readonly cloudinaryService: CloudinaryService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -98,13 +100,18 @@ export class ExaminationRequestsService {
         await manager.save(teeth);
 
         if (files?.length) {
-          const attachments = files.map((file) =>
+          const uploadedImages = await this.cloudinaryService.uploadMany(
+            files,
+            'examination-requests',
+          );
+          const attachments = uploadedImages.map((image, index) =>
             manager.create(ExaminationRequestAttachments, {
               request_id: request.id,
               examination_request: request,
-              file_path: file.path,
-              file_name: file.originalname,
-              mime_type: file.mimetype,
+              fileUrl: image.secure_url,
+              publicId: image.public_id,
+              fileName: files[index].originalname,
+              mimeType: files[index].mimetype,
             }),
           );
           await manager.save(attachments);

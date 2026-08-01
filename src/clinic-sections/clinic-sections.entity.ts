@@ -21,13 +21,8 @@ export class ClinicSections {
   id: number;
 
   @ApiProperty({ type: () => Subject, description: 'Associated subject' })
-  @ManyToOne(() => Subject, (subject) => subject.clinicSections)
-  @JoinColumn({ name: 'subject_id' })
-  subject: Subject;
-
-  @ApiProperty({ description: 'Subject ID', example: 1 })
-  @RelationId('subject')
-  subject_id: number;
+  @OneToMany(() => Subject, (subject) => subject.section)
+  subjects: Subject[];
 
   @ApiProperty({ type: () => Supervisor, description: 'Assigned supervisor' })
   @ManyToOne(() => Supervisor, (supervisor) => supervisor.clinicSections)

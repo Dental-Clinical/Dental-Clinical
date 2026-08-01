@@ -6,10 +6,11 @@ import { Student } from './student.entity';
 import { UserModule } from 'src/users/user.module';
 import { CommonModule } from 'src/common/common.module';
 import { StudentSection } from 'src/student-section/student-section.entity';
+import { Subject } from 'src/subjects/subjects.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Student, StudentSection]),
+    TypeOrmModule.forFeature([Student, StudentSection, Subject]),
     forwardRef(() => UserModule),
     CommonModule,
   ],

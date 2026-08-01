@@ -31,17 +31,21 @@ export class ExaminationRequestAttachments {
   examination_request: ExaminationRequest;
 
   @ApiProperty({
-    description: 'File path',
-    example: 'uploads/examination-requests/image.jpg',
+    description: 'File URL',
+    example: 'https://res.cloudinary.com/.../image.jpg',
   })
-  @Column()
-  file_path: string;
+  @Column({ name: 'file_url' })
+  fileUrl: string;
+
+  @ApiProperty({ description: 'Cloudinary public ID', example: 'abc123' })
+  @Column({ name: 'public_id' })
+  publicId: string;
 
   @ApiProperty({ description: 'File name', example: 'xray-tooth-36.jpg' })
-  @Column()
-  file_name: string;
+  @Column({ name: 'file_name' })
+  fileName: string;
 
   @ApiProperty({ description: 'MIME type', example: 'image/jpeg' })
-  @Column()
-  mime_type: string;
+  @Column({ name: 'mime_type' })
+  mimeType: string;
 }

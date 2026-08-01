@@ -16,12 +16,14 @@ import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.ent
 import { DiagnosisSubmissionStatus } from './enums/diagnosis-submission-status.enum';
 import { DiagnosisImages } from 'src/diagnosis-images/diagnosis-images.entity';
 import { unlink } from 'fs/promises';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class DiagnosisSubmissionService {
   constructor(
     private readonly studentService: StudentService,
     private readonly dataSource: EntityManager,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
   async submitDiagnosis(
     dto: CreateDiagnosisSubmissionDto,
@@ -138,12 +140,17 @@ export class DiagnosisSubmissionService {
         );
         await manager.save(plannedProcedures);
         if (files?.length) {
-          const images = files.map((file) =>
+          const uploadedImages = await this.cloudinaryService.uploadMany(
+            files,
+            'diagnosis-submissions',
+          );
+          const images = uploadedImages.map((image, index) =>
             manager.create(DiagnosisImages, {
               diagnosisSubmission: savedSubmission,
-              file_path: file.path,
-              file_name: file.originalname,
-              mime_type: file.mimetype,
+              publicId: image.public_id,
+              fileUrl: image.secure_url,
+              fileName: files[index].originalname,
+              mimeType: files[index].mimetype,
             }),
           );
           await manager.save(images);

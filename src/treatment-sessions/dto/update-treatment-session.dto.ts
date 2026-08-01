@@ -1,12 +1,17 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsOptional, IsString, Matches } from 'class-validator';
+import { IsDateString, IsOptional, IsString } from 'class-validator';
 
 export class UpdateTreatmentSessionDto {
+  @ApiPropertyOptional({
+    description: 'Treatment title',
+    example: 'Root Canal Treatment',
+  })
   @IsOptional()
   @IsString()
   title?: string;
 
   @ApiPropertyOptional({
+    description: 'Appointment date in YYYY-MM-DD format',
     example: '2026-08-15',
   })
   @IsOptional()
@@ -14,9 +19,10 @@ export class UpdateTreatmentSessionDto {
   appointmentDate?: string;
 
   @ApiPropertyOptional({
+    description: 'Appointment start time in HH:MM format',
     example: '09:00',
   })
   @IsOptional()
-  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/)
+  @IsString()
   appointmentStart?: string;
 }

@@ -46,7 +46,6 @@ export class ExaminationRequestsController {
   @Roles([UserRole.PATIENT])
   @UseInterceptors(
     FileUploadInterceptor({
-      uploadPath: './uploads/examination-requests',
       fieldName: 'attachments',
       maxCount: 5,
     }),

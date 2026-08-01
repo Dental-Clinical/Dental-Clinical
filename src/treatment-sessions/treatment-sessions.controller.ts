@@ -241,4 +241,44 @@ export class TreatmentSessionsController {
       dto,
     );
   }
+  @Patch(':treatmentSessionId')
+  @ApiOperation({
+    summary: '[Student] Update a treatment session details',
+  })
+  @ApiParam({
+    name: 'treatmentSessionId',
+    type: Number,
+    description: 'Treatment session ID',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Treatment session updated successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Student or treatment session not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Treatment session does not belong to this student or is not active.',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'The provided appointment date and start time are the same as the current values.',
+  })
+  @ApiBody({ type: UpdateTreatmentSessionDto })
+  @Roles([UserRole.STUDENT])
+  async updateTreatmentSession(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('treatmentSessionId', ParseIntPipe) treatmentSessionId: number,
+    @Body() dto: UpdateTreatmentSessionDto,
+  ) {
+    return await this.treatmentSessionsService.updateTreatmentSession(
+      user.userId,
+      treatmentSessionId,
+      dto,
+    );
+  }
 }

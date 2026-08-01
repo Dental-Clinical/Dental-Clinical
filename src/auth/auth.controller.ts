@@ -48,7 +48,9 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('register/send-otp')
   @ApiOperation({ summary: 'Send registration OTP' })
-  @ApiOkResponse({ description: 'OTP sent successfully' })
+  @ApiOkResponse({
+    description: 'OTP sent successfully',
+  })
   @ApiResponse({
     status: 429,
     description: 'Please wait before requesting another OTP',

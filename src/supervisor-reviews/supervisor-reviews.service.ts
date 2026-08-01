@@ -39,13 +39,16 @@ export class SupervisorReviewsService {
         },
       });
 
-    return pendingReviews.map((submission) => ({
+    const result = pendingReviews.map((submission) => ({
       submissionId: submission.id,
       clinicalCaseId: submission.clinicalCase.id,
       patientName: submission.clinicalCase.patient.full_name,
       studentName: submission.student.user.full_name,
       procedureCount: submission.plannedProcedures.length,
     }));
+    return {
+      pendingReviews: result,
+    };
   }
   async getPendingReviewDetails(user: AuthenticatedUser, submissionId: number) {
     const supervisor = await this.getSupervisor(user);

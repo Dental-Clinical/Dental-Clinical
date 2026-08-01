@@ -47,8 +47,8 @@ const ENV = process.env.NODE_ENV;
   imports: [
     ConfigModule.forRoot({
       envFilePath: !ENV ? '.env' : `.env.${ENV}`,
-      load: [redisConfig],
       isGlobal: true,
+      load: [redisConfig],
     }),
     HttpModule.register({ global: true }),
     TypeOrmModule.forRoot(connectionSource.options),

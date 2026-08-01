@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClinicalCase } from './clinical-case.entity';
-import { EntityManager, IsNull, Repository } from 'typeorm';
+import { EntityManager, In, IsNull, Repository } from 'typeorm';
 import { CreateClinicalCaseDto } from './dto/create-clinical-case.dto';
 import { InitialExamination } from 'src/initial-examination/initial-examination.entity';
 import { InitialExaminationStatus } from 'src/initial-examination/enums/initial-examination-status.enum';
@@ -167,13 +167,16 @@ export class ClinicalCaseService {
         : null,
     }));
   }
-  async findOne(id: number): Promise<ClinicalCaseDetailsDto> {
+  async findOpenClinicalCaseDetails(
+    id: number,
+  ): Promise<ClinicalCaseDetailsDto> {
     const clinicalCase = await this.clinicalCaseRepository.findOne({
       where: { id },
       relations: {
         patient: true,
         request: true,
         subject: true,
+        clinicalAppointments: true,
         assignedStudent: {
           user: true,
         },
@@ -213,6 +216,80 @@ export class ClinicalCaseService {
             name: clinicalCase.assignedStudent.user.full_name,
           }
         : null,
+    };
+  }
+  async findStudentAssignedClinicalCase(id: number, userId: number) {
+    const student = await this.studentService.findByUserId(userId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    const clinicalCase = await this.clinicalCaseRepository.findOne({
+      where: {
+        id,
+        assignedStudent: { id: student.id },
+        status: ClinicalCaseStatus.ASSIGNED,
+      },
+      relations: {
+        patient: true,
+        request: true,
+        subject: true,
+        clinicalAppointments: {
+          supervisor: true,
+        },
+        assignedStudent: {
+          user: true,
+        },
+      },
+    });
+    if (!clinicalCase) {
+      throw new NotFoundException(
+        'Clinical Case not found for this student or not assigned',
+      );
+    }
+    const nextAppointment = clinicalCase.clinicalAppointments
+      .filter((a) => a.status === ClinicalAppointmentStatus.SCHEDULED)
+      .sort(
+        (a, b) => a.appointmentDate.getTime() - b.appointmentDate.getTime(),
+      )[0];
+    return {
+      id: clinicalCase.id,
+      status: clinicalCase.status,
+      createdAt: clinicalCase.createdAt,
+
+      patient: {
+        id: clinicalCase.patient.id,
+        fullName: clinicalCase.patient.full_name,
+        phone: clinicalCase.patient.phone,
+        medicalHistory: clinicalCase.patient.medical_history,
+        allergies: clinicalCase.patient.allergies,
+        currentMedications: clinicalCase.patient.current_medications,
+      },
+
+      patientRequest: {
+        id: clinicalCase.request.id,
+        chiefComplaint: clinicalCase.request.chief_complaint,
+        symptoms: clinicalCase.request.symptoms,
+      },
+
+      subject: {
+        id: clinicalCase.subject.id,
+        name: clinicalCase.subject.name,
+      },
+
+      assignedStudent: {
+        id: clinicalCase.assignedStudent.id,
+        name: clinicalCase.assignedStudent.user.full_name,
+      },
+      assignedSupervisor: {
+        id: clinicalCase.assignedSupervisor.id,
+        name: clinicalCase.assignedSupervisor.user.full_name,
+      },
+      nextAppointment: {
+        id: nextAppointment?.id,
+        appointmentDate: nextAppointment?.appointmentDate,
+        startTime: nextAppointment?.appointmentStart,
+        endTime: nextAppointment?.appointmentEnd,
+      },
     };
   }
   async findStudentCaseDetails(id: number, userId: number) {
@@ -366,7 +443,8 @@ export class ClinicalCaseService {
         notes: session.supervisorNotes,
       }));
   }
-  async findStudentCases(userId: number): Promise<StudentCasesSummaryDto[]> {
+  async findStudentCases(userId: number): Promise<StudentCasesSummaryDto> {
+    // approved
     const student = await this.studentService.findByUserId(userId);
     if (!student) {
       throw new NotFoundException('Student not found');
@@ -381,15 +459,19 @@ export class ClinicalCaseService {
       },
     });
 
-    return clinicalCases.map((clinicalCase) => {
+    const cases = clinicalCases.map((clinicalCase) => {
       return {
         id: clinicalCase.id,
         patientName: clinicalCase.patient.full_name,
         subjectName: clinicalCase.subject.name,
         status: clinicalCase.status,
-        sessionCount: clinicalCase.treatmentSessions.length,
+        sessionCount:
+          clinicalCase.status !== ClinicalCaseStatus.ASSIGNED
+            ? clinicalCase.treatmentSessions.length
+            : null,
       };
     });
+    return { cases };
   }
   async updateStatus(id: number, dto: UpdateClinicalCaseStatusDto) {
     const clinicalCase = await this.clinicalCaseRepository.findOne({
@@ -402,12 +484,13 @@ export class ClinicalCaseService {
     clinicalCase.status = dto.status;
     return await this.clinicalCaseRepository.save(clinicalCase);
   }
-  async findOpenCases(userId: number): Promise<OpenCasesSummary[]> {
+  async findOpenCases(userId: number): Promise<OpenCasesSummary> {
+    // approved
     const studyYear = await this.studentService.getCurrentStudyYear(userId);
 
     const openCases = await this.clinicalCaseRepository.find({
       where: {
-        status: ClinicalCaseStatus.OPEN,
+        status: In([ClinicalCaseStatus.OPEN, ClinicalCaseStatus.ASSIGNED]),
         assignedStudent: IsNull(),
         initialExamination: {
           coordinator: {
@@ -428,7 +511,7 @@ export class ClinicalCaseService {
         request: true,
       },
     });
-    return openCases.map((clinicalCase) => {
+    const result = openCases.map((clinicalCase) => {
       return {
         id: clinicalCase.id,
         patient: clinicalCase.patient.full_name,
@@ -437,6 +520,9 @@ export class ClinicalCaseService {
         chiefComplaint: clinicalCase.request.chief_complaint,
       };
     });
+    return {
+      openCases: result,
+    };
   }
   async findBySubject(subjectId: number) {
     return await this.clinicalCaseRepository.find({

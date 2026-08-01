@@ -27,7 +27,7 @@ import { UpdatePatientMedicalRecordsDto } from './dto/update-patient-medical-rec
 @ApiBearerAuth('JWT-auth')
 @Controller('patients')
 export class PatientsController {
-  constructor(private readonly patientService: PatientsService) {}
+  constructor(private readonly patientService: PatientsService) { }
 
   @Post()
   @Roles([UserRole.STUDENT])
@@ -82,4 +82,17 @@ export class PatientsController {
   ) {
     return await this.patientService.updateMedicalRecords(id, dto);
   }
+
+  @Get('all-patients')
+  @Roles([UserRole.COORDINATOR, UserRole.ADMIN])
+  @ApiOperation({ summary: '[Coordinator, Admin] Get all patients' })
+  @ApiOkResponse({
+    type: PatientResponseDto,
+    isArray: true,
+    description: 'List of all patients',
+  })
+  async getAllPatients() {
+    return await this.patientService.getAllPatients()
+  }
+
 }

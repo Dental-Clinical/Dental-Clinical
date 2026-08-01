@@ -20,7 +20,7 @@ export class PatientsService {
     private readonly patientRepository: Repository<Patient>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
   public async createPatient(patient: CreatePatientDto): Promise<Patient> {
     patient.phone = this.normalizePhoneNumber(patient.phone);
     const existingPatient = await this.findPatientByPhone(patient.phone);
@@ -161,5 +161,9 @@ export class PatientsService {
       message: 'Medical records updated successfully',
       patient: savedPatient,
     };
+  }
+
+  async getAllPatients() {
+    return await this.patientRepository.find()
   }
 }

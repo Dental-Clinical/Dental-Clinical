@@ -37,7 +37,7 @@ import {
 @ApiBearerAuth('JWT-auth')
 @Controller('clinic-sections')
 export class ClinicSectionsController {
-  constructor(private readonly clinicSectionsService: ClinicSectionsService) {}
+  constructor(private readonly clinicSectionsService: ClinicSectionsService) { }
 
   @Post()
   @Roles([UserRole.ADMIN])
@@ -58,8 +58,8 @@ export class ClinicSectionsController {
   }
 
   @Get()
-  @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: '[Admin] Get a paginated list of clinic sections' })
+  @Roles([UserRole.ADMIN, UserRole.COORDINATOR])
+  @ApiOperation({ summary: '[Admin, COORDINATOR] Get a paginated list of clinic sections' })
   @ApiOkResponse({
     type: GetClinicSectionsResponseDto,
     description: 'Clinic sections retrieved successfully',

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -28,6 +29,8 @@ import { SupervisorService } from 'src/supervisors/supervisor.service';
 import { ReviewTreatmentSessionDto } from './dto/review-treatment-session.dto';
 import { DateTimeUtils } from 'src/utils/date-time.utils';
 import { UpdateTreatmentSessionDto } from './dto/update-treatment-session.dto';
+import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
+import { use } from 'passport';
 
 @Injectable()
 export class TreatmentSessionsService {
@@ -51,7 +54,7 @@ export class TreatmentSessionsService {
     private readonly supervisorAvailabilityService: SupervisorAvailabilityService,
     @InjectRepository(Material)
     private readonly materialRepository: Repository<Material>,
-  ) {}
+  ) { }
   public async createTreatmentSession(
     userId: number,
     dto: CreateTreatmentSessionDto,
@@ -924,5 +927,44 @@ export class TreatmentSessionsService {
         status: ClinicalCaseStatus.AWAITING_CASE_REVIEW,
       });
     }
+  }
+
+  async getTreatmentSession(user: AuthenticatedUser, id: number) {
+    const treatmentSession = await this.treatmentSessionRepository.findOne({
+      where: {
+        id,
+        clinicalCase: { patient: { user: { id: user.userId } } },
+      },
+      relations: {
+        clinicalAppointment: true,
+        sessionProcedures: true,
+        clinicalCase: { patient: true },
+      },
+    });
+
+    if (!treatmentSession) {
+      const exists = await this.treatmentSessionRepository.exists({
+        where: { id },
+      });
+      if (exists) {
+        throw new ForbiddenException("You can't access this treatment session");
+      }
+      throw new NotFoundException('Treatment Session Not Found');
+    }
+
+    return treatmentSession;
+  }
+
+  async getAllTreatmentSessions(user: AuthenticatedUser) {
+    return await this.treatmentSessionRepository.find({
+      where: {
+        clinicalCase: { patient: { user: { id: user.userId } } },
+      },
+      relations: {
+        clinicalAppointment: true,
+        clinicalCase: true,
+      },
+      order: { createdAt: 'DESC' },
+    });
   }
 }

@@ -6,7 +6,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClinicalAppointment } from './clinical-appointments.entity';
-import { DataSource, EntityManager, IsNull, Repository } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  IsNull,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { CreateStudentClinicalAppointmentDto } from './dto/create-student-clinical-appointment.dto';
 import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 import { Student } from 'src/students/student.entity';
@@ -36,6 +43,7 @@ export class ClinicalAppointmentsService {
     private readonly dataSource: DataSource,
     private readonly studentService: StudentService,
     private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
+    @InjectRepository(Patient) readonly patientRepository: Repository<Patient>,
   ) {}
 
   async createStudentClinicalAppointment(
@@ -362,5 +370,112 @@ export class ClinicalAppointmentsService {
 
     appointment.status = ClinicalAppointmentStatus.CANCELLED;
     return appointment;
+  }
+
+  async getUpcomingAppointments(user: AuthenticatedUser) {
+    const patient = await this.patientRepository.findOne({
+      where: { user: { id: user.userId } },
+    });
+    if (!patient) {
+      throw new NotFoundException('Patient Not Found');
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const appointments = await this.clinicalAppointmentRepository.find({
+      where: {
+        patient: { id: patient.id },
+        status: ClinicalAppointmentStatus.SCHEDULED,
+        appointmentDate: MoreThanOrEqual(today),
+      },
+      relations: {
+        clinicalCase: true,
+        student: { user: true },
+        supervisor: { user: true },
+      },
+      order: {
+        appointmentDate: 'ASC',
+        appointmentStart: 'ASC',
+      },
+    });
+
+    const now = new Date();
+    const upcoming = appointments
+      .filter(
+        (appointment) =>
+          this.combineDateAndTime(
+            appointment.appointmentDate,
+            appointment.appointmentStart,
+          ) > now,
+      )
+      .map((appointment) => ({
+        appointmentId: appointment.id,
+        clinicalCaseId: appointment.clinicalCase?.id,
+        appointmentDate: appointment.appointmentDate,
+        appointmentStart: appointment.appointmentStart,
+        appointmentEnd: appointment.appointmentEnd,
+        studentName: appointment.student?.user?.full_name,
+        supervisorName: appointment.supervisor?.user?.full_name,
+        status: appointment.status,
+      }));
+
+    return {
+      message: 'Upcoming appointments retrieved successfully',
+      data: upcoming,
+    };
+  }
+
+  async getPastAppointments(user: AuthenticatedUser) {
+    const patient = await this.patientRepository.findOne({
+      where: { user: { id: user.userId } },
+    });
+    if (!patient) {
+      throw new NotFoundException('Patient Not Found');
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const appointments = await this.clinicalAppointmentRepository.find({
+      where: {
+        patient: { id: patient.id },
+        appointmentDate: LessThanOrEqual(today),
+      },
+      relations: {
+        clinicalCase: true,
+        student: { user: true },
+        supervisor: { user: true },
+      },
+      order: {
+        appointmentDate: 'DESC',
+        appointmentStart: 'DESC',
+      },
+    });
+
+    const now = new Date();
+    const past = appointments
+      .filter(
+        (appointment) =>
+          this.combineDateAndTime(
+            appointment.appointmentDate,
+            appointment.appointmentEnd,
+          ) <= now,
+      )
+      .map((appointment) => ({
+        appointmentId: appointment.id,
+        clinicalCaseId: appointment.clinicalCase?.id,
+        appointmentDate: appointment.appointmentDate,
+        appointmentStart: appointment.appointmentStart,
+        appointmentEnd: appointment.appointmentEnd,
+        studentName: appointment.student?.user?.full_name,
+        supervisorName: appointment.supervisor?.user?.full_name,
+        status: appointment.status,
+      }));
+
+    return {
+      message: 'Past appointments retrieved successfully',
+      data: past,
+    };
   }
 }

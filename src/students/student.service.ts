@@ -16,6 +16,7 @@ import { PasswordService } from 'src/common/services/password.service';
 import * as xlsx from 'xlsx';
 import { StudentSection } from 'src/student-section/student-section.entity';
 import { Subject } from '../subjects/subjects.entity';
+import { GetStudentsQueryDto } from './dto/get-students-query.dto';
 
 @Injectable()
 export class StudentService {
@@ -29,7 +30,7 @@ export class StudentService {
     private readonly studentSectionRepository: Repository<StudentSection>,
     @InjectRepository(Subject)
     private readonly subjectRepository: Repository<Subject>,
-  ) {}
+  ) { }
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
       where: { university_id },
@@ -206,5 +207,82 @@ export class StudentService {
         university_id: universityId,
       });
     }
+  }
+
+  async getAllStudents(dto: GetStudentsQueryDto) {
+    const qb = this.studentRepository
+      .createQueryBuilder('student')
+      .leftJoinAndSelect('student.user', 'user')
+      .leftJoinAndSelect(
+        'student.studentAcademicYears',
+        'enrollment',
+        'enrollment.isCurrent = true',
+      )
+      .leftJoinAndSelect('enrollment.studyYear', 'studyYear');
+
+    if (dto.search) {
+      qb.andWhere(
+        '(user.full_name ILIKE :search OR user.father_name ILIKE :search OR student.university_id ILIKE :search OR user.email ILIKE :search OR user.phone ILIKE :search)',
+        { search: `%${dto.search}%` },
+      );
+    }
+
+    if (dto.study_year_id !== undefined) {
+      qb.andWhere('enrollment.study_year_id = :studyYearId', {
+        studyYearId: dto.study_year_id,
+      });
+    }
+
+    if (dto.academic_year_id !== undefined) {
+      qb.andWhere('enrollment.academic_year_id = :academicYearId', {
+        academicYearId: dto.academic_year_id,
+      });
+    }
+
+    if (dto.is_active !== undefined) {
+      qb.andWhere('user.is_active = :is_active', { is_active: dto.is_active });
+    }
+
+    qb.orderBy('student.created_at', 'DESC')
+      .skip((dto.page - 1) * dto.limit)
+      .take(dto.limit);
+
+    const [students, total] = await qb.getManyAndCount();
+
+    const data = students.map((student) => {
+      const currentEnrollment = student.studentAcademicYears?.find(
+        (enrollment) => enrollment.isCurrent,
+      );
+      return {
+        id: student.id,
+        university_id: student.university_id,
+        created_at: student.created_at,
+        user: {
+          id: student.user.id,
+          full_name: student.user.full_name,
+          father_name: student.user.father_name,
+          email: student.user.email,
+          phone: student.user.phone,
+          is_active: student.user.is_active,
+        },
+        studyYear: currentEnrollment
+          ? {
+              id: currentEnrollment.studyYear.id,
+              name: currentEnrollment.studyYear.name,
+              level: currentEnrollment.studyYear.level,
+            }
+          : null,
+      };
+    });
+
+    return {
+      data,
+      meta: {
+        page: dto.page,
+        limit: dto.limit,
+        total,
+        totalPages: Math.ceil(total / dto.limit),
+      },
+    };
   }
 }

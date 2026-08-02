@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { UpdatePatientProfileDto } from './dto/update-patient-profile.dto';
+import { UpdatePatientMedicalRecordsDto } from './dto/update-patient-medical-records.dto';
 import { User } from 'src/users/user.entity';
 import { log } from 'console';
 
@@ -93,7 +94,43 @@ export class PatientsService {
       throw new NotFoundException('Patient not found');
     }
 
-    Object.assign(patient, updatePatientDto);
+    if (updatePatientDto.full_name !== undefined) {
+      patient.full_name = updatePatientDto.full_name;
+    }
+
+    if (updatePatientDto.phone !== undefined) {
+      const phone = this.normalizePhoneNumber(updatePatientDto.phone);
+      const existingPatient = await this.findPatientByPhone(phone);
+
+      if (existingPatient && existingPatient.id !== patient.id) {
+        throw new HttpException(
+          `Patient with phone ${phone} already exists`,
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      patient.phone = phone;
+    }
+
+    if (updatePatientDto.dateOfBirth !== undefined) {
+      patient.dateOfBirth = new Date(updatePatientDto.dateOfBirth);
+    }
+
+    if (updatePatientDto.gender !== undefined) {
+      patient.gender = updatePatientDto.gender;
+    }
+
+    if (updatePatientDto.medical_history !== undefined) {
+      patient.medical_history = updatePatientDto.medical_history;
+    }
+
+    if (updatePatientDto.current_medications !== undefined) {
+      patient.current_medications = updatePatientDto.current_medications;
+    }
+
+    if (updatePatientDto.allergies !== undefined) {
+      patient.allergies = updatePatientDto.allergies;
+    }
 
     const savedPatient = await this.patientRepository.save(patient);
 
@@ -133,7 +170,7 @@ export class PatientsService {
   }
   public async updateMedicalRecords(
     patientId: number,
-    updatePatientDto: UpdatePatientProfileDto,
+    updatePatientDto: UpdatePatientMedicalRecordsDto,
   ) {
     const patient = await this.patientRepository.findOne({
       where: { id: patientId },

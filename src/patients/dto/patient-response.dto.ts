@@ -10,6 +10,12 @@ export class PatientResponseDto {
   @ApiProperty({ example: '963912345678' })
   phone: string;
 
+  @ApiPropertyOptional({ example: '1990-01-01' })
+  dateOfBirth?: Date;
+
+  @ApiPropertyOptional({ example: 'female' })
+  gender?: string;
+
   @ApiProperty({ example: false })
   is_walkin: boolean;
 

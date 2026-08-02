@@ -55,11 +55,16 @@ export class PatientsController {
   @Patch('me')
   @Roles([UserRole.PATIENT])
   @ApiOperation({ summary: '[Patient] Update my profile' })
+  @ApiBody({ type: UpdatePatientProfileDto })
   @ApiOkResponse({
     type: UpdatePatientProfileResponseDto,
     description: 'Profile updated',
   })
   @ApiResponse({ status: 404, description: 'Patient not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Phone number already used by another patient',
+  })
   async updatePatientProfile(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdatePatientProfileDto,

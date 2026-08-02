@@ -14,9 +14,20 @@ import { GetUserQueryDto } from './dto/get-user-query.dto';
 export class UserService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
   public async getUsers(dto: GetUserQueryDto) {
-    const qb = this.userRepository.createQueryBuilder('user');
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.full_name',
+        'user.father_name',
+        'user.email',
+        'user.phone',
+        'user.role',
+        'user.is_active',
+        'user.created_at',
+      ]);
 
     if (dto.role) {
       qb.andWhere('user.role = :role', { role: dto.role });
@@ -24,26 +35,23 @@ export class UserService {
 
     if (dto.search) {
       qb.andWhere(
-        '(user.full_name ILIKE :search OR user.father_name ILIKE :search OR user.email ILIKE :search OR user.phone ILIKE :search)',
+        '(user.full_name ILIKE :search OR user.email ILIKE :search OR user.phone ILIKE :search)',
         { search: `%${dto.search}%` },
       );
     }
 
     if (dto.is_active !== undefined) {
-      qb.andWhere('user.is_active = :is_active', { is_active: dto.is_active });
+      qb.andWhere('user.is_active = :is_active', {
+        is_active: dto.is_active,
+      });
     }
-    qb.skip((dto.page - 1) * dto.limit).take(dto.limit);
-    qb.select([
-      'user.id',
-      'user.full_name',
-      'user.father_name',
-      'user.email',
-      'user.phone',
-      'user.role',
-      'user.is_active',
-      'user.created_at',
-    ]);
-    const [users, total] = await qb.select().getManyAndCount();
+
+    qb.orderBy('user.created_at', 'DESC')
+      .skip((dto.page - 1) * dto.limit)
+      .take(dto.limit);
+
+    const [users, total] = await qb.getManyAndCount();
+
     return {
       data: users,
       meta: {

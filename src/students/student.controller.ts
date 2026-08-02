@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -24,12 +26,25 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import 'multer';
 import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { GetStudentsQueryDto } from './dto/get-students-query.dto';
+import { PaginatedStudentsResponseDto } from './dto/student-response.dto';
 
 @ApiTags('Students')
 @ApiBearerAuth('JWT-auth')
 @Controller('students')
 export class StudentController {
   constructor(private readonly studentService: StudentService) {}
+
+  @Get()
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get all students (paginated)' })
+  @ApiOkResponse({
+    type: PaginatedStudentsResponseDto,
+    description: 'Paginated list of students',
+  })
+  async getAllStudents(@Query() query: GetStudentsQueryDto) {
+    return await this.studentService.getAllStudents(query);
+  }
 
   @Post()
   @Roles([UserRole.ADMIN])

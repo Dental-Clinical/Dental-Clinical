@@ -23,7 +23,7 @@ import { UpdateUserStatusResponseDto } from './dto/update-user-status-response.d
 @ApiBearerAuth('JWT-auth')
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get()
   @Roles([UserRole.ADMIN])

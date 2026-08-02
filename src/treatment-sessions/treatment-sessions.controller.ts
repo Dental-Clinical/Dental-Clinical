@@ -38,7 +38,7 @@ import { UpdateTreatmentSessionDto } from './dto/update-treatment-session.dto';
 export class TreatmentSessionsController {
   constructor(
     private readonly treatmentSessionsService: TreatmentSessionsService,
-  ) {}
+  ) { }
 
   @Post()
   @Roles([UserRole.STUDENT])
@@ -279,6 +279,50 @@ export class TreatmentSessionsController {
       user.userId,
       treatmentSessionId,
       dto,
+    );
+  }
+
+  @Get()
+  @Roles([UserRole.PATIENT])
+  @ApiOperation({
+    summary: '[Patient] List all of their own treatment sessions',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Treatment sessions retrieved successfully, newest first, each with its appointment and clinical case',
+  })
+  async getAllTreatmentSessions(@CurrentUser() user: AuthenticatedUser) {
+    return await this.treatmentSessionsService.getAllTreatmentSessions(user);
+  }
+
+  @Get(':treatmentSessionId')
+  @Roles([UserRole.PATIENT])
+  @ApiOperation({
+    summary: '[Patient] Get one of their own treatment sessions',
+  })
+  @ApiParam({
+    name: 'treatmentSessionId',
+    type: Number,
+    description: 'Treatment session ID',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Treatment session retrieved successfully, including its appointment, session procedures and clinical case',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Treatment session does not belong to this patient',
+  })
+  @ApiResponse({ status: 404, description: 'Treatment session not found' })
+  async getTreatmentSession(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('treatmentSessionId', ParseIntPipe) treatmentSessionId: number,
+  ) {
+    return await this.treatmentSessionsService.getTreatmentSession(
+      user,
+      treatmentSessionId,
     );
   }
 }

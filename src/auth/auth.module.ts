@@ -14,6 +14,7 @@ import { UserModule } from 'src/users/user.module';
 import { PatientsModule } from 'src/patients/patients.module';
 import { SessionsModule } from 'src/sessions/sessions.module';
 import { StudentModule } from 'src/students/student.module';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { StudentModule } from 'src/students/student.module';
     PatientsModule,
     SessionsModule,
     StudentModule,
+    CloudinaryModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, OtpService, WhatsappService],

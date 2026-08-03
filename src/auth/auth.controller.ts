@@ -5,6 +5,8 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -26,11 +28,12 @@ import {
   StaffLoginResponseDto,
 } from './dto/auth-response.dto';
 import type { AuthenticatedUser } from './interfaces/authenticated-user.interface';
+import { FileUploadInterceptor } from 'src/common/interceptors/files.interceptor';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @Get('me')
   @HttpCode(HttpStatus.OK)
@@ -75,6 +78,9 @@ export class AuthController {
   @AllowAnonymous()
   @HttpCode(HttpStatus.OK)
   @Post('register')
+  @UseInterceptors(
+    FileUploadInterceptor({ fieldName: 'profilePicture', maxCount: 1 }),
+  )
   @ApiOperation({ summary: 'Complete patient registration' })
   @ApiOkResponse({
     type: AuthResponseDto,
@@ -85,8 +91,11 @@ export class AuthController {
     description: 'Invalid or expired registration token',
   })
   @ApiResponse({ status: 409, description: 'Patient already registered' })
-  public async register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  public async register(
+    @Body() dto: RegisterDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.authService.register(dto, files);
   }
 
   @AllowAnonymous()

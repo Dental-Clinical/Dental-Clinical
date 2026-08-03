@@ -60,7 +60,7 @@ const ENV = process.env.NODE_ENV;
         store: await redisStore({
           url: configService.get('redis.url'),
           // host: configService.get('redis.host'),
-          // port: configService.get('redis.port'),
+          //          port: configService.get('redis.port'),
         }),
         ttl: configService.get('redis.ttl'),
         isGlobal: true,

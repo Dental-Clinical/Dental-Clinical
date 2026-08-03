@@ -30,7 +30,11 @@ import { ReviewTreatmentSessionDto } from './dto/review-treatment-session.dto';
 import { DateTimeUtils } from 'src/utils/date-time.utils';
 import { UpdateTreatmentSessionDto } from './dto/update-treatment-session.dto';
 import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
-import { use } from 'passport';
+import {
+  PatientSessionDetailsDto,
+  PatientSessionsSummaryDto,
+  PatientSessionSummaryDto,
+} from './dto/patient-sessions.dto';
 
 @Injectable()
 export class TreatmentSessionsService {
@@ -929,7 +933,10 @@ export class TreatmentSessionsService {
     }
   }
 
-  async getTreatmentSession(user: AuthenticatedUser, id: number) {
+  async getTreatmentSession(
+    user: AuthenticatedUser,
+    id: number,
+  ): Promise<PatientSessionDetailsDto> {
     const treatmentSession = await this.treatmentSessionRepository.findOne({
       where: {
         id,
@@ -937,8 +944,14 @@ export class TreatmentSessionsService {
       },
       relations: {
         clinicalAppointment: true,
-        sessionProcedures: true,
-        clinicalCase: { patient: true },
+        sessionProcedures: {
+          plannedProcedure: { subjectProcedure: true },
+        },
+        clinicalCase: {
+          subject: true,
+          assignedStudent: { user: true },
+          assignedSupervisor: { user: true },
+        },
       },
     });
 
@@ -952,19 +965,73 @@ export class TreatmentSessionsService {
       throw new NotFoundException('Treatment Session Not Found');
     }
 
-    return treatmentSession;
+    const appointment = treatmentSession.clinicalAppointment;
+    return {
+      ...this.buildPatientSessionSummary(treatmentSession),
+      endTime: appointment?.appointmentEnd ?? null,
+      appointmentStatus: appointment?.status ?? null,
+      startedAt: treatmentSession.startedAt ?? null,
+      completedAt: treatmentSession.completedAt ?? null,
+      procedures: treatmentSession.sessionProcedures.map(
+        (sessionProcedure) => ({
+          id: sessionProcedure.plannedProcedure.id,
+          name: sessionProcedure.plannedProcedure.subjectProcedure.name,
+          tooth: sessionProcedure.plannedProcedure.toothNumber,
+          status: sessionProcedure.plannedProcedure.status,
+        }),
+      ),
+    };
   }
 
-  async getAllTreatmentSessions(user: AuthenticatedUser) {
-    return await this.treatmentSessionRepository.find({
+  /**
+   * The patient's own treatment sessions. Scoped by the user behind the patient
+   * record, the same ownership rule the details route uses. A patient with no
+   * sessions yet is a normal state, so this returns an empty list.
+   */
+  async getAllTreatmentSessions(
+    user: AuthenticatedUser,
+  ): Promise<PatientSessionsSummaryDto> {
+    const treatmentSessions = await this.treatmentSessionRepository.find({
       where: {
         clinicalCase: { patient: { user: { id: user.userId } } },
       },
       relations: {
         clinicalAppointment: true,
-        clinicalCase: true,
+        clinicalCase: {
+          subject: true,
+          assignedStudent: { user: true },
+          assignedSupervisor: { user: true },
+        },
       },
       order: { createdAt: 'DESC' },
     });
+
+    return {
+      sessions: treatmentSessions.map((treatmentSession) =>
+        this.buildPatientSessionSummary(treatmentSession),
+      ),
+    };
+  }
+
+  private buildPatientSessionSummary(
+    treatmentSession: TreatmentSession,
+  ): PatientSessionSummaryDto {
+    const clinicalCase = treatmentSession.clinicalCase;
+    const appointment = treatmentSession.clinicalAppointment;
+
+    return {
+      id: treatmentSession.id,
+      title: treatmentSession.title,
+      status: treatmentSession.status,
+      caseId: clinicalCase.id,
+      subject: clinicalCase.subject.name,
+      treatingStudent: clinicalCase.assignedStudent?.user?.full_name ?? null,
+      supervisor: clinicalCase.assignedSupervisor?.user?.full_name ?? null,
+      appointmentDate: appointment
+        ? DateTimeUtils.toDateString(appointment.appointmentDate)
+        : null,
+      startTime: appointment?.appointmentStart ?? null,
+      createdAt: treatmentSession.createdAt,
+    };
   }
 }

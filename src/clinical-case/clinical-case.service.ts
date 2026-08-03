@@ -412,12 +412,10 @@ export class ClinicalCaseService {
     };
   }
   /**
-   * Normalizes a Postgres `date` column to a 'YYYY-MM-DD' string. The driver
-   * already returns one despite the entity typing it as `Date`; the instanceof
-   * branch keeps this correct if that ever changes.
+   * Normalizes a Postgres `date` column to a 'YYYY-MM-DD' string.
    */
   private toDateString(value: Date | string): string {
-    return value instanceof Date ? value.toISOString().slice(0, 10) : value;
+    return DateTimeUtils.toDateString(value);
   }
   /**
    * The earliest still-scheduled appointment, or undefined if there is none.

@@ -7,10 +7,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { SessionMaterialDto } from './session-material.dto';
-import {
-  ApiProperty,
-  ApiPropertyOptional,
-} from 'node_modules/@nestjs/swagger/dist/decorators/api-property.decorator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { PerformedProceduresDto } from './performed-procedures.dto';
 

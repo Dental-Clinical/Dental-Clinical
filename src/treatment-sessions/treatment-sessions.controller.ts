@@ -31,6 +31,10 @@ import {
 } from './dto/treatment-session-response.dto';
 import { ReviewTreatmentSessionDto } from './dto/review-treatment-session.dto';
 import { UpdateTreatmentSessionDto } from './dto/update-treatment-session.dto';
+import {
+  PatientSessionDetailsDto,
+  PatientSessionsSummaryDto,
+} from './dto/patient-sessions.dto';
 
 @ApiTags('Treatment Sessions')
 @ApiBearerAuth('JWT-auth')
@@ -287,8 +291,8 @@ export class TreatmentSessionsController {
   @ApiOperation({
     summary: '[Patient] List all of their own treatment sessions',
   })
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponse({
+    type: PatientSessionsSummaryDto,
     description:
       'Treatment sessions retrieved successfully, newest first, each with its appointment and clinical case',
   })
@@ -306,8 +310,8 @@ export class TreatmentSessionsController {
     type: Number,
     description: 'Treatment session ID',
   })
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponse({
+    type: PatientSessionDetailsDto,
     description:
       'Treatment session retrieved successfully, including its appointment, session procedures and clinical case',
   })

@@ -1,11 +1,6 @@
 import { ApiPropertyOptional, IntersectionType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsDateString,
-  IsInt,
-  IsOptional,
-  IsPositive,
-} from 'class-validator';
+import { IsDateString, IsInt, IsOptional, IsPositive } from 'class-validator';
 import { PaginationDto } from 'src/pagination/dto/pagination.dto';
 
 class GetClinicalCaseEvaluationsBaseDto {

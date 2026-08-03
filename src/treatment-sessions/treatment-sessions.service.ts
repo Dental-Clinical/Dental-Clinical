@@ -54,7 +54,7 @@ export class TreatmentSessionsService {
     private readonly supervisorAvailabilityService: SupervisorAvailabilityService,
     @InjectRepository(Material)
     private readonly materialRepository: Repository<Material>,
-  ) { }
+  ) {}
   public async createTreatmentSession(
     userId: number,
     dto: CreateTreatmentSessionDto,

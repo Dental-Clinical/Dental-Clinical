@@ -27,7 +27,7 @@ import { UpdatePatientMedicalRecordsDto } from './dto/update-patient-medical-rec
 @ApiBearerAuth('JWT-auth')
 @Controller('patients')
 export class PatientsController {
-  constructor(private readonly patientService: PatientsService) { }
+  constructor(private readonly patientService: PatientsService) {}
 
   @Post()
   @Roles([UserRole.STUDENT])
@@ -97,7 +97,6 @@ export class PatientsController {
     description: 'List of all patients',
   })
   async getAllPatients() {
-    return await this.patientService.getAllPatients()
+    return await this.patientService.getAllPatients();
   }
-
 }

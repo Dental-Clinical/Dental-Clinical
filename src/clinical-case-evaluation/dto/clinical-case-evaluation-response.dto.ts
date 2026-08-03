@@ -42,7 +42,10 @@ export class StudentClinicalCaseEvaluationItemDto {
   @ApiProperty({ example: 1 })
   clinicalCaseId: number;
 
-  @ApiProperty({ enum: ClinicalCaseStatus, example: ClinicalCaseStatus.COMPLETED })
+  @ApiProperty({
+    enum: ClinicalCaseStatus,
+    example: ClinicalCaseStatus.COMPLETED,
+  })
   clinicalCaseStatus: ClinicalCaseStatus;
 
   @ApiProperty({ example: 1 })

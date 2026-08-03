@@ -18,6 +18,8 @@ import { FilterClinicalCasesDto } from './dto/get-filtered-clinical-cases.dto';
 import { OpenCasesSummary } from './dto/open-clinical-cases-summary.dto';
 import { StudentCasesSummaryDto } from './dto/student-cases-summary.dto';
 import { StudentAssignedCaseDetailsDto } from './dto/student-assigned-case-details.dto';
+import { PatientCaseDetailsDto } from './dto/patient-case-details.dto';
+import { SupervisorCaseDetailsDto } from './dto/supervisor-case-details.dto';
 
 @ApiTags('Clinical Cases')
 @ApiBearerAuth('JWT-auth')
@@ -100,6 +102,10 @@ export class ClinicalCaseController {
     type: StudentAssignedCaseDetailsDto,
     description: 'Details of a clinical case',
   })
+  @ApiResponse({
+    status: 403,
+    description: 'Clinical Case is assigned to another student',
+  })
   @ApiResponse({ status: 404, description: 'Clinical Case not found' })
   @Roles([UserRole.STUDENT])
   async getStudentClinicalCase(
@@ -107,6 +113,55 @@ export class ClinicalCaseController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return await this.clinicalCaseService.findStudentCaseDetails(
+      id,
+      user.userId,
+    );
+  }
+  @Get('patient/:id')
+  @ApiOperation({
+    summary: "[Patient] Get one of the current patient's clinical cases by ID",
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Clinical case ID' })
+  @ApiOkResponse({
+    type: PatientCaseDetailsDto,
+    description: 'Details of a clinical case',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Clinical Case belongs to another patient',
+  })
+  @ApiResponse({ status: 404, description: 'Clinical Case not found' })
+  @Roles([UserRole.PATIENT])
+  async getPatientClinicalCase(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.clinicalCaseService.findPatientCaseDetails(
+      id,
+      user.userId,
+    );
+  }
+  @Get('supervisor/:id')
+  @ApiOperation({
+    summary:
+      '[Supervisor] Get a clinical case supervised by the current supervisor',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Clinical case ID' })
+  @ApiOkResponse({
+    type: SupervisorCaseDetailsDto,
+    description: 'Details of a clinical case',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Clinical Case is supervised by another supervisor',
+  })
+  @ApiResponse({ status: 404, description: 'Clinical Case not found' })
+  @Roles([UserRole.SUPERVISOR])
+  async getSupervisorClinicalCase(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.clinicalCaseService.findSupervisorCaseDetails(
       id,
       user.userId,
     );

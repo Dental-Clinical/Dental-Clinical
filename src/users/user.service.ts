@@ -14,7 +14,7 @@ import { GetUserQueryDto } from './dto/get-user-query.dto';
 export class UserService {
   constructor(
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-  ) { }
+  ) {}
   public async getUsers(dto: GetUserQueryDto) {
     const qb = this.userRepository
       .createQueryBuilder('user')

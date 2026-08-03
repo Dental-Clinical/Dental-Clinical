@@ -16,6 +16,6 @@ import { StudentProgressModule } from 'src/student-progress/student-progress.mod
     StudentProgressModule,
   ],
   controllers: [ClinicalCaseEvaluationController],
-  providers: [ClinicalCaseEvaluationService]
+  providers: [ClinicalCaseEvaluationService],
 })
 export class ClinicalCaseEvaluationModule {}

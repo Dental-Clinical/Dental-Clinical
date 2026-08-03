@@ -1,6 +1,6 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsEnum, IsOptional, IsString } from "class-validator";
-import { Grade } from "../enums/grade.enum";
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { Grade } from '../enums/grade.enum';
 
 export class CreateClinicalCaseEvaluationDto {
   @ApiProperty({
@@ -9,7 +9,7 @@ export class CreateClinicalCaseEvaluationDto {
     example: Grade.A,
   })
   @IsEnum(Grade)
-  grade: Grade
+  grade: Grade;
 
   @ApiPropertyOptional({
     description: 'Supervisor comments on the case',
@@ -17,5 +17,5 @@ export class CreateClinicalCaseEvaluationDto {
   })
   @IsString()
   @IsOptional()
-  comment?: string
+  comment?: string;
 }

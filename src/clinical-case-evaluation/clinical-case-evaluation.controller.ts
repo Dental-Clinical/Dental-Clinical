@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -28,7 +37,7 @@ import { GetClinicalCaseEvaluationsQueryDto } from './dto/get-clinical-case-eval
 export class ClinicalCaseEvaluationController {
   constructor(
     private readonly clinicalCaseEvaluationService: ClinicalCaseEvaluationService,
-  ) { }
+  ) {}
 
   @Post(':id/evaluation')
   @Roles([UserRole.SUPERVISOR])
@@ -87,15 +96,20 @@ export class ClinicalCaseEvaluationController {
   public async updateClinicalCaseEvaluation(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateClinicalCaseEvaluationDto
+    @Body() dto: UpdateClinicalCaseEvaluationDto,
   ) {
-    return await this.clinicalCaseEvaluationService.updateClinicalCaseEvaluation(id, user, dto)
+    return await this.clinicalCaseEvaluationService.updateClinicalCaseEvaluation(
+      id,
+      user,
+      dto,
+    );
   }
 
   @Get('evaluations')
   @Roles([UserRole.STUDENT])
   @ApiOperation({
-    summary: "[Student] Get all of the current student's clinical case evaluations",
+    summary:
+      "[Student] Get all of the current student's clinical case evaluations",
   })
   @ApiOkResponse({
     type: GetClinicalCaseEvaluationsResponseDto,
@@ -107,7 +121,10 @@ export class ClinicalCaseEvaluationController {
     @CurrentUser() user: AuthenticatedUser,
     @Query() dto: GetClinicalCaseEvaluationsQueryDto,
   ) {
-    return await this.clinicalCaseEvaluationService.getAllClinicalCasesEvaluations(user, dto)
+    return await this.clinicalCaseEvaluationService.getAllClinicalCasesEvaluations(
+      user,
+      dto,
+    );
   }
 
   @Get('evaluations/:id')
@@ -128,6 +145,9 @@ export class ClinicalCaseEvaluationController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    return await this.clinicalCaseEvaluationService.getClinicalCaseEvaluation(id, user)
+    return await this.clinicalCaseEvaluationService.getClinicalCaseEvaluation(
+      id,
+      user,
+    );
   }
 }

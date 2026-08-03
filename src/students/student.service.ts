@@ -30,7 +30,7 @@ export class StudentService {
     private readonly studentSectionRepository: Repository<StudentSection>,
     @InjectRepository(Subject)
     private readonly subjectRepository: Repository<Subject>,
-  ) { }
+  ) {}
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
       where: { university_id },

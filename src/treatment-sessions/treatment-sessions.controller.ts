@@ -38,7 +38,7 @@ import { UpdateTreatmentSessionDto } from './dto/update-treatment-session.dto';
 export class TreatmentSessionsController {
   constructor(
     private readonly treatmentSessionsService: TreatmentSessionsService,
-  ) { }
+  ) {}
 
   @Post()
   @Roles([UserRole.STUDENT])

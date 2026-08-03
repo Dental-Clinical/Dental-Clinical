@@ -110,4 +110,4 @@ const ENV = process.env.NODE_ENV;
     RedisHealthService,
   ],
 })
-export class AppModule {}
+export class AppModule { }

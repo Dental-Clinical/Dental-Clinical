@@ -19,13 +19,14 @@ import { OpenCasesSummary } from './dto/open-clinical-cases-summary.dto';
 import { StudentCasesSummaryDto } from './dto/student-cases-summary.dto';
 import { StudentAssignedCaseDetailsDto } from './dto/student-assigned-case-details.dto';
 import { PatientCaseDetailsDto } from './dto/patient-case-details.dto';
+import { PatientCasesSummaryDto } from './dto/patient-cases-summary.dto';
 import { SupervisorCaseDetailsDto } from './dto/supervisor-case-details.dto';
 
 @ApiTags('Clinical Cases')
 @ApiBearerAuth('JWT-auth')
 @Controller('clinical-cases')
 export class ClinicalCaseController {
-  constructor(private readonly clinicalCaseService: ClinicalCaseService) {}
+  constructor(private readonly clinicalCaseService: ClinicalCaseService) { }
   @Get()
   @ApiOperation({ summary: 'Get all clinical cases, optionally filtered' })
   @ApiOkResponse({
@@ -116,6 +117,18 @@ export class ClinicalCaseController {
       id,
       user.userId,
     );
+  }
+  @Get('patient')
+  @ApiOperation({
+    summary: '[Patient] Get all clinical cases of the current patient',
+  })
+  @ApiOkResponse({
+    type: PatientCasesSummaryDto,
+    description: 'List of the clinical cases belonging to the patient',
+  })
+  @Roles([UserRole.PATIENT])
+  async getPatientClinicalCases(@CurrentUser() user: AuthenticatedUser) {
+    return await this.clinicalCaseService.findPatientCases(user.userId);
   }
   @Get('patient/:id')
   @ApiOperation({

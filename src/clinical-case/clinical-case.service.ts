@@ -28,6 +28,7 @@ import { StudentService } from 'src/students/student.service';
 import { FilterClinicalCasesDto } from './dto/get-filtered-clinical-cases.dto';
 import { OpenCasesSummary } from './dto/open-clinical-cases-summary.dto';
 import { StudentCasesSummaryDto } from './dto/student-cases-summary.dto';
+import { PatientCasesSummaryDto } from './dto/patient-cases-summary.dto';
 import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
 import { TreatmentSession } from 'src/treatment-sessions/treatment-sessions.entity';
 import { ClinicalAppointmentStatus } from 'src/clinical-appointments/enums/clinical-appointment.enum';
@@ -587,6 +588,47 @@ export class ClinicalCaseService {
           clinicalCase.status !== ClinicalCaseStatus.ASSIGNED
             ? clinicalCase.treatmentSessions.length
             : null,
+      };
+    });
+    return { cases };
+  }
+  /**
+   * The patient's own cases. Scoped by the user behind the patient record, the
+   * same ownership rule the details route uses. A patient with no cases yet is
+   * a normal state, so this returns an empty list rather than a 404.
+   */
+  async findPatientCases(userId: number): Promise<PatientCasesSummaryDto> {
+    const clinicalCases = await this.clinicalCaseRepository.find({
+      where: { patient: { user: { id: userId } } },
+      relations: {
+        subject: true,
+        treatmentSessions: true,
+        clinicalAppointments: true,
+        assignedStudent: { user: true },
+        assignedSupervisor: { user: true },
+      },
+      order: { createdAt: 'DESC' },
+    });
+
+    const cases = clinicalCases.map((clinicalCase) => {
+      const nextAppointment = this.findNextScheduledAppointment(clinicalCase);
+      return {
+        id: clinicalCase.id,
+        subject: clinicalCase.subject.name,
+        status: clinicalCase.status,
+        treatingStudent: clinicalCase.assignedStudent?.user?.full_name ?? null,
+        supervisor: clinicalCase.assignedSupervisor?.user?.full_name ?? null,
+        sessionCount: clinicalCase.treatmentSessions.length,
+        nextSession: nextAppointment
+          ? {
+              id: nextAppointment.id,
+              appointmentDate: this.toDateString(
+                nextAppointment.appointmentDate,
+              ),
+              startTime: nextAppointment.appointmentStart,
+            }
+          : null,
+        createdAt: clinicalCase.createdAt,
       };
     });
     return { cases };

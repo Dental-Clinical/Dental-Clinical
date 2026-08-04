@@ -11,7 +11,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ClinicalCaseSummaryDto } from './dto/clinical-case-summary.dto';
-import { ClinicalCaseDetailsDto } from './dto/clinical-case-details.sto';
+import {
+  AssignedClinicalCaseDetailsDto,
+  ClinicalCaseDetailsDto,
+} from './dto/clinical-case-details.sto';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 import { FilterClinicalCasesDto } from './dto/get-filtered-clinical-cases.dto';
@@ -50,6 +53,23 @@ export class ClinicalCaseController {
   async getOpenClinicalCases(@CurrentUser() user: AuthenticatedUser) {
     return this.clinicalCaseService.findOpenCases(user.userId);
   }
+  @Get('assigned') // after being assigned
+  @ApiOperation({
+    summary:
+      '[Student] Get open, unassigned clinical cases for the student study year',
+  })
+  @ApiOkResponse({
+    type: OpenCasesSummary,
+    description: 'List of open clinical cases retrieved',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Student or current enrollment not found',
+  })
+  @Roles([UserRole.STUDENT])
+  async getAssignedClinicalCases(@CurrentUser() user: AuthenticatedUser) {
+    return this.clinicalCaseService.findAssignedCases(user.userId);
+  }
   @Get('my-cases') // get all student cases
   @ApiOperation({
     summary: '[Student] Get clinical cases assigned to the current student',
@@ -67,7 +87,7 @@ export class ClinicalCaseController {
   @ApiOperation({ summary: '[Student] Get a clinical case by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'Clinical case ID' })
   @ApiOkResponse({
-    type: ClinicalCaseDetailsDto,
+    type: AssignedClinicalCaseDetailsDto,
     description: 'Details of a clinical case',
   })
   @ApiResponse({ status: 404, description: 'Clinical Case not found' })

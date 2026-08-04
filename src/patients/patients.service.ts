@@ -6,13 +6,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Patient } from './patient.entity';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { UpdatePatientProfileDto } from './dto/update-patient-profile.dto';
 import { UpdatePatientMedicalRecordsDto } from './dto/update-patient-medical-records.dto';
 import { User } from 'src/users/user.entity';
 import { log } from 'console';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class PatientsService {
@@ -21,8 +22,15 @@ export class PatientsService {
     private readonly patientRepository: Repository<Patient>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
-  public async createPatient(patient: CreatePatientDto): Promise<Patient> {
+  public async createPatient(
+    patient: CreatePatientDto,
+    manager?: EntityManager,
+  ): Promise<Patient> {
+    const repo = manager
+      ? manager.getRepository(Patient)
+      : this.patientRepository;
     patient.phone = this.normalizePhoneNumber(patient.phone);
     const existingPatient = await this.findPatientByPhone(patient.phone);
     if (existingPatient) {
@@ -31,7 +39,7 @@ export class PatientsService {
         HttpStatus.CONFLICT,
       );
     }
-    const newPatient = this.patientRepository.create({
+    const newPatient = repo.create({
       full_name: patient.full_name,
       phone: patient.phone,
       user: patient.userId ? { id: patient.userId } : undefined,
@@ -81,6 +89,7 @@ export class PatientsService {
   async updateMyProfile(
     userId: number,
     updatePatientDto: UpdatePatientProfileDto,
+    files: Express.Multer.File[],
   ) {
     const patient = await this.patientRepository.findOne({
       where: {
@@ -130,6 +139,24 @@ export class PatientsService {
 
     if (updatePatientDto.allergies !== undefined) {
       patient.allergies = updatePatientDto.allergies;
+    }
+    if (files && files.length > 0) {
+      const uploaded = await this.cloudinaryService.uploadImage(
+        files[0],
+        `patients/${patient.id}`,
+      );
+
+      try {
+        if (patient.profilePicturePublicId) {
+          await this.cloudinaryService.delete(patient.profilePicturePublicId);
+        }
+
+        patient.profilePictureUrl = uploaded.secure_url;
+        patient.profilePicturePublicId = uploaded.public_id;
+      } catch (error) {
+        await this.cloudinaryService.delete(uploaded.public_id);
+        throw error;
+      }
     }
 
     const savedPatient = await this.patientRepository.save(patient);

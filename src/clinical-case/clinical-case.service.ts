@@ -23,7 +23,10 @@ import { ClinicalCaseStatus } from './enums/clinical-case-status.enum';
 import { ClinicalCaseStateMachine } from './state-machine/clinical-case-state-machine';
 import { UpdateClinicalCaseStatusDto } from './dto/update-clinical-case-status.dto';
 import { ClinicalCaseSummaryDto } from './dto/clinical-case-summary.dto';
-import { ClinicalCaseDetailsDto } from './dto/clinical-case-details.sto';
+import {
+  AssignedClinicalCaseDetailsDto,
+  ClinicalCaseDetailsDto,
+} from './dto/clinical-case-details.sto';
 import { StudentService } from 'src/students/student.service';
 import { FilterClinicalCasesDto } from './dto/get-filtered-clinical-cases.dto';
 import { OpenCasesSummary } from './dto/open-clinical-cases-summary.dto';
@@ -694,18 +697,50 @@ export class ClinicalCaseService {
       },
     });
   }
-  async findAssignedCases() {
+  async findAssignedCases(
+    userId: number,
+  ): Promise<AssignedClinicalCaseDetailsDto[]> {
+    const student = await this.studentService.findByUserId(userId);
+
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
     const assignedCases = await this.clinicalCaseRepository.find({
-      where: { status: ClinicalCaseStatus.ASSIGNED },
+      where: {
+        assignedStudent: { id: student.id },
+        status: ClinicalCaseStatus.ASSIGNED,
+      },
       relations: {
         patient: true,
-        subject: true,
+        subject: {
+          section: true,
+        },
         assignedStudent: true,
-        initialExamination: true,
         request: true,
+        clinicalAppointments: true,
       },
     });
-    return assignedCases;
+    const result = assignedCases.map((clinicalCase) => {
+      const nextAppointment = clinicalCase.clinicalAppointments
+        .filter((a) => a.status === ClinicalAppointmentStatus.SCHEDULED)
+        .sort(
+          (a, b) => a.appointmentDate.getTime() - b.appointmentDate.getTime(),
+        )[0];
+      return {
+        id: clinicalCase.id,
+        status: clinicalCase.status,
+        patient: clinicalCase.patient.full_name,
+        subject: clinicalCase.subject.name,
+        section: clinicalCase.subject.section.name,
+        chiefComplaint: clinicalCase.request.chief_complaint,
+        nextAppointment: {
+          appointmentDate: nextAppointment.appointmentDate,
+          appointmentStart: nextAppointment.appointmentStart,
+        },
+        createdAt: clinicalCase.createdAt,
+      };
+    });
+    return result;
   }
   public async createFromInitialExamination(
     initialExaminationId: number,

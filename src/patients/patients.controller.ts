@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UploadedFile,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -22,6 +32,7 @@ import {
   UpdatePatientProfileResponseDto,
 } from './dto/patient-response.dto';
 import { UpdatePatientMedicalRecordsDto } from './dto/update-patient-medical-records.dto';
+import { FileUploadInterceptor } from 'src/common/interceptors/files.interceptor';
 
 @ApiTags('Patients')
 @ApiBearerAuth('JWT-auth')
@@ -54,6 +65,9 @@ export class PatientsController {
 
   @Patch('me')
   @Roles([UserRole.PATIENT])
+  @UseInterceptors(
+    FileUploadInterceptor({ fieldName: 'profilePicture', maxCount: 1 }),
+  )
   @ApiOperation({ summary: '[Patient] Update my profile' })
   @ApiBody({ type: UpdatePatientProfileDto })
   @ApiOkResponse({
@@ -68,8 +82,9 @@ export class PatientsController {
   async updatePatientProfile(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdatePatientProfileDto,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return await this.patientService.updateMyProfile(user.userId, dto);
+    return await this.patientService.updateMyProfile(user.userId, dto, files);
   }
 
   @Patch(':id/medical-records')

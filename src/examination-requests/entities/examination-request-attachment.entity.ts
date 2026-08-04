@@ -34,18 +34,18 @@ export class ExaminationRequestAttachments {
     description: 'File URL',
     example: 'https://res.cloudinary.com/.../image.jpg',
   })
-  @Column({ name: 'file_url' })
+  @Column({ name: 'file_url', nullable: true })
   fileUrl: string;
 
   @ApiProperty({ description: 'Cloudinary public ID', example: 'abc123' })
-  @Column({ name: 'public_id' })
+  @Column({ name: 'public_id', nullable: true })
   publicId: string;
 
   @ApiProperty({ description: 'File name', example: 'xray-tooth-36.jpg' })
-  @Column({ name: 'file_name' })
+  @Column({ name: 'file_name', nullable: true })
   fileName: string;
 
   @ApiProperty({ description: 'MIME type', example: 'image/jpeg' })
-  @Column({ name: 'mime_type' })
+  @Column({ name: 'mime_type', nullable: true })
   mimeType: string;
 }

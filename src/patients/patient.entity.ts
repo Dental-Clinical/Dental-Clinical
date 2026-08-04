@@ -54,6 +54,26 @@ export class Patient {
   })
   gender: string;
 
+  @ApiPropertyOptional({
+    description: 'Profile picture URL',
+    example: 'https://res.cloudinary.com/demo/image/upload/sample.jpg',
+  })
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  profilePictureUrl: string;
+
+  @ApiPropertyOptional({
+    description: 'Profile picture public ID in Cloudinary',
+    example: 'patients/1/profile-picture',
+  })
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  profilePicturePublicId: string;
+
   @ApiProperty({ description: 'Walk-in patient flag', example: false })
   @Column({
     default: false,

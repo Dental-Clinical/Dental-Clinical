@@ -27,6 +27,13 @@ export class DateTimeUtils {
 
     return age;
   }
+  /**
+   * Postgres `date` columns come back from the driver as 'YYYY-MM-DD' strings
+   * even though the entities type them as `Date`, so accept both.
+   */
+  static toDateString(value: Date | string): string {
+    return value instanceof Date ? value.toISOString().slice(0, 10) : value;
+  }
   static combine(date: Date, time: string): Date {
     const result = new Date(date);
 

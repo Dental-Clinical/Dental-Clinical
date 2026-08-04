@@ -45,7 +45,10 @@ export class ClinicalCaseDetailsDto {
   @ApiProperty({ example: 1 })
   id: number;
 
-  @ApiProperty({ enum: ClinicalCaseStatus, example: ClinicalCaseStatus.OPEN })
+  @ApiProperty({
+    enum: ClinicalCaseStatus,
+    example: ClinicalCaseStatus.OPEN,
+  })
   status: ClinicalCaseStatus;
 
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
@@ -66,4 +69,46 @@ export class ClinicalCaseDetailsDto {
     description: 'Null when the case has not been assigned to a student yet',
   })
   assignedStudent: ClinicalCaseAssignedStudentDto | null;
+}
+class NextAppointmentDto {
+  @ApiProperty({
+    example: '2026-08-15',
+  })
+  appointmentDate: Date;
+
+  @ApiProperty({
+    example: '09:00',
+  })
+  appointmentStart: string;
+}
+
+export class AssignedClinicalCaseDetailsDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+
+  @ApiProperty({
+    enum: ClinicalCaseStatus,
+    example: ClinicalCaseStatus.ASSIGNED,
+  })
+  status: ClinicalCaseStatus;
+
+  @ApiProperty({ example: 'Ahmad Srour' })
+  patient: string;
+
+  @ApiProperty({ example: 'Operative Dentistry' })
+  subject: string;
+
+  @ApiProperty({ example: 'Section A' })
+  section: string;
+
+  @ApiProperty({ example: 'Toothache in lower left molar' })
+  chiefComplaint: string;
+
+  @ApiProperty({
+    type: NextAppointmentDto,
+    description: 'Next scheduled appointment for this case',
+  })
+  nextAppointment: NextAppointmentDto;
+  @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
+  createdAt: Date;
 }

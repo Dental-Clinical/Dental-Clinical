@@ -47,7 +47,7 @@ export class StudentProgressService {
     //     status: PlannedProceduresStatus.COMPLETED,
     //   })
     //   .getMany();
-    const raw = (await manager
+    const raw = await manager
       .getRepository(PlannedProcedures)
       .createQueryBuilder('pp')
       .select('pp.subject_procedure_id', 'subjectProcedureId')
@@ -58,7 +58,7 @@ export class StudentProgressService {
         status: PlannedProceduresStatus.COMPLETED,
       })
       .groupBy('pp.subject_procedure_id')
-      .getRawMany()) as AwardedProcedureCredit[];
+      .getRawMany();
 
     const groupedProcedures: AwardedProcedureCredit[] = raw.map((row) => ({
       subjectProcedureId: Number(row.subjectProcedureId),

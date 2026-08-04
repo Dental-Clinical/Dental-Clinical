@@ -27,6 +27,10 @@ import { SessionsService } from 'src/sessions/sessions.service';
 import { StaffLoginDto } from './dto/staffLogin.dto';
 import { StudentService } from 'src/students/student.service';
 import { AuthenticatedUser } from './interfaces/authenticated-user.interface';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { DataSource } from 'typeorm';
+import { UploadApiResponse } from 'cloudinary';
+import { Patient } from 'src/patients/patient.entity';
 
 @Injectable()
 export class AuthService {
@@ -42,9 +46,14 @@ export class AuthService {
     private readonly patientService: PatientsService,
     private readonly sessionsService: SessionsService,
     private readonly studentService: StudentService,
+    private readonly cloudinaryService: CloudinaryService,
+    private readonly dataSource: DataSource,
   ) {}
   // register patient
-  public async register(registerDto: RegisterDto) {
+  public async register(
+    registerDto: RegisterDto,
+    files: Express.Multer.File[],
+  ) {
     const registration = await this.cacheManager.get<{ phone: string }>(
       `registration:${registerDto.registrationToken}`,
     );
@@ -76,12 +85,41 @@ export class AuthService {
         is_walkin: false,
       });
     } else {
-      await this.patientService.createPatient({
-        phone: registration.phone,
-        full_name: `${registerDto.full_name}`,
-        dateOfBirth: registerDto.dateOfBirth,
-        gender: registerDto.gender,
-        userId: user.id,
+      await this.dataSource.transaction(async (manager) => {
+        const patient = await this.patientService.createPatient(
+          {
+            phone: registration.phone,
+            full_name: registerDto.full_name,
+            dateOfBirth: registerDto.dateOfBirth,
+            gender: registerDto.gender,
+            userId: user.id,
+          },
+          manager, // preferably use the transaction manager
+        );
+
+        let uploaded: UploadApiResponse | undefined;
+
+        try {
+          if (files?.length) {
+            uploaded = await this.cloudinaryService.uploadImage(
+              files[0],
+              `patients/${patient.id}`,
+            );
+
+            patient.profilePictureUrl = uploaded.secure_url;
+            patient.profilePicturePublicId = uploaded.public_id;
+
+            await manager.getRepository(Patient).save(patient);
+          }
+
+          return patient;
+        } catch (error) {
+          if (uploaded) {
+            await this.cloudinaryService.delete(uploaded.public_id);
+          }
+
+          throw error;
+        }
       });
     }
     const jti = randomUUID();

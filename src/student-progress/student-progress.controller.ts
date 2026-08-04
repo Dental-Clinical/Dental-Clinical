@@ -19,12 +19,13 @@ import { GetStudentProcedureProgressResponseDto } from './dto/student-procedure-
 export class StudentProgressController {
   constructor(
     private readonly studentProgressService: StudentProgressService,
-  ) { }
+  ) {}
 
   @Get('me/procedure-progress')
   @Roles([UserRole.STUDENT])
   @ApiOperation({
-    summary: "[Student] Get the current student's procedure progress by subject",
+    summary:
+      "[Student] Get the current student's procedure progress by subject",
   })
   @ApiOkResponse({
     type: GetStudentProcedureProgressResponseDto,
@@ -35,6 +36,6 @@ export class StudentProgressController {
     description: 'Student or current enrollment not found',
   })
   public async getMyProcedureProgress(@CurrentUser() user: AuthenticatedUser) {
-    return await this.studentProgressService.getMyProcedureProgress(user)
+    return await this.studentProgressService.getMyProcedureProgress(user);
   }
 }

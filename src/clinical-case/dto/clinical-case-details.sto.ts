@@ -98,17 +98,24 @@ export class AssignedClinicalCaseDetailsDto {
   @ApiProperty({ example: 'Operative Dentistry' })
   subject: string;
 
-  @ApiProperty({ example: 'Section A' })
-  section: string;
+  @ApiProperty({
+    example: 'Section A',
+    nullable: true,
+    description:
+      'The section the student takes this subject in. Null when they have no enrolment for it in the active academic year',
+  })
+  section: string | null;
 
   @ApiProperty({ example: 'Toothache in lower left molar' })
   chiefComplaint: string;
 
   @ApiProperty({
     type: NextAppointmentDto,
-    description: 'Next scheduled appointment for this case',
+    nullable: true,
+    description:
+      'Next scheduled appointment for this case. Null when none is scheduled',
   })
-  nextAppointment: NextAppointmentDto;
+  nextAppointment: NextAppointmentDto | null;
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
   createdAt: Date;
 }

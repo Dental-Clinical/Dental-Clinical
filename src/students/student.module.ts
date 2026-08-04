@@ -6,11 +6,17 @@ import { Student } from './student.entity';
 import { UserModule } from 'src/users/user.module';
 import { CommonModule } from 'src/common/common.module';
 import { StudentSection } from 'src/student-section/student-section.entity';
-import { Subject } from 'src/subjects/subjects.entity';
+import { StudentSubjectEnrollment } from 'src/student-subject-enrollment/student-subject-enrollment.entity';
+import { SectionSubject } from 'src/section-subject/section-subject.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Student, StudentSection, Subject]),
+    TypeOrmModule.forFeature([
+      Student,
+      StudentSection,
+      StudentSubjectEnrollment,
+      SectionSubject,
+    ]),
     forwardRef(() => UserModule),
     CommonModule,
   ],

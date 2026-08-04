@@ -15,7 +15,11 @@ import {
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-/** @deprecated Superseded by {@link StudentSubjectEnrollment}. */
+/**
+ * A student's enrolment in one academic year, and — via {@link StudyYear} — the
+ * level they are at during it. {@link StudentSubjectEnrollment} records which
+ * subjects they take; this records which year of the programme they are in.
+ */
 @Entity('student_academic_years')
 @Unique(['student', 'academicYear'])
 export class StudentAcademicYear {

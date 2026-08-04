@@ -55,6 +55,16 @@ export class Student {
   )
   subjectEnrollment: StudentSubjectEnrollment[]
 
+  @ApiPropertyOptional({
+    type: () => [StudentAcademicYear],
+    description: 'Academic year enrollments, carrying the study year (level)',
+  })
+  @OneToMany(
+    () => StudentAcademicYear,
+    (studentAcademicYear) => studentAcademicYear.student,
+  )
+  studentAcademicYears: StudentAcademicYear[];
+
 
 
   @ApiPropertyOptional({

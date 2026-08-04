@@ -15,12 +15,6 @@ export class SubjectResponseDto {
 
   @ApiProperty({ example: true })
   is_active: boolean;
-
-  @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
-  created_at: Date;
-
-  @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
-  updated_at: Date;
 }
 
 export class PaginationMetaDto {

@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Subject } from './subjects.entity';
 import { Repository } from 'typeorm';
 import { StudyYear } from 'src/study-years/study-years.entity';
+import { Clinic } from 'src/clinic/clinic.entity';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { GetSubjectsQueryDto } from './dto/get-subjects-query.dto';
@@ -19,6 +20,8 @@ export class SubjectsService {
     private readonly subjectRepository: Repository<Subject>,
     @InjectRepository(StudyYear)
     private readonly studyYearRepository: Repository<StudyYear>,
+    @InjectRepository(Clinic)
+    private readonly clinicRepository: Repository<Clinic>,
   ) {}
 
   async getSubjects(dto: GetSubjectsQueryDto) {
@@ -42,7 +45,7 @@ export class SubjectsService {
       });
     }
 
-    qb.orderBy('subject.created_at', 'DESC')
+    qb.orderBy('subject.id', 'DESC')
       .skip((dto.page - 1) * dto.limit)
       .take(dto.limit);
 
@@ -83,6 +86,14 @@ export class SubjectsService {
       throw new NotFoundException('Study year not found');
     }
 
+    // Subjects belong to a clinic, and the faculty runs one per academic year.
+    const clinic = await this.clinicRepository.findOne({
+      where: { academicYear: { is_active: true } },
+    });
+    if (!clinic) {
+      throw new NotFoundException('No clinic exists for the active academic year');
+    }
+
     const existing = await this.subjectRepository.findOne({
       where: { studyYear: { id: dto.study_year_id }, name: dto.name },
     });
@@ -97,6 +108,7 @@ export class SubjectsService {
       description: dto.description,
       is_active: dto.is_active,
       studyYear,
+      clinic,
     });
 
     try {

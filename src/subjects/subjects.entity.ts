@@ -3,15 +3,19 @@ import {
   Column,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  RelationId,
   Unique,
 } from 'typeorm';
 import { ClinicalCase } from '../clinical-case/clinical-case.entity';
 import { SubjectProcedures } from 'src/subject-procedures/subject-procedures.entity';
 import { Clinic } from 'src/clinic/clinic.entity';
 import { SectionSubject } from 'src/section-subject/section-subject.entity';
+import { Material } from 'src/materials/materials.entity';
 
 @Entity('subjects')
 @Unique(['studyYear', 'name'])
@@ -22,6 +26,12 @@ export class Subject {
   @Column()
   name: string
 
+  @Column({ type: 'text', nullable: true })
+  description: string
+
+  @Column({ type: 'boolean', default: true })
+  is_active: boolean
+
   @ManyToOne(() => Clinic, (clinic) => clinic.subjects, { nullable: false })
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic
@@ -29,6 +39,13 @@ export class Subject {
   @ManyToOne(() => StudyYear)
   @JoinColumn({ name: 'study_year_id' })
   studyYear: StudyYear
+
+  /**
+   * Populated at load and NOT refreshed when `studyYear` is reassigned, which
+   * is what lets updateSubject tell whether the study year actually changed.
+   */
+  @RelationId('studyYear')
+  study_year_id: number
 
   @OneToMany(
     () => SubjectProcedures,
@@ -44,5 +61,19 @@ export class Subject {
 
   @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.subject)
   clinicalCases: ClinicalCase[]
+
+  @ManyToMany(() => Material, (material) => material.subjects)
+  @JoinTable({
+    name: 'subject_materials',
+    joinColumn: {
+      name: 'subject_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'material_id',
+      referencedColumnName: 'id',
+    },
+  })
+  materials: Material[]
 
 }

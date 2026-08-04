@@ -1,5 +1,7 @@
 import { EntityManager } from 'typeorm';
-import { ClinicSections } from 'src/clinic-sections/clinic-sections.entity';
+import { Clinic } from 'src/clinic/clinic.entity';
+import { Section } from 'src/section/section.entity';
+import { SectionSubject } from 'src/section-subject/section-subject.entity';
 import { Material } from 'src/materials/materials.entity';
 import { Subject } from 'src/subjects/subjects.entity';
 import { SubjectProcedures } from 'src/subject-procedures/subject-procedures.entity';
@@ -8,6 +10,9 @@ import { SeedContext } from '../seed-context';
 import { upsertBy } from '../support/persistence.helper';
 import { SECTIONS, SUBJECTS } from '../data/academic.data';
 import { MATERIALS } from '../data/materials.data';
+
+/** The faculty runs one clinic; sections and subjects all belong to it. */
+const CLINIC_NAME = 'Dental Clinic';
 
 /**
  * Clinic sections, the materials catalogue, subjects and their procedure
@@ -21,24 +26,47 @@ export class ClinicStructureSeeder implements Seeder {
   readonly name = 'clinic structure';
 
   async run(context: SeedContext, manager: EntityManager): Promise<void> {
+    await this.seedClinic(context, manager);
     await this.seedSections(context, manager);
     await this.seedMaterials(context, manager);
     await this.seedSubjects(context, manager);
+    await this.seedSectionSubjects(context, manager);
+  }
+
+  /**
+   * The faculty runs a single clinic, so it is implied rather than spelled out
+   * in the blueprints. Sections and subjects both hang off it.
+   */
+  private async seedClinic(
+    context: SeedContext,
+    manager: EntityManager,
+  ): Promise<void> {
+    const academicYear = context.academicYears.require('current');
+
+    const { entity, created } = await upsertBy(
+      manager,
+      Clinic,
+      { name: CLINIC_NAME },
+      () => ({ name: CLINIC_NAME, academicYear }),
+    );
+    if (created) context.logger.created('clinic', CLINIC_NAME);
+    context.clinics.set('current', entity);
   }
 
   private async seedSections(
     context: SeedContext,
     manager: EntityManager,
   ): Promise<void> {
+    const clinic = context.clinics.require('current');
+
     for (const blueprint of SECTIONS) {
-      const supervisor = context.supervisors.require(blueprint.supervisorKey);
       const { entity, created } = await upsertBy(
         manager,
-        ClinicSections,
+        Section,
         { name: blueprint.name },
-        () => ({ name: blueprint.name, supervisor, is_active: true }),
+        () => ({ name: blueprint.name, clinic }),
       );
-      if (created) context.logger.created('clinic section', blueprint.name);
+      if (created) context.logger.created('section', blueprint.name);
       context.sections.set(blueprint.key, entity);
     }
   }
@@ -63,9 +91,10 @@ export class ClinicStructureSeeder implements Seeder {
     context: SeedContext,
     manager: EntityManager,
   ): Promise<void> {
+    const clinic = context.clinics.require('current');
+
     for (const blueprint of SUBJECTS) {
       const studyYear = context.studyYears.require(blueprint.studyYearKey);
-      const section = context.sections.require(blueprint.sectionKey);
       const materials = blueprint.materialKeys.map((key) =>
         context.materials.require(key),
       );
@@ -78,7 +107,7 @@ export class ClinicStructureSeeder implements Seeder {
           name: blueprint.name,
           description: blueprint.description,
           studyYear,
-          section,
+          clinic,
           is_active: true,
         }),
       );
@@ -112,6 +141,53 @@ export class ClinicStructureSeeder implements Seeder {
           entity,
         );
       }
+    }
+  }
+
+  /**
+   * Which subject is taught in which section, and by whom. The supervisor used
+   * to live on the section itself; it now belongs to the (section, subject,
+   * year) triple, so a section can have a different supervisor per subject.
+   */
+  private async seedSectionSubjects(
+    context: SeedContext,
+    manager: EntityManager,
+  ): Promise<void> {
+    const academicYear = context.academicYears.require('current');
+
+    for (const blueprint of SUBJECTS) {
+      const subject = context.subjects.require(blueprint.key);
+      const section = context.sections.require(blueprint.sectionKey);
+
+      const sectionBlueprint = SECTIONS.find(
+        (candidate) => candidate.key === blueprint.sectionKey,
+      );
+      if (!sectionBlueprint) {
+        throw new Error(
+          `Subject "${blueprint.name}" references unknown section "${blueprint.sectionKey}".`,
+        );
+      }
+      const supervisor = context.supervisors.require(
+        sectionBlueprint.supervisorKey,
+      );
+
+      const { entity, created } = await upsertBy(
+        manager,
+        SectionSubject,
+        {
+          section: { id: section.id },
+          subject: { id: subject.id },
+          academicYear: { id: academicYear.id },
+        },
+        () => ({ section, subject, supervisor, academicYear }),
+      );
+      if (created) {
+        context.logger.created(
+          'section subject',
+          `${blueprint.name} in ${sectionBlueprint.name}`,
+        );
+      }
+      context.sectionSubjects.set(blueprint.key, entity);
     }
   }
 }

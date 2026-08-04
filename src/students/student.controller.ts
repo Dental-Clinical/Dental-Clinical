@@ -84,15 +84,11 @@ export class StudentController {
   @Get('me/subjects')
   @Roles([UserRole.STUDENT])
   @ApiOperation({
-    summary: "[Student] Get the current student's subjects and study year",
+    summary: "[Student] Get the current student's subjects",
   })
   @ApiResponse({
     status: 200,
-    description: 'Subjects and study year retrieved successfully',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Student or current enrollment not found',
+    description: 'Subjects retrieved successfully',
   })
   public async getMySubjects(@CurrentUser() user: AuthenticatedUser) {
     return await this.studentService.getMySubjects(user.userId);

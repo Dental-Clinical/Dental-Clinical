@@ -1,110 +1,48 @@
-import { InitialExamination } from '../initial-examination/initial-examination.entity';
 import { StudyYear } from '../study-years/study-years.entity';
 import {
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
-  JoinTable,
-  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-  RelationId,
   Unique,
-  UpdateDateColumn,
 } from 'typeorm';
 import { ClinicalCase } from '../clinical-case/clinical-case.entity';
 import { SubjectProcedures } from 'src/subject-procedures/subject-procedures.entity';
-import { ClinicSections } from 'src/clinic-sections/clinic-sections.entity';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Material } from 'src/materials/materials.entity';
+import { Clinic } from 'src/clinic/clinic.entity';
+import { SectionSubject } from 'src/section-subject/section-subject.entity';
 
 @Entity('subjects')
 @Unique(['studyYear', 'name'])
 export class Subject {
-  @ApiProperty({ description: 'Subject ID', example: 1 })
   @PrimaryGeneratedColumn()
-  id: number;
+  id: number
 
-  @ApiProperty({ type: () => StudyYear, description: 'Associated study year' })
-  @ManyToOne(() => StudyYear, (studyYear) => studyYear.subjects)
+  @Column()
+  name: string
+
+  @ManyToOne(() => Clinic, (clinic) => clinic.subjects, { nullable: false })
+  @JoinColumn({ name: 'clinic_id' })
+  clinic: Clinic
+
+  @ManyToOne(() => StudyYear)
   @JoinColumn({ name: 'study_year_id' })
-  studyYear: StudyYear;
+  studyYear: StudyYear
 
-  @ApiProperty({ description: 'Study year ID', example: 1 })
-  @RelationId('studyYear')
-  study_year_id: number;
-
-  @ApiProperty({
-    description: 'Subject name',
-    example: 'Restorative Dentistry',
-  })
-  @Column({ type: 'varchar', length: 255, nullable: false })
-  name: string;
-
-  @ApiPropertyOptional({
-    description: 'Subject description',
-    example: 'Covers restorative procedures',
-  })
-  @Column({ type: 'text', nullable: true })
-  description: string;
-
-  @ApiProperty({ description: 'Whether the subject is active', example: true })
-  @Column({ type: 'boolean', default: true })
-  is_active: boolean;
-
-  @ApiProperty({ description: 'Creation timestamp' })
-  @CreateDateColumn()
-  created_at: Date;
-
-  @ApiProperty({ description: 'Last update timestamp' })
-  @UpdateDateColumn()
-  updated_at: Date;
-
-  @ApiPropertyOptional({
-    type: () => [InitialExamination],
-    description: 'Initial examinations',
-  })
-  @OneToMany(() => InitialExamination, (examination) => examination.subject)
-  initialExaminations: InitialExamination[];
-
-  @ApiPropertyOptional({
-    type: () => [ClinicalCase],
-    description: 'Clinical cases',
-  })
-  @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.subject)
-  clinicalCases: ClinicalCase[];
-
-  @ApiPropertyOptional({
-    type: () => [SubjectProcedures],
-    description: 'Subject procedures',
-  })
   @OneToMany(
     () => SubjectProcedures,
-    (subjectProcedure) => subjectProcedure.subject,
+    procedure => procedure.subject,
   )
-  subjectProcedures: SubjectProcedures[];
+  subjectProcedures: SubjectProcedures[]
 
-  @ApiPropertyOptional({
-    type: () => [ClinicSections],
-    description: 'Clinic sections',
-  })
-  @ManyToOne(() => ClinicSections, (clinicSection) => clinicSection.subjects)
-  @JoinColumn({ name: 'section_id' })
-  section: ClinicSections;
+  @OneToMany(
+    () => SectionSubject,
+    sectionSubject => sectionSubject.subject,
+  )
+  sectionSubjects: SectionSubject[]
 
-  @ManyToMany(() => Material, (material) => material.subjects)
-  @JoinTable({
-    name: 'subject_materials',
-    joinColumn: {
-      name: 'subject_id',
-      referencedColumnName: 'id',
-    },
-    inverseJoinColumn: {
-      name: 'material_id',
-      referencedColumnName: 'id',
-    },
-  })
-  materials: Material[];
+  @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.subject)
+  clinicalCases: ClinicalCase[]
+
 }

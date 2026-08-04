@@ -1,5 +1,4 @@
 import { Supervisor } from '../supervisors/supervisor.entity';
-import { Subject } from '../subjects/subjects.entity';
 import {
   Column,
   CreateDateColumn,
@@ -14,15 +13,12 @@ import {
 import { StudentSection } from 'src/student-section/student-section.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+/** @deprecated Superseded by {@link Section}; subjects now hang off {@link Clinic}. */
 @Entity({ name: 'clinic_sections' })
 export class ClinicSections {
   @ApiProperty({ description: 'Clinic section ID', example: 1 })
   @PrimaryGeneratedColumn()
   id: number;
-
-  @ApiProperty({ type: () => Subject, description: 'Associated subject' })
-  @OneToMany(() => Subject, (subject) => subject.section)
-  subjects: Subject[];
 
   @ApiProperty({ type: () => Supervisor, description: 'Assigned supervisor' })
   @ManyToOne(() => Supervisor, (supervisor) => supervisor.clinicSections)

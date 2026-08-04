@@ -41,6 +41,10 @@ import redisConfig from './config/redis.config';
 import { RedisHealthService } from './redis-health.service';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ClinicalCaseMediaModule } from './clinical-case-media/clinical-case-media.module';
+import { SectionModule } from './section/section.module';
+import { ClinicModule } from './clinic/clinic.module';
+import { SectionSubjectModule } from './section-subject/section-subject.module';
+import { StudentSubjectEnrollmentModule } from './student-subject-enrollment/student-subject-enrollment.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -58,9 +62,9 @@ const ENV = process.env.NODE_ENV;
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         store: await redisStore({
-          url: configService.get('redis.url'),
-          // host: configService.get('redis.host'),
-          //          port: configService.get('redis.port'),
+          //url: configService.get('redis.url'),
+          host: configService.get('redis.host'),
+          port: configService.get('redis.port'),
         }),
         ttl: configService.get('redis.ttl'),
         isGlobal: true,
@@ -96,6 +100,10 @@ const ENV = process.env.NODE_ENV;
     StudentProgressModule,
     CloudinaryModule,
     ClinicalCaseMediaModule,
+    SectionModule,
+    ClinicModule,
+    SectionSubjectModule,
+    StudentSubjectEnrollmentModule,
   ],
   controllers: [AppController],
   providers: [

@@ -14,6 +14,7 @@ import { ClinicSections } from 'src/clinic-sections/clinic-sections.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SupervisorReview } from 'src/supervisor-reviews/supervisor-reviews.entity';
 import { ClinicalCaseEvaluation } from 'src/clinical-case-evaluation/clinical-case-evaluation.entity';
+import { SectionSubject } from 'src/section-subject/section-subject.entity';
 
 @Entity('supervisors')
 export class Supervisor {
@@ -86,4 +87,11 @@ export class Supervisor {
   })
   @OneToMany(() => ClinicSections, (clinicSection) => clinicSection.supervisor)
   clinicSections: ClinicSections[];
+
+
+  @OneToMany(
+    () => SectionSubject,
+    ss => ss.supervisor
+  )
+  sectionSubjects: SectionSubject[]
 }

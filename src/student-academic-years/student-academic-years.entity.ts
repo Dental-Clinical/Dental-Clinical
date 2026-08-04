@@ -15,6 +15,7 @@ import {
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+/** @deprecated Superseded by {@link StudentSubjectEnrollment}. */
 @Entity('student_academic_years')
 @Unique(['student', 'academicYear'])
 export class StudentAcademicYear {

@@ -268,7 +268,7 @@ export class ClinicalAppointmentsService {
     });
 
     if (appointments.length === 0) {
-      throw new NotFoundException('No appointments found for today');
+      return { data: [] }
     }
     const now = new Date();
     return appointments.map((appointment) => {

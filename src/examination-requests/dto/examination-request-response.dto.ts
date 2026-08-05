@@ -21,6 +21,13 @@ export class ExaminationRequestToothDto {
   @ApiProperty({ example: 36 })
   tooth: number;
 }
+class ExaminationRequestAppointmentDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+
+  @ApiProperty({ example: '2026-01-01' })
+  appointmentDate: Date;
+}
 
 export class ExaminationRequestDataDto {
   @ApiProperty({ example: 1 })
@@ -49,6 +56,9 @@ export class ExaminationRequestDataDto {
 
   @ApiPropertyOptional({ type: [ExaminationRequestAttachmentDto] })
   attachments?: ExaminationRequestAttachmentDto[];
+  
+  @ApiPropertyOptional({ type: ExaminationRequestAppointmentDto })
+  appointment?: ExaminationRequestAppointmentDto;
 }
 
 export class CreateExaminationRequestResponseDto {

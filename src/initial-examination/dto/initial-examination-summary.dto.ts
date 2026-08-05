@@ -12,9 +12,6 @@ export class InitialExaminationSummaryDto {
   @ApiProperty({ example: 'Dr. Lina Haddad' })
   coordinator: string;
 
-  @ApiProperty({ example: 'Operative Dentistry' })
-  subject: string;
-
   @ApiProperty({
     enum: InitialExaminationStatus,
     example: InitialExaminationStatus.COMPLETED,

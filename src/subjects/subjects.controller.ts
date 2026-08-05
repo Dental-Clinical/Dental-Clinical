@@ -43,7 +43,7 @@ export class SubjectsController {
   constructor(private readonly subjectsService: SubjectsService) {}
 
   @Post()
-  @Roles([UserRole.ADMIN, UserRole.COORDINATOR])
+  @Roles([UserRole.ADMIN])
   @ApiOperation({ summary: '[Admin, Coordinator] Create a subject' })
   @ApiBody({ type: CreateSubjectDto })
   @ApiCreatedResponse({
@@ -61,8 +61,10 @@ export class SubjectsController {
   }
 
   @Get()
-  @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: '[Admin] Get a paginated list of subjects' })
+  @Roles([UserRole.ADMIN, UserRole.COORDINATOR])
+  @ApiOperation({
+    summary: '[Admin, Coordinator] Get a paginated list of subjects',
+  })
   @ApiOkResponse({
     type: GetSubjectsResponseDto,
     description: 'Subjects retrieved successfully',

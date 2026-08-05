@@ -39,6 +39,7 @@ import { DateTimeUtils } from 'src/utils/date-time.utils';
 import { SessionMaterial } from 'src/session-materials/session-materials.entity';
 import { Patient } from 'src/patients/patient.entity';
 import { ClinicalCaseMedia } from 'src/clinical-case-media/clinical-case-media.entity';
+import { Subject } from 'src/subjects/subjects.entity';
 import { UserRole } from 'src/constants/user-roles';
 import {
   CASE_VIEW_POLICY,
@@ -75,7 +76,6 @@ export class ClinicalCaseService {
         request: {
           patient: true,
         },
-        subject: true,
       },
     });
 
@@ -100,11 +100,17 @@ export class ClinicalCaseService {
       );
     }
 
+    const subject = await manager.findOneBy(Subject, { id: dto.subjectId });
+
+    if (!subject) {
+      throw new NotFoundException('Subject not found');
+    }
+
     const clinicalCase = manager.getRepository(ClinicalCase).create({
       initialExamination: initialExamination,
       patient: initialExamination.request.patient,
       request: initialExamination.request,
-      subject: initialExamination.subject,
+      subject,
       status: ClinicalCaseStatus.OPEN,
     });
 
@@ -203,9 +209,6 @@ export class ClinicalCaseService {
         request: true,
         subject: true,
         clinicalAppointments: true,
-        assignedStudent: {
-          user: true,
-        },
       },
     });
     if (!clinicalCase) {
@@ -235,13 +238,6 @@ export class ClinicalCaseService {
         id: clinicalCase.subject.id,
         name: clinicalCase.subject.name,
       },
-
-      assignedStudent: clinicalCase.assignedStudent
-        ? {
-            id: clinicalCase.assignedStudent.id,
-            name: clinicalCase.assignedStudent.user.full_name,
-          }
-        : null,
     };
   }
   async findStudentAssignedClinicalCase(id: number, userId: number) {
@@ -259,14 +255,16 @@ export class ClinicalCaseService {
         patient: true,
         request: true,
         subject: true,
-        clinicalAppointments: {
-          supervisor: true,
+        assignedSupervisor: {
+          user: true,
         },
+        clinicalAppointments: true,
         assignedStudent: {
           user: true,
         },
       },
     });
+
     if (!clinicalCase) {
       throw new NotFoundException(
         'Clinical Case not found for this student or not assigned',
@@ -653,13 +651,7 @@ export class ClinicalCaseService {
       where: {
         status: In([ClinicalCaseStatus.OPEN, ClinicalCaseStatus.ASSIGNED]),
         assignedStudent: IsNull(),
-        initialExamination: {
-          coordinator: {
-            user: true,
-          },
-        },
         subject: {
-          section: true,
           is_active: true,
           studyYear: {
             id: studyYear.id,
@@ -670,6 +662,7 @@ export class ClinicalCaseService {
         patient: true,
         subject: true,
         request: true,
+        initialExamination: { coordinator: { user: true } },
       },
     });
     const result = openCases.map((clinicalCase) => {
@@ -705,6 +698,12 @@ export class ClinicalCaseService {
     if (!student) {
       throw new NotFoundException('Student not found');
     }
+    // A subject no longer knows its section — that depends on which section the
+    // student takes it in, so it comes from their enrolments. Fetched once
+    // rather than per case.
+    const sectionsBySubjectId =
+      await this.studentService.getSectionsBySubjectId(userId);
+
     const assignedCases = await this.clinicalCaseRepository.find({
       where: {
         assignedStudent: { id: student.id },
@@ -712,9 +711,7 @@ export class ClinicalCaseService {
       },
       relations: {
         patient: true,
-        subject: {
-          section: true,
-        },
+        subject: true,
         assignedStudent: true,
         request: true,
         clinicalAppointments: true,
@@ -731,12 +728,14 @@ export class ClinicalCaseService {
         status: clinicalCase.status,
         patient: clinicalCase.patient.full_name,
         subject: clinicalCase.subject.name,
-        section: clinicalCase.subject.section.name,
+        section: sectionsBySubjectId.get(clinicalCase.subject.id)?.name ?? null,
         chiefComplaint: clinicalCase.request.chief_complaint,
-        nextAppointment: {
-          appointmentDate: nextAppointment.appointmentDate,
-          appointmentStart: nextAppointment.appointmentStart,
-        },
+        nextAppointment: nextAppointment
+          ? {
+              appointmentDate: nextAppointment.appointmentDate,
+              appointmentStart: nextAppointment.appointmentStart,
+            }
+          : null,
         createdAt: clinicalCase.createdAt,
       };
     });
@@ -744,9 +743,10 @@ export class ClinicalCaseService {
   }
   public async createFromInitialExamination(
     initialExaminationId: number,
+    subjectId: number,
     manager: EntityManager,
   ) {
-    return await this.create({ initialExaminationId }, manager);
+    return await this.create({ initialExaminationId, subjectId }, manager);
   }
   private validateTransition(
     current: ClinicalCaseStatus,

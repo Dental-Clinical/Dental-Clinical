@@ -8,6 +8,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Clinic } from 'src/clinic/clinic.entity';
+import { StudentSubjectEnrollment } from 'src/student-subject-enrollment/student-subject-enrollment.entity';
 
 @Entity({ name: 'academic_years' })
 export class AcademicYear {
@@ -51,4 +53,13 @@ export class AcademicYear {
     (studentAcademicYear) => studentAcademicYear.academicYear,
   )
   studentAcademicYears: StudentAcademicYear[];
+
+  @OneToMany(() => Clinic, (clinic) => clinic.academicYear)
+  clinics: Clinic[];
+
+  @OneToMany(
+    () => StudentSubjectEnrollment,
+    (enrollment) => enrollment.academicYear,
+  )
+  enrollments: StudentSubjectEnrollment[];
 }

@@ -14,9 +14,11 @@ import { UserRole } from 'src/constants/user-roles';
 import { randomBytes } from 'crypto';
 import { PasswordService } from 'src/common/services/password.service';
 import * as xlsx from 'xlsx';
-import { StudentSection } from 'src/student-section/student-section.entity';
-import { Subject } from '../subjects/subjects.entity';
+import { StudentSubjectEnrollment } from 'src/student-subject-enrollment/student-subject-enrollment.entity';
+import { SectionSubject } from 'src/section-subject/section-subject.entity';
+import { Section } from 'src/section/section.entity';
 import { GetStudentsQueryDto } from './dto/get-students-query.dto';
+import { StudentAcademicYear } from 'src/student-academic-years/student-academic-years.entity';
 
 @Injectable()
 export class StudentService {
@@ -26,10 +28,12 @@ export class StudentService {
     private readonly studentRepository: Repository<Student>,
     private readonly passwordService: PasswordService,
     private readonly dataSource: DataSource,
-    @InjectRepository(StudentSection)
-    private readonly studentSectionRepository: Repository<StudentSection>,
-    @InjectRepository(Subject)
-    private readonly subjectRepository: Repository<Subject>,
+    @InjectRepository(StudentSubjectEnrollment)
+    private readonly enrollmentRepository: Repository<StudentSubjectEnrollment>,
+    @InjectRepository(SectionSubject)
+    private readonly sectionSubjectRepository: Repository<SectionSubject>,
+    @InjectRepository(StudentAcademicYear)
+    private readonly studentAcademicYearRepository: Repository<StudentAcademicYear>,
   ) {}
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
@@ -54,100 +58,125 @@ export class StudentService {
     });
   }
   public async getCurrentStudyYear(userId: number, manager?: EntityManager) {
-    const student = await (
-      manager ? manager.getRepository(Student) : this.studentRepository
-    ).findOne({
+    const enrollment = manager
+      ? manager.getRepository(StudentAcademicYear)
+      : this.studentAcademicYearRepository;
+    const currentEnrollment = await enrollment.findOne({
       where: {
-        user: { id: userId },
-        studentAcademicYears: { isCurrent: true },
+        student: { user: { id: userId } },
+        isCurrent: true,
       },
       relations: {
-        studentAcademicYears: { studyYear: true },
+        studyYear: true,
       },
     });
-    if (!student) {
-      throw new NotFoundException('Student not found');
-    }
-    const currentEnrollment = student.studentAcademicYears.find(
-      (enrollment) => enrollment.isCurrent,
-    );
     if (!currentEnrollment) {
-      throw new NotFoundException('Current enrollment not found for student');
+      throw new NotFoundException(
+        'No current enrollment found for this student',
+      );
     }
     return currentEnrollment.studyYear;
   }
-  public async getClinicSectionForSubject(
+  /**
+   * The student's section for each subject they are enrolled in this academic
+   * year, keyed by subject id. Callers mapping over many cases use this to
+   * avoid a per-case lookup.
+   */
+  public async getSectionsBySubjectId(
+    userId: number,
+  ): Promise<Map<number, Section>> {
+    const enrollments = await this.enrollmentRepository.find({
+      where: {
+        student: { user: { id: userId } },
+        academicYear: { is_active: true },
+      },
+      relations: { subject: true, section: true },
+    });
+
+    return new Map(
+      enrollments.map((enrollment) => [
+        enrollment.subject.id,
+        enrollment.section,
+      ]),
+    );
+  }
+
+  /**
+   * The offering through which a student takes a subject: their section for it,
+   * and the supervisor teaching it there. Resolved in two steps because the
+   * student's section and the section's supervisor are separate facts —
+   * enrolment says where the student sits, SectionSubject says who teaches it.
+   */
+  public async getSectionSubjectForStudent(
     userId: number,
     subjectId: number,
     manager?: EntityManager,
   ) {
-    const subject = await (
-      manager ? manager.getRepository(Subject) : this.subjectRepository
+    const enrollment = await (
+      manager
+        ? manager.getRepository(StudentSubjectEnrollment)
+        : this.enrollmentRepository
     ).findOne({
       where: {
-        id: subjectId,
-        section: {
-          studentSections: {
-            studentAcademicYear: {
-              isCurrent: true,
-              student: {
-                user: {
-                  id: userId,
-                },
-              },
-            },
-          },
-        },
+        student: { user: { id: userId } },
+        subject: { id: subjectId },
+        academicYear: { is_active: true },
       },
-      relations: {
-        section: {
-          supervisor: true,
-          studentSections: true,
-        },
-      },
-    });
-    if (!subject) {
-      throw new NotFoundException(
-        'Current student section not found for the given subject',
-      );
-    }
-    return subject.section;
-  }
-  public async getMySubjects(userId: number) {
-    const subjects = await this.subjectRepository.find({
-      where: {
-        is_active: true,
-        section: {
-          studentSections: {
-            studentAcademicYear: {
-              isCurrent: true,
-              student: {
-                user: {
-                  id: userId,
-                },
-              },
-            },
-          },
-        },
-        studyYear: {
-          studentAcademicYears: {
-            isCurrent: true,
-            student: {
-              user: {
-                id: userId,
-              },
-            },
-          },
-        },
-      },
+      relations: { section: true },
     });
 
-    const result = subjects.map((subject) => ({
-      id: subject.id,
-      name: subject.name,
-    }));
+    if (!enrollment) {
+      throw new NotFoundException(
+        'Student is not enrolled in this subject for the active academic year',
+      );
+    }
+
+    const sectionSubject = await (
+      manager
+        ? manager.getRepository(SectionSubject)
+        : this.sectionSubjectRepository
+    ).findOne({
+      where: {
+        section: { id: enrollment.section.id },
+        subject: { id: subjectId },
+        academicYear: { is_active: true },
+      },
+      relations: { section: true, supervisor: true },
+    });
+
+    if (!sectionSubject) {
+      throw new NotFoundException(
+        'No supervisor is assigned to this subject in the student section',
+      );
+    }
+
+    return sectionSubject;
+  }
+  public async getMySubjects(userId: number) {
+    const enrollments = await this.enrollmentRepository.find({
+      where: {
+        student: { user: { id: userId } },
+        academicYear: { is_active: true },
+        subject: { is_active: true },
+      },
+      relations: { subject: true },
+    });
+    if (!enrollments || enrollments.length === 0) {
+      throw new NotFoundException('No subjects found for this student');
+    }
+
+    // // Rows are unique per (student, subject, academicYear), so a subject can
+    // // only repeat if more than one academic year is flagged active.
+    // const subjects = new Map<number, { id: number; name: string }>();
+    // for (const { subject } of enrollments) {
+    //   subjects.set(subject.id, { id: subject.id, name: subject.name });
+    // }
+
     return {
-      subjects: result,
+      subjects: enrollments.map((enrollment) => ({
+        id: enrollment.subject.id,
+        name: enrollment.subject.name,
+      })),
     };
   }
   public async createStudent(student: CreateStudentDto) {

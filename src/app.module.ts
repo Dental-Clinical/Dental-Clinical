@@ -31,8 +31,6 @@ import { SubjectProceduresModule } from './subject-procedures/subject-procedures
 import { DiagnosisSubmissionModule } from './diagnosis-submission/diagnosis-submission.module';
 import { PlannedProceduresModule } from './planned-procedures/planned-procedures.module';
 import { DiagnosisImagesModule } from './diagnosis-images/diagnosis-images.module';
-import { ClinicSectionsModule } from './clinic-sections/clinic-sections.module';
-import { StudentSectionModule } from './student-section/student-section.module';
 import { SupervisorReviewsModule } from './supervisor-reviews/supervisor-reviews.module';
 import { TreatmentSessionsModule } from './treatment-sessions/treatment-sessions.module';
 import { ClinicalCaseEvaluationModule } from './clinical-case-evaluation/clinical-case-evaluation.module';
@@ -41,6 +39,10 @@ import redisConfig from './config/redis.config';
 import { RedisHealthService } from './redis-health.service';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ClinicalCaseMediaModule } from './clinical-case-media/clinical-case-media.module';
+import { SectionModule } from './section/section.module';
+import { ClinicModule } from './clinic/clinic.module';
+import { SectionSubjectModule } from './section-subject/section-subject.module';
+import { StudentSubjectEnrollmentModule } from './student-subject-enrollment/student-subject-enrollment.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -60,7 +62,7 @@ const ENV = process.env.NODE_ENV;
         store: await redisStore({
           url: configService.get('redis.url'),
           // host: configService.get('redis.host'),
-          //          port: configService.get('redis.port'),
+          // port: configService.get('redis.port'),
         }),
         ttl: configService.get('redis.ttl'),
         isGlobal: true,
@@ -88,14 +90,16 @@ const ENV = process.env.NODE_ENV;
     DiagnosisSubmissionModule,
     PlannedProceduresModule,
     DiagnosisImagesModule,
-    ClinicSectionsModule,
-    StudentSectionModule,
     SupervisorReviewsModule,
     TreatmentSessionsModule,
     ClinicalCaseEvaluationModule,
     StudentProgressModule,
     CloudinaryModule,
     ClinicalCaseMediaModule,
+    SectionModule,
+    ClinicModule,
+    SectionSubjectModule,
+    StudentSubjectEnrollmentModule,
   ],
   controllers: [AppController],
   providers: [
@@ -110,4 +114,4 @@ const ENV = process.env.NODE_ENV;
     RedisHealthService,
   ],
 })
-export class AppModule { }
+export class AppModule {}

@@ -13,6 +13,7 @@ import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submissi
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ClinicalCaseEvaluation } from 'src/clinical-case-evaluation/clinical-case-evaluation.entity';
 import { StudentProgress } from 'src/student-progress/student-progress.entity';
+import { StudentSubjectEnrollment } from 'src/student-subject-enrollment/student-subject-enrollment.entity';
 
 @Entity('students')
 export class Student {
@@ -47,9 +48,12 @@ export class Student {
   @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.assignedStudent)
   clinicalCases: ClinicalCase[];
 
+  @OneToMany(() => StudentSubjectEnrollment, (enrollment) => enrollment.student)
+  subjectEnrollments: StudentSubjectEnrollment[];
+
   @ApiPropertyOptional({
     type: () => [StudentAcademicYear],
-    description: 'Academic year enrollments',
+    description: 'Academic year enrollments, carrying the study year (level)',
   })
   @OneToMany(
     () => StudentAcademicYear,

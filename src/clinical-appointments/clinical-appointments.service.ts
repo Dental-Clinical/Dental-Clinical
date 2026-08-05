@@ -51,18 +51,27 @@ export class ClinicalAppointmentsService {
     dto: CreateStudentClinicalAppointmentDto,
   ) {
     return await this.dataSource.transaction(async (manager) => {
-      const clinicalCase = await manager
+      // Locks the row for the rest of the transaction. Kept separate from the
+      // read below because Postgres rejects FOR UPDATE on the nullable side of
+      // an outer join, and the assigned* relations are nullable.
+      const lockedCase = await manager
         .getRepository(ClinicalCase)
         .createQueryBuilder('clinicalCase')
         .setLock('pessimistic_write')
         .where('clinicalCase.id = :id', { id: dto.clinicalCaseId })
         .getOne();
 
+      if (!lockedCase) {
+        throw new NotFoundException('Clinical Case not Found');
+      }
+
       const loadedCase = await manager.findOne(ClinicalCase, {
         where: { id: dto.clinicalCaseId },
         relations: {
           subject: { studyYear: true },
           patient: true,
+          assignedStudent: true,
+          assignedSupervisor: true,
         },
       });
 
@@ -96,7 +105,7 @@ export class ClinicalAppointmentsService {
       }
 
       const studentCurrentYear = await this.studentService.getCurrentStudyYear(
-        student.id,
+        currentUser.userId,
         manager,
       );
 
@@ -106,15 +115,15 @@ export class ClinicalAppointmentsService {
         );
       }
 
-      const clinicSection =
-        await this.studentService.getClinicSectionForSubject(
-          student.id,
+      const sectionSubject =
+        await this.studentService.getSectionSubjectForStudent(
+          currentUser.userId,
           loadedCase.subject.id,
           manager,
         );
 
       const { patient } = loadedCase;
-      const supervisor = clinicSection.supervisor;
+      const supervisor = sectionSubject.supervisor;
 
       const { startTime, endTime } = await this.checkSupervisorAvailability(
         dto.appointmentDate,
@@ -207,6 +216,7 @@ export class ClinicalAppointmentsService {
       where: { id: clinicalCaseId },
       relations: {
         subject: true,
+        assignedStudent: true,
       },
     });
     if (!clinicalCase) {
@@ -225,14 +235,15 @@ export class ClinicalAppointmentsService {
       throw new ConflictException('Clinical case has already been assigned');
     }
 
-    const clinicSection = await this.studentService.getClinicSectionForSubject(
-      currentUser.userId,
-      clinicalCase.subject.id,
-    );
+    const sectionSubject =
+      await this.studentService.getSectionSubjectForStudent(
+        currentUser.userId,
+        clinicalCase.subject.id,
+      );
 
     return await this.supervisorAvailibilityService.getAvailableSlots(
       date,
-      clinicSection.supervisor.id,
+      sectionSubject.supervisor.id,
     );
   }
   async getTodayAppointments(currentUser: AuthenticatedUser) {

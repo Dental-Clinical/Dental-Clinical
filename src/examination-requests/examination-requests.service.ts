@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -16,6 +17,11 @@ import { CoordinatorAvailabilityService } from '../examination-appointments/coor
 import { ExaminationAppointmentsService } from 'src/examination-appointments/examination-appointments.service';
 import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import {
+  GetAllExaminationRequestsResponseDto,
+  GetExaminationRequestResponseDto,
+} from './dto/examination-request-response.dto';
+import { UserRole } from 'src/constants/user-roles';
 
 @Injectable()
 export class ExaminationRequestsService {
@@ -133,17 +139,14 @@ export class ExaminationRequestsService {
 
   async getExaminationRequest(id: number, user: AuthenticatedUser) {
     const examinationRequest = await this.examinationRepository.findOne({
-      where: {
-        id,
-        patient: {
-          user: {
-            id: user.userId,
-          },
-        },
-      },
+      where: { id },
       relations: {
-        patient: true,
+        patient: {
+          user: true,
+        },
+        teeth: true,
         attachments: true,
+        appointment: true,
       },
     });
 
@@ -151,7 +154,39 @@ export class ExaminationRequestsService {
       throw new NotFoundException('Examination request not found');
     }
 
-    return examinationRequest;
+    // Patient can only view their own request
+    if (
+      user.role === UserRole.PATIENT &&
+      examinationRequest.patient.user!.id !== user.userId
+    ) {
+      throw new ForbiddenException(
+        'You are not allowed to view this examination request.',
+      );
+    }
+
+    return {
+      id: examinationRequest.id,
+      patient_id: examinationRequest.patient_id,
+      symptoms: examinationRequest.symptoms,
+      chief_complaint: examinationRequest.chief_complaint,
+      status: examinationRequest.status,
+      submitted_at: examinationRequest.submitted_at,
+      teeth: examinationRequest.teeth.map((tooth) => ({
+        id: tooth.id,
+        tooth: tooth.tooth,
+      })),
+      attachments: examinationRequest.attachments.map((attachment) => ({
+        id: attachment.id,
+        file_url: attachment.fileUrl,
+        file_name: attachment.fileName,
+      })),
+      appointment: examinationRequest.appointment
+        ? {
+            id: examinationRequest.appointment.id,
+            appointmentDate: examinationRequest.appointment.appointment_date,
+          }
+        : null,
+    };
   }
 
   async getAllExaminationRequestsForAUser(user: AuthenticatedUser) {
@@ -175,6 +210,38 @@ export class ExaminationRequestsService {
   }
 
   async getAllExaminationRequests() {
-    return await this.examinationRepository.find();
+    const examinationRequests = await this.examinationRepository.find({
+      relations: {
+        patient: true,
+        initialExamination: true,
+        teeth: true,
+        attachments: true,
+        appointment: true,
+      },
+    });
+    return examinationRequests.map((request) => ({
+      id: request.id,
+      patient_id: request.patient_id,
+      patient_name: request.patient.full_name,
+      symptoms: request.symptoms,
+      chief_complaint: request.chief_complaint,
+      status: request.status,
+      submitted_at: request.submitted_at,
+      teeth: request.teeth.map((tooth) => ({
+        id: tooth.id,
+        tooth: tooth.tooth,
+      })),
+      attachments: request.attachments.map((attachment) => ({
+        id: attachment.id,
+        fileUrl: attachment.fileUrl,
+        fileName: attachment.fileName,
+      })),
+      appointment: request.appointment
+        ? {
+            id: request.appointment.id,
+            appointmentDate: request.appointment.appointment_date,
+          }
+        : null,
+    }));
   }
 }

@@ -29,7 +29,7 @@ import { SupervisorCaseDetailsDto } from './dto/supervisor-case-details.dto';
 @ApiBearerAuth('JWT-auth')
 @Controller('clinical-cases')
 export class ClinicalCaseController {
-  constructor(private readonly clinicalCaseService: ClinicalCaseService) { }
+  constructor(private readonly clinicalCaseService: ClinicalCaseService) {}
   @Get()
   @ApiOperation({ summary: 'Get all clinical cases, optionally filtered' })
   @ApiOkResponse({

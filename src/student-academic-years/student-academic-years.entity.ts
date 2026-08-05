@@ -1,5 +1,4 @@
 import { AcademicYear } from 'src/academic-years/academic-years.entity';
-import { StudentSection } from 'src/student-section/student-section.entity';
 import { Student } from 'src/students/student.entity';
 import { StudyYear } from 'src/study-years/study-years.entity';
 import {
@@ -12,6 +11,7 @@ import {
   PrimaryGeneratedColumn,
   RelationId,
   Unique,
+  UpdateDateColumn,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -57,16 +57,6 @@ export class StudentAcademicYear {
   @RelationId('studyYear')
   study_year_id: number;
 
-  @ApiPropertyOptional({
-    type: () => [StudentSection],
-    description: 'Student section enrollments',
-  })
-  @OneToMany(
-    () => StudentSection,
-    (studentSection) => studentSection.studentAcademicYear,
-  )
-  studentSections: StudentSection[];
-
   @ApiProperty({
     description: 'Whether this is the current enrollment',
     example: true,
@@ -83,6 +73,6 @@ export class StudentAcademicYear {
   createdAt: Date;
 
   @ApiProperty({ description: 'Last update timestamp' })
-  @CreateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }

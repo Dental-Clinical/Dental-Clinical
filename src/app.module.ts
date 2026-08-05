@@ -31,8 +31,6 @@ import { SubjectProceduresModule } from './subject-procedures/subject-procedures
 import { DiagnosisSubmissionModule } from './diagnosis-submission/diagnosis-submission.module';
 import { PlannedProceduresModule } from './planned-procedures/planned-procedures.module';
 import { DiagnosisImagesModule } from './diagnosis-images/diagnosis-images.module';
-import { ClinicSectionsModule } from './clinic-sections/clinic-sections.module';
-import { StudentSectionModule } from './student-section/student-section.module';
 import { SupervisorReviewsModule } from './supervisor-reviews/supervisor-reviews.module';
 import { TreatmentSessionsModule } from './treatment-sessions/treatment-sessions.module';
 import { ClinicalCaseEvaluationModule } from './clinical-case-evaluation/clinical-case-evaluation.module';
@@ -62,9 +60,9 @@ const ENV = process.env.NODE_ENV;
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         store: await redisStore({
-          //url: configService.get('redis.url'),
-          host: configService.get('redis.host'),
-          port: configService.get('redis.port'),
+          url: configService.get('redis.url'),
+          // host: configService.get('redis.host'),
+          // port: configService.get('redis.port'),
         }),
         ttl: configService.get('redis.ttl'),
         isGlobal: true,
@@ -92,8 +90,6 @@ const ENV = process.env.NODE_ENV;
     DiagnosisSubmissionModule,
     PlannedProceduresModule,
     DiagnosisImagesModule,
-    ClinicSectionsModule,
-    StudentSectionModule,
     SupervisorReviewsModule,
     TreatmentSessionsModule,
     ClinicalCaseEvaluationModule,
@@ -118,4 +114,4 @@ const ENV = process.env.NODE_ENV;
     RedisHealthService,
   ],
 })
-export class AppModule { }
+export class AppModule {}

@@ -62,13 +62,6 @@ export class ClinicalCaseDetailsDto {
 
   @ApiProperty({ type: ClinicalCaseDetailsSubjectDto })
   subject: ClinicalCaseDetailsSubjectDto;
-
-  @ApiProperty({
-    type: ClinicalCaseAssignedStudentDto,
-    nullable: true,
-    description: 'Null when the case has not been assigned to a student yet',
-  })
-  assignedStudent: ClinicalCaseAssignedStudentDto | null;
 }
 class NextAppointmentDto {
   @ApiProperty({

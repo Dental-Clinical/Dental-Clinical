@@ -16,51 +16,49 @@ import { SubjectProcedures } from 'src/subject-procedures/subject-procedures.ent
 import { Clinic } from 'src/clinic/clinic.entity';
 import { SectionSubject } from 'src/section-subject/section-subject.entity';
 import { Material } from 'src/materials/materials.entity';
+import { StudentSubjectEnrollment } from 'src/student-subject-enrollment/student-subject-enrollment.entity';
 
 @Entity('subjects')
 @Unique(['studyYear', 'name'])
 export class Subject {
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
 
   @Column()
-  name: string
+  name: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string
+  description: string;
 
   @Column({ type: 'boolean', default: true })
-  is_active: boolean
+  is_active: boolean;
+
+  @OneToMany(() => StudentSubjectEnrollment, (enrollment) => enrollment.subject)
+  enrollments: StudentSubjectEnrollment[];
 
   @ManyToOne(() => Clinic, (clinic) => clinic.subjects, { nullable: false })
   @JoinColumn({ name: 'clinic_id' })
-  clinic: Clinic
+  clinic: Clinic;
 
   @ManyToOne(() => StudyYear)
   @JoinColumn({ name: 'study_year_id' })
-  studyYear: StudyYear
+  studyYear: StudyYear;
 
   /**
    * Populated at load and NOT refreshed when `studyYear` is reassigned, which
    * is what lets updateSubject tell whether the study year actually changed.
    */
   @RelationId('studyYear')
-  study_year_id: number
+  study_year_id: number;
 
-  @OneToMany(
-    () => SubjectProcedures,
-    procedure => procedure.subject,
-  )
-  subjectProcedures: SubjectProcedures[]
+  @OneToMany(() => SubjectProcedures, (procedure) => procedure.subject)
+  subjectProcedures: SubjectProcedures[];
 
-  @OneToMany(
-    () => SectionSubject,
-    sectionSubject => sectionSubject.subject,
-  )
-  sectionSubjects: SectionSubject[]
+  @OneToMany(() => SectionSubject, (sectionSubject) => sectionSubject.subject)
+  sectionSubjects: SectionSubject[];
 
   @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.subject)
-  clinicalCases: ClinicalCase[]
+  clinicalCases: ClinicalCase[];
 
   @ManyToMany(() => Material, (material) => material.subjects)
   @JoinTable({
@@ -74,6 +72,5 @@ export class Subject {
       referencedColumnName: 'id',
     },
   })
-  materials: Material[]
-
+  materials: Material[];
 }

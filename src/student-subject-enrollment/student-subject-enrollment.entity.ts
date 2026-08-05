@@ -1,38 +1,42 @@
-import { AcademicYear } from "src/academic-years/academic-years.entity";
-import { Section } from "src/section/section.entity";
-import { Student } from "src/students/student.entity";
-import { Subject } from "src/subjects/subjects.entity";
-import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
+import { AcademicYear } from 'src/academic-years/academic-years.entity';
+import { Section } from 'src/section/section.entity';
+import { Student } from 'src/students/student.entity';
+import { Subject } from 'src/subjects/subjects.entity';
+import {
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 
 @Entity('student_subject_enrollments')
-@Unique([
-  'student',
-  'subject',
-  'academicYear'
-])
+@Unique(['student', 'subject', 'academicYear'])
 export class StudentSubjectEnrollment {
-
   @PrimaryGeneratedColumn()
-  id: number
+  id: number;
 
-  @ManyToOne(
-    () => Student,
-    student => student.subjectEnrollment,
-    { nullable: false },
-  )
+  @ManyToOne(() => Student, (student) => student.subjectEnrollments, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'student_id' })
-  student: Student
+  student: Student;
 
-  @ManyToOne(() => Subject, { nullable: false })
+  @ManyToOne(() => Subject, (subject) => subject.enrollments, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'subject_id' })
-  subject: Subject
+  subject: Subject;
 
-  @ManyToOne(() => Section, { nullable: false })
+  @ManyToOne(() => Section, (section) => section.enrollments, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'section_id' })
-  section: Section
+  section: Section;
 
-  @ManyToOne(() => AcademicYear, { nullable: false })
+  @ManyToOne(() => AcademicYear, (academicYear) => academicYear.enrollments, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'academic_year_id' })
-  academicYear: AcademicYear
-
+  academicYear: AcademicYear;
 }

@@ -14,11 +14,11 @@ import { UserRole } from 'src/constants/user-roles';
 import { randomBytes } from 'crypto';
 import { PasswordService } from 'src/common/services/password.service';
 import * as xlsx from 'xlsx';
-import { StudentSection } from 'src/student-section/student-section.entity';
 import { StudentSubjectEnrollment } from 'src/student-subject-enrollment/student-subject-enrollment.entity';
 import { SectionSubject } from 'src/section-subject/section-subject.entity';
 import { Section } from 'src/section/section.entity';
 import { GetStudentsQueryDto } from './dto/get-students-query.dto';
+import { StudentAcademicYear } from 'src/student-academic-years/student-academic-years.entity';
 
 @Injectable()
 export class StudentService {
@@ -28,13 +28,13 @@ export class StudentService {
     private readonly studentRepository: Repository<Student>,
     private readonly passwordService: PasswordService,
     private readonly dataSource: DataSource,
-    @InjectRepository(StudentSection)
-    private readonly studentSectionRepository: Repository<StudentSection>,
     @InjectRepository(StudentSubjectEnrollment)
     private readonly enrollmentRepository: Repository<StudentSubjectEnrollment>,
     @InjectRepository(SectionSubject)
     private readonly sectionSubjectRepository: Repository<SectionSubject>,
-  ) { }
+    @InjectRepository(StudentAcademicYear)
+    private readonly studentAcademicYearRepository: Repository<StudentAcademicYear>,
+  ) {}
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
       where: { university_id },
@@ -58,25 +58,22 @@ export class StudentService {
     });
   }
   public async getCurrentStudyYear(userId: number, manager?: EntityManager) {
-    const student = await (
-      manager ? manager.getRepository(Student) : this.studentRepository
-    ).findOne({
+    const enrollment = manager
+      ? manager.getRepository(StudentAcademicYear)
+      : this.studentAcademicYearRepository;
+    const currentEnrollment = await enrollment.findOne({
       where: {
-        user: { id: userId },
-        studentAcademicYears: { isCurrent: true },
+        student: { user: { id: userId } },
+        isCurrent: true,
       },
       relations: {
-        studentAcademicYears: { studyYear: true },
+        studyYear: true,
       },
     });
-    if (!student) {
-      throw new NotFoundException('Student not found');
-    }
-    const currentEnrollment = student.studentAcademicYears.find(
-      (enrollment) => enrollment.isCurrent,
-    );
     if (!currentEnrollment) {
-      throw new NotFoundException('Current enrollment not found for student');
+      throw new NotFoundException(
+        'No current enrollment found for this student',
+      );
     }
     return currentEnrollment.studyYear;
   }
@@ -164,16 +161,22 @@ export class StudentService {
       },
       relations: { subject: true },
     });
-
-    // Rows are unique per (student, subject, academicYear), so a subject can
-    // only repeat if more than one academic year is flagged active.
-    const subjects = new Map<number, { id: number; name: string }>();
-    for (const { subject } of enrollments) {
-      subjects.set(subject.id, { id: subject.id, name: subject.name });
+    if (!enrollments || enrollments.length === 0) {
+      throw new NotFoundException('No subjects found for this student');
     }
 
+    // // Rows are unique per (student, subject, academicYear), so a subject can
+    // // only repeat if more than one academic year is flagged active.
+    // const subjects = new Map<number, { id: number; name: string }>();
+    // for (const { subject } of enrollments) {
+    //   subjects.set(subject.id, { id: subject.id, name: subject.name });
+    // }
+
     return {
-      subjects: [...subjects.values()],
+      subjects: enrollments.map((enrollment) => ({
+        id: enrollment.subject.id,
+        name: enrollment.subject.name,
+      })),
     };
   }
   public async createStudent(student: CreateStudentDto) {
@@ -293,10 +296,10 @@ export class StudentService {
         },
         studyYear: currentEnrollment
           ? {
-            id: currentEnrollment.studyYear.id,
-            name: currentEnrollment.studyYear.name,
-            level: currentEnrollment.studyYear.level,
-          }
+              id: currentEnrollment.studyYear.id,
+              name: currentEnrollment.studyYear.name,
+              level: currentEnrollment.studyYear.level,
+            }
           : null,
       };
     });

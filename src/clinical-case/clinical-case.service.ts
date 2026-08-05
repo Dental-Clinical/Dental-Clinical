@@ -67,7 +67,7 @@ export class ClinicalCaseService {
     @InjectRepository(SessionMaterial)
     private readonly sessionMaterialRepository: Repository<SessionMaterial>,
     private readonly studentService: StudentService,
-  ) { }
+  ) {}
   private async create(dto: CreateClinicalCaseDto, manager: EntityManager) {
     const initialExamination = await manager.findOne(InitialExamination, {
       where: { id: dto.initialExaminationId },
@@ -193,9 +193,9 @@ export class ClinicalCaseService {
       },
       assignedStudent: clinicalCase.assignedStudent
         ? {
-          id: clinicalCase.assignedStudent.id,
-          name: clinicalCase.assignedStudent.user.full_name,
-        }
+            id: clinicalCase.assignedStudent.id,
+            name: clinicalCase.assignedStudent.user.full_name,
+          }
         : null,
     }));
   }
@@ -209,9 +209,6 @@ export class ClinicalCaseService {
         request: true,
         subject: true,
         clinicalAppointments: true,
-        assignedStudent: {
-          user: true,
-        },
       },
     });
     if (!clinicalCase) {
@@ -241,13 +238,6 @@ export class ClinicalCaseService {
         id: clinicalCase.subject.id,
         name: clinicalCase.subject.name,
       },
-
-      assignedStudent: clinicalCase.assignedStudent
-        ? {
-          id: clinicalCase.assignedStudent.id,
-          name: clinicalCase.assignedStudent.user.full_name,
-        }
-        : null,
     };
   }
   async findStudentAssignedClinicalCase(id: number, userId: number) {
@@ -265,14 +255,16 @@ export class ClinicalCaseService {
         patient: true,
         request: true,
         subject: true,
-        clinicalAppointments: {
-          supervisor: true,
+        assignedSupervisor: {
+          user: true,
         },
+        clinicalAppointments: true,
         assignedStudent: {
           user: true,
         },
       },
     });
+
     if (!clinicalCase) {
       throw new NotFoundException(
         'Clinical Case not found for this student or not assigned',
@@ -465,10 +457,10 @@ export class ClinicalCaseService {
 
       nextSession: nextAppointment
         ? {
-          id: nextAppointment.id,
-          appointmentDate: this.toDateString(nextAppointment.appointmentDate),
-          startTime: nextAppointment.appointmentStart,
-        }
+            id: nextAppointment.id,
+            appointmentDate: this.toDateString(nextAppointment.appointmentDate),
+            startTime: nextAppointment.appointmentStart,
+          }
         : null,
 
       ...(policy.includePatientIdentity
@@ -477,9 +469,9 @@ export class ClinicalCaseService {
 
       ...(policy.includeTreatingStudent
         ? {
-          treatingStudent:
-            clinicalCase.assignedStudent?.user?.full_name ?? null,
-        }
+            treatingStudent:
+              clinicalCase.assignedStudent?.user?.full_name ?? null,
+          }
         : {}),
     };
   }
@@ -628,12 +620,12 @@ export class ClinicalCaseService {
         sessionCount: clinicalCase.treatmentSessions.length,
         nextSession: nextAppointment
           ? {
-            id: nextAppointment.id,
-            appointmentDate: this.toDateString(
-              nextAppointment.appointmentDate,
-            ),
-            startTime: nextAppointment.appointmentStart,
-          }
+              id: nextAppointment.id,
+              appointmentDate: this.toDateString(
+                nextAppointment.appointmentDate,
+              ),
+              startTime: nextAppointment.appointmentStart,
+            }
           : null,
         createdAt: clinicalCase.createdAt,
       };
@@ -740,9 +732,9 @@ export class ClinicalCaseService {
         chiefComplaint: clinicalCase.request.chief_complaint,
         nextAppointment: nextAppointment
           ? {
-            appointmentDate: nextAppointment.appointmentDate,
-            appointmentStart: nextAppointment.appointmentStart,
-          }
+              appointmentDate: nextAppointment.appointmentDate,
+              appointmentStart: nextAppointment.appointmentStart,
+            }
           : null,
         createdAt: clinicalCase.createdAt,
       };

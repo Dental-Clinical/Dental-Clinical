@@ -48,12 +48,8 @@ export class Student {
   @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.assignedStudent)
   clinicalCases: ClinicalCase[];
 
-
-  @OneToMany(
-    () => StudentSubjectEnrollment,
-    enrollment => enrollment.student
-  )
-  subjectEnrollment: StudentSubjectEnrollment[]
+  @OneToMany(() => StudentSubjectEnrollment, (enrollment) => enrollment.student)
+  subjectEnrollments: StudentSubjectEnrollment[];
 
   @ApiPropertyOptional({
     type: () => [StudentAcademicYear],
@@ -64,8 +60,6 @@ export class Student {
     (studentAcademicYear) => studentAcademicYear.student,
   )
   studentAcademicYears: StudentAcademicYear[];
-
-
 
   @ApiPropertyOptional({
     type: () => [DiagnosisSubmission],

@@ -1,5 +1,8 @@
 import { AcademicYear } from 'src/academic-years/academic-years.entity';
-import { ClinicSections } from 'src/clinic-sections/clinic-sections.entity';
+import { Clinic } from 'src/clinic/clinic.entity';
+import { Section } from 'src/section/section.entity';
+import { SectionSubject } from 'src/section-subject/section-subject.entity';
+import { StudentSubjectEnrollment } from 'src/student-subject-enrollment/student-subject-enrollment.entity';
 import { Coordinator } from 'src/coordinators/coordinator.entity';
 import { Material } from 'src/materials/materials.entity';
 import { Patient } from 'src/patients/patient.entity';
@@ -36,13 +39,20 @@ export class SeedContext {
 
   readonly academicYears = new Registry<AcademicYear>('academic year');
   readonly studyYears = new Registry<StudyYear>('study year');
-  readonly sections = new Registry<ClinicSections>('clinic section');
+  readonly clinics = new Registry<Clinic>('clinic');
+  readonly sections = new Registry<Section>('section');
+  readonly sectionSubjects = new Registry<SectionSubject>('section subject');
   readonly subjects = new Registry<Subject>('subject');
   readonly subjectProcedures = new Registry<SubjectProcedures>(
     'subject procedure',
   );
   readonly materials = new Registry<Material>('material');
+  /** Academic-year enrolment: carries the student's study year (level). */
   readonly enrollments = new Registry<StudentAcademicYear>('enrollment');
+  /** Per-subject enrolment: which subject, in which section. */
+  readonly subjectEnrollments = new Registry<StudentSubjectEnrollment>(
+    'subject enrollment',
+  );
 
   readonly clinicalCases = new Registry<ClinicalCase>('clinical case');
 

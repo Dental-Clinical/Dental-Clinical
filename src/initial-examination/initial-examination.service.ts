@@ -102,7 +102,6 @@ export class InitialExaminationService {
           request,
           appointment,
           coordinator,
-          subject,
           diagnosis: dto.diagnosis,
           clinicalFindings: dto.clinicalFindings,
           status: InitialExaminationStatus.COMPLETED,
@@ -119,6 +118,7 @@ export class InitialExaminationService {
 
       await this.clinicalCaseService.createFromInitialExamination(
         initialExamination.id,
+        dto.subject_id,
         manager,
       );
 
@@ -127,7 +127,6 @@ export class InitialExaminationService {
         relations: {
           request: true,
           clinicalCase: true,
-          subject: true,
           coordinator: true,
         },
       });
@@ -165,7 +164,6 @@ export class InitialExaminationService {
         coordinator: {
           user: true,
         },
-        subject: true,
         clinicalCase: true,
       },
     });
@@ -209,11 +207,6 @@ export class InitialExaminationService {
         name: examination.coordinator.user.full_name,
       },
 
-      subject: {
-        id: examination.subject.id,
-        name: examination.subject.name,
-      },
-
       clinicalCase: examination.clinicalCase
         ? {
             id: examination.clinicalCase.id,
@@ -240,7 +233,6 @@ export class InitialExaminationService {
         coordinator: {
           user: true,
         },
-        subject: true,
         clinicalCase: { patient: true },
       },
       order: {
@@ -251,7 +243,6 @@ export class InitialExaminationService {
       id: examination.id,
       patient: examination.clinicalCase.patient.full_name,
       coordinator: examination.coordinator.user.full_name,
-      subject: examination.subject.name,
       status: examination.status,
       appointmentDate: examination.appointment.appointment_date,
       clinicalCaseStatus: examination.clinicalCase.status,

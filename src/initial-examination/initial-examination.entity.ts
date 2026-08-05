@@ -13,7 +13,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { InitialExaminationStatus } from './enums/initial-examination-status.enum';
-import { Subject } from '../subjects/subjects.entity';
 import { ClinicalCase } from '../clinical-case/clinical-case.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -53,13 +52,6 @@ export class InitialExamination {
   )
   @JoinColumn({ name: 'coordinator_id' })
   coordinator: Coordinator;
-
-  @ApiProperty({ type: () => Subject, description: 'Associated subject' })
-  @ManyToOne(() => Subject, (subject) => subject.initialExaminations, {
-    nullable: false,
-  })
-  @JoinColumn({ name: 'subject_id' })
-  subject: Subject;
 
   @ApiPropertyOptional({
     type: () => ClinicalCase,

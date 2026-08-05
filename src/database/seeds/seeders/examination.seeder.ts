@@ -122,7 +122,6 @@ export class ExaminationSeeder {
       request: ExaminationRequest;
       appointment: ExaminationAppointment;
       coordinator: Coordinator;
-      subject: Subject;
       blueprint: InitialExaminationBlueprint;
       visit: ExaminationVisitBlueprint;
     },
@@ -137,7 +136,6 @@ export class ExaminationSeeder {
       request: params.request,
       appointment: params.appointment,
       coordinator: params.coordinator,
-      subject: params.subject,
       diagnosis: blueprint.diagnosis,
       clinicalFindings: blueprint.clinicalFindings,
       status: blueprint.status,

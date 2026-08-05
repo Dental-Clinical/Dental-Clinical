@@ -89,7 +89,6 @@ export class ClinicalCaseSeeder {
         request,
         appointment: visit,
         coordinator,
-        subject,
         blueprint: scenario.initialExamination,
         visit: scenario.examinationVisit,
       },

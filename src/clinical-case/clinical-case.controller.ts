@@ -29,7 +29,7 @@ import { SupervisorCaseDetailsDto } from './dto/supervisor-case-details.dto';
 @ApiBearerAuth('JWT-auth')
 @Controller('clinical-cases')
 export class ClinicalCaseController {
-  constructor(private readonly clinicalCaseService: ClinicalCaseService) {}
+  constructor(private readonly clinicalCaseService: ClinicalCaseService) { }
   @Get()
   @ApiOperation({ summary: 'Get all clinical cases, optionally filtered' })
   @ApiOkResponse({
@@ -59,11 +59,11 @@ export class ClinicalCaseController {
   @Get('assigned') // after being assigned
   @ApiOperation({
     summary:
-      '[Student] Get open, unassigned clinical cases for the student study year',
+      '[Student] Get assigned clinical cases for the student study year',
   })
   @ApiOkResponse({
     type: OpenCasesSummary,
-    description: 'List of open clinical cases retrieved',
+    description: 'List of assigned clinical cases retrieved',
   })
   @ApiResponse({
     status: 404,

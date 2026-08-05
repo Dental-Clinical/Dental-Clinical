@@ -268,7 +268,7 @@ export class ClinicalAppointmentsService {
     });
 
     if (appointments.length === 0) {
-      return { data: [] }
+      return []
     }
     const now = new Date();
     return appointments.map((appointment) => {

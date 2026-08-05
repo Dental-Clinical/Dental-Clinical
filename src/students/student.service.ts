@@ -34,7 +34,7 @@ export class StudentService {
     private readonly sectionSubjectRepository: Repository<SectionSubject>,
     @InjectRepository(StudentAcademicYear)
     private readonly studentAcademicYearRepository: Repository<StudentAcademicYear>,
-  ) {}
+  ) { }
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
       where: { university_id },
@@ -176,6 +176,7 @@ export class StudentService {
       subjects: enrollments.map((enrollment) => ({
         id: enrollment.subject.id,
         name: enrollment.subject.name,
+        description: enrollment.subject.description
       })),
     };
   }
@@ -296,10 +297,10 @@ export class StudentService {
         },
         studyYear: currentEnrollment
           ? {
-              id: currentEnrollment.studyYear.id,
-              name: currentEnrollment.studyYear.name,
-              level: currentEnrollment.studyYear.level,
-            }
+            id: currentEnrollment.studyYear.id,
+            name: currentEnrollment.studyYear.name,
+            level: currentEnrollment.studyYear.level,
+          }
           : null,
       };
     });

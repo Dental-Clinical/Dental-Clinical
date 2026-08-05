@@ -44,7 +44,7 @@ export class ClinicalAppointmentsService {
     private readonly studentService: StudentService,
     private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
     @InjectRepository(Patient) readonly patientRepository: Repository<Patient>,
-  ) {}
+  ) { }
 
   async createStudentClinicalAppointment(
     currentUser: AuthenticatedUser,
@@ -257,9 +257,13 @@ export class ClinicalAppointmentsService {
         status: ClinicalAppointmentStatus.SCHEDULED,
       },
       relations: {
-        clinicalCase: true,
+        clinicalCase: {
+          subject: {
+            clinic: true
+          }
+        },
         patient: true,
-        supervisor: true,
+        supervisor: true
       },
     });
 
@@ -293,6 +297,8 @@ export class ClinicalAppointmentsService {
       return {
         appointmentId: appointment.id,
         patient: appointment.patient.full_name,
+        subject: appointment.clinicalCase.subject.name,
+        clinic: appointment.clinicalCase.subject.clinic.name,
         start: new Date(start).toLocaleTimeString(),
         displayStatus,
       };

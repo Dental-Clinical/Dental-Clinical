@@ -34,7 +34,7 @@ export class ExaminationRequestsService {
     private readonly appointmentService: ExaminationAppointmentsService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async createExaminationRequest(
     dto: CreateExaminationRequestDto,
@@ -131,7 +131,7 @@ export class ExaminationRequestsService {
       });
     } catch (err) {
       await Promise.all(
-        (files ?? []).map((f) => unlink(f.path).catch(() => {})),
+        (files ?? []).map((f) => unlink(f.path).catch(() => { })),
       );
       throw err;
     }
@@ -182,15 +182,15 @@ export class ExaminationRequestsService {
       })),
       appointment: examinationRequest.appointment
         ? {
-            id: examinationRequest.appointment.id,
-            appointmentDate: examinationRequest.appointment.appointment_date,
-          }
+          id: examinationRequest.appointment.id,
+          appointmentDate: examinationRequest.appointment.appointment_date,
+        }
         : null,
     };
   }
 
   async getAllExaminationRequestsForAUser(user: AuthenticatedUser) {
-    const examinationRequest = await this.examinationRepository.findOne({
+    const examinationRequest = await this.examinationRepository.find({
       where: {
         patient: {
           user: {
@@ -238,9 +238,9 @@ export class ExaminationRequestsService {
       })),
       appointment: request.appointment
         ? {
-            id: request.appointment.id,
-            appointmentDate: request.appointment.appointment_date,
-          }
+          id: request.appointment.id,
+          appointmentDate: request.appointment.appointment_date,
+        }
         : null,
     }));
   }

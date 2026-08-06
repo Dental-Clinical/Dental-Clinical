@@ -54,9 +54,6 @@ export class AcademicYear {
   )
   studentAcademicYears: StudentAcademicYear[];
 
-  @OneToMany(() => Clinic, (clinic) => clinic.academicYear)
-  clinics: Clinic[];
-
   @OneToMany(
     () => StudentSubjectEnrollment,
     (enrollment) => enrollment.academicYear,

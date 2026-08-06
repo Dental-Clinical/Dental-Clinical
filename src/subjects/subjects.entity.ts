@@ -27,8 +27,8 @@ export class Subject {
   @Column()
   name: string;
 
-  @Column({ type: 'text', nullable: true })
-  description: string;
+  @Column({ name: 'short_name', nullable: true })
+  shortName: string;
 
   @Column({ type: 'boolean', default: true })
   is_active: boolean;

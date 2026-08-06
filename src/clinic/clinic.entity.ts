@@ -8,11 +8,12 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  RelationId,
   Unique,
 } from 'typeorm';
 
 @Entity('clinics')
-@Unique(['name', 'academicYear'])
+@Unique(['name'])
 export class Clinic {
   @PrimaryGeneratedColumn()
   id: number;
@@ -22,10 +23,6 @@ export class Clinic {
 
   @Column({ nullable: true })
   description?: string;
-
-  @ManyToOne(() => AcademicYear, (year) => year.clinics)
-  @JoinColumn({ name: 'academic_year_id' })
-  academicYear: AcademicYear;
 
   @OneToMany(() => Subject, (subject) => subject.clinic)
   subjects: Subject[];

@@ -5,13 +5,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Subject } from './subjects.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { StudyYear } from 'src/study-years/study-years.entity';
 import { Clinic } from 'src/clinic/clinic.entity';
 import { CreateSubjectDto } from './dto/create-subject.dto';
 import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { GetSubjectsQueryDto } from './dto/get-subjects-query.dto';
 import { GetSubjectMaterialsResponseDto } from './dto/get-subject-materials-response.dto';
+import { Material } from 'src/materials/materials.entity';
 
 @Injectable()
 export class SubjectsService {
@@ -22,6 +23,8 @@ export class SubjectsService {
     private readonly studyYearRepository: Repository<StudyYear>,
     @InjectRepository(Clinic)
     private readonly clinicRepository: Repository<Clinic>,
+    @InjectRepository(Material)
+    private readonly materialRepository: Repository<Material>,
   ) {}
 
   async getSubjects(dto: GetSubjectsQueryDto) {
@@ -53,7 +56,11 @@ export class SubjectsService {
 
     return {
       message: 'Subjects retrieved successfully',
-      data: subjects,
+      subjects: subjects.map((subject) => ({
+        id: subject.id,
+        name: subject.name,
+        shortName: subject.shortName,
+      })),
       meta: {
         page: dto.page,
         limit: dto.limit,
@@ -86,12 +93,14 @@ export class SubjectsService {
       throw new NotFoundException('Study year not found');
     }
 
-    // Subjects belong to a clinic, and the faculty runs one per academic year.
+    // Subjects belong to a clinic
     const clinic = await this.clinicRepository.findOne({
-      where: { academicYear: { is_active: true } },
+      where: { id: dto.clinic_id },
     });
     if (!clinic) {
-      throw new NotFoundException('No clinic exists for the active academic year');
+      throw new NotFoundException(
+        'No clinic exists with the provided clinic_id. Please provide a valid clinic_id.',
+      );
     }
 
     const existing = await this.subjectRepository.findOne({
@@ -105,7 +114,7 @@ export class SubjectsService {
 
     const subject = this.subjectRepository.create({
       name: dto.name,
-      description: dto.description,
+      shortName: dto.shortName,
       is_active: dto.is_active,
       studyYear,
       clinic,
@@ -167,8 +176,8 @@ export class SubjectsService {
     if (dto.name !== undefined) {
       subject.name = dto.name;
     }
-    if (dto.description !== undefined) {
-      subject.description = dto.description;
+    if (dto.shortName !== undefined) {
+      subject.shortName = dto.shortName;
     }
     if (dto.is_active !== undefined) {
       subject.is_active = dto.is_active;
@@ -227,6 +236,49 @@ export class SubjectsService {
     };
   }
 
+  async addMaterialsToSubject(subjectId: number, materialIds: number[]) {
+    const subject = await this.subjectRepository.findOne({
+      where: { id: subjectId },
+      relations: {
+        materials: true,
+      },
+    });
+
+    if (!subject) {
+      throw new NotFoundException('Subject not found');
+    }
+
+    const uniqueMaterialIds = [...new Set(materialIds)];
+
+    const existingIds = new Set(
+      subject.materials.map((material) => material.id),
+    );
+
+    const newMaterialIds = uniqueMaterialIds.filter(
+      (id) => !existingIds.has(id),
+    );
+    if (newMaterialIds.length === 0) {
+      return {
+        message: 'All provided materials are already assigned to this subject.',
+        added: 0,
+      };
+    }
+
+    const materials = await this.materialRepository.findBy({
+      id: In(newMaterialIds),
+    });
+
+    if (materials.length !== newMaterialIds.length) {
+      throw new NotFoundException('One or more materials not found');
+    }
+
+    subject.materials.push(...materials);
+    await this.subjectRepository.save(subject);
+    return {
+      message: 'Materials added to subject successfully',
+      added: materials.length,
+    };
+  }
   async getSubjectMaterials(
     subjectId: number,
   ): Promise<GetSubjectMaterialsResponseDto> {

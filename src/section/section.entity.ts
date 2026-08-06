@@ -8,6 +8,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  RelationId,
 } from 'typeorm';
 
 @Entity('sections')
@@ -21,6 +22,9 @@ export class Section {
   @ManyToOne(() => Clinic, (clinic) => clinic.sections)
   @JoinColumn({ name: 'clinic_id' })
   clinic: Clinic;
+
+  @RelationId('clinic')
+  clinic_id: number;
 
   @OneToMany(() => SectionSubject, (ss) => ss.section)
   sectionSubjects: SectionSubject[];

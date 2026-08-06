@@ -34,7 +34,7 @@ export class StudentService {
     private readonly sectionSubjectRepository: Repository<SectionSubject>,
     @InjectRepository(StudentAcademicYear)
     private readonly studentAcademicYearRepository: Repository<StudentAcademicYear>,
-  ) { }
+  ) {}
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
       where: { university_id },
@@ -159,24 +159,30 @@ export class StudentService {
         academicYear: { is_active: true },
         subject: { is_active: true },
       },
-      relations: { subject: true },
+      relations: {
+        subject: true,
+        section: {
+          sectionSubjects: {
+            subject: true,
+            supervisor: { user: true },
+          },
+        },
+      },
     });
     if (!enrollments || enrollments.length === 0) {
       throw new NotFoundException('No subjects found for this student');
     }
 
-    // // Rows are unique per (student, subject, academicYear), so a subject can
-    // // only repeat if more than one academic year is flagged active.
-    // const subjects = new Map<number, { id: number; name: string }>();
-    // for (const { subject } of enrollments) {
-    //   subjects.set(subject.id, { id: subject.id, name: subject.name });
-    // }
-
     return {
       subjects: enrollments.map((enrollment) => ({
         id: enrollment.subject.id,
         name: enrollment.subject.name,
-        description: enrollment.subject.description
+        shortName: enrollment.subject.shortName,
+        section: enrollment.section.name,
+        supervisor:
+          enrollment.section.sectionSubjects.find(
+            (ss) => ss.subject.id === enrollment.subject.id,
+          )?.supervisor.user.full_name || null,
       })),
     };
   }
@@ -297,10 +303,10 @@ export class StudentService {
         },
         studyYear: currentEnrollment
           ? {
-            id: currentEnrollment.studyYear.id,
-            name: currentEnrollment.studyYear.name,
-            level: currentEnrollment.studyYear.level,
-          }
+              id: currentEnrollment.studyYear.id,
+              name: currentEnrollment.studyYear.name,
+              level: currentEnrollment.studyYear.level,
+            }
           : null,
       };
     });

@@ -24,6 +24,17 @@ export class SupervisorService {
     private readonly dataSource: DataSource,
     private readonly whatsappService: WhatsappService,
   ) {}
+  async getSupervisors() {
+    const supervisors = await this.dataSource.getRepository(Supervisor).find({
+      relations: {
+        user: true,
+      },
+    });
+    return supervisors.map((supervisor) => ({
+      id: supervisor.id,
+      full_name: supervisor.user.full_name,
+    }));
+  }
   async createSupervisor(dto: CreateSupervisorDto) {
     return await this.dataSource.transaction(async (manager) => {
       dto.email = dto.email.trim().toLowerCase();

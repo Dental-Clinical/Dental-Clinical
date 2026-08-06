@@ -114,4 +114,20 @@ export class AcademicYearsController {
   async deleteAcademicYear(@Param('id', ParseIntPipe) id: number) {
     return await this.academicYearsService.deleteAcademicYear(id);
   }
+
+  @Post(':id/initialize')
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({
+    summary:
+      '[Admin] Initialize an academic year with sections and subjects from the previous academic year without changes',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Academic year ID' })
+  @ApiOkResponse({
+    type: AcademicYearItemResponseDto,
+    description: 'Academic year initialized successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Academic year not found' })
+  async initializeAcademicYear(@Param('id', ParseIntPipe) id: number) {
+    return await this.academicYearsService.initializeAcademicYear(id);
+  }
 }

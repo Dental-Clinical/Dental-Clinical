@@ -6,16 +6,18 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AcademicYear } from './academic-years.entity';
-import { Repository } from 'typeorm';
+import { DataSource, In, LessThan, Repository } from 'typeorm';
 import { CreateAcademicYearDto } from './dto/create-academic-year.dto';
 import { UpdateAcademicYearDto } from './dto/update-academic-year.dto';
 import { GetAcademicYearsQueryDto } from './dto/get-academic-years-query.dto';
+import { SectionSubject } from 'src/section-subject/section-subject.entity';
 
 @Injectable()
 export class AcademicYearsService {
   constructor(
     @InjectRepository(AcademicYear)
     private readonly academicYearRepository: Repository<AcademicYear>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async getAcademicYears(dto: GetAcademicYearsQueryDto) {
@@ -41,7 +43,13 @@ export class AcademicYearsService {
 
     return {
       message: 'Academic years retrieved successfully',
-      data: academicYears,
+      academicYears: academicYears.map((academicYear) => ({
+        id: academicYear.id,
+        label: academicYear.label,
+        start_date: academicYear.start_date,
+        end_date: academicYear.end_date,
+        is_active: academicYear.is_active,
+      })),
       meta: {
         page: dto.page,
         limit: dto.limit,
@@ -84,7 +92,10 @@ export class AcademicYearsService {
       const saved = await this.academicYearRepository.save(academicYear);
       return {
         message: 'Academic year created successfully',
-        data: saved,
+        data: {
+          id: saved.id,
+          label: saved.label,
+        },
       };
     } catch (error: any) {
       if (error.code === '23505') {
@@ -152,6 +163,89 @@ export class AcademicYearsService {
     return {
       message: 'Academic year deleted successfully',
     };
+  }
+
+  async initializeAcademicYear(id: number) {
+    const academicYear = await this.academicYearRepository.findOne({
+      where: { id },
+    });
+
+    if (!academicYear) {
+      throw new NotFoundException('Academic year not found');
+    }
+    const sourceAcademicYear = await this.academicYearRepository.findOne({
+      where: { end_date: LessThan(academicYear.start_date) },
+      order: { end_date: 'DESC' },
+    });
+
+    if (!sourceAcademicYear) {
+      throw new NotFoundException('Source academic year not found');
+    }
+
+    const alreadyInitialized = await this.dataSource
+      .getRepository(SectionSubject)
+      .findOne({
+        where: { academicYear: { id: academicYear.id } },
+      });
+
+    if (alreadyInitialized) {
+      throw new ConflictException(
+        'The target academic year has already been initialized',
+      );
+    }
+
+    const previousAssignments = await this.dataSource
+      .getRepository(SectionSubject)
+      .find({
+        where: { academicYear: { id: sourceAcademicYear.id } },
+        relations: {
+          section: true,
+          subject: true,
+          supervisor: true,
+        },
+      });
+
+    if (previousAssignments.length === 0) {
+      throw new ConflictException(
+        'The previous academic year has not been initialized.',
+      );
+    }
+    return await this.dataSource.transaction(async (manager) => {
+      const newAssignments = previousAssignments.map((assignment) => {
+        const newAssignment = manager.getRepository(SectionSubject).create({
+          section: assignment.section,
+          subject: assignment.subject,
+          supervisor: assignment.supervisor,
+          academicYear: academicYear,
+        });
+
+        return newAssignment;
+      });
+
+      // execute the insert query in chunks to avoid exceeding the parameter limit
+      // await manager
+      //   .getRepository(SectionSubject)
+      //   .save(newAssignments, { chunk: 100 });
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(SectionSubject)
+        .values(
+          previousAssignments.map((assignment) => ({
+            section: { id: assignment.section.id },
+            subject: { id: assignment.subject.id },
+            supervisor: { id: assignment.supervisor.id },
+            academicYear: { id: academicYear.id },
+          })),
+        )
+        .execute();
+
+      return {
+        message: 'Academic year initialized successfully',
+        copiedAssignments: newAssignments.length,
+        academicYearId: academicYear.id,
+      };
+    });
   }
 
   private validateDateRange(

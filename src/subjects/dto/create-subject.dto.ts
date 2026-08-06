@@ -26,12 +26,12 @@ export class CreateSubjectDto {
   name: string;
 
   @ApiPropertyOptional({
-    description: 'Subject description',
-    example: 'Covers restorative procedures',
+    description: 'Subject short name or abbreviation',
+    example: 'Restorative Dent.',
   })
   @IsOptional()
   @IsString()
-  description?: string;
+  shortName?: string;
 
   @ApiPropertyOptional({
     description: 'Whether the subject is active',
@@ -41,4 +41,12 @@ export class CreateSubjectDto {
   @IsOptional()
   @IsBoolean()
   is_active?: boolean;
+
+  @ApiProperty({
+    description: 'ID of the clinic the subject belongs to',
+    example: 1,
+  })
+  @IsInt()
+  @IsPositive()
+  clinic_id: number;
 }

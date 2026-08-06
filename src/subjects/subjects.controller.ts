@@ -35,6 +35,7 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { GetSubjectMaterialsResponseDto } from './dto/get-subject-materials-response.dto';
+import { CreateSubjectMaterialsDto } from './dto/create-subject-materials.dto';
 
 @ApiTags('Subjects')
 @ApiBearerAuth('JWT-auth')
@@ -162,5 +163,41 @@ export class SubjectsController {
   @ApiNotFoundResponse({ description: 'Subject not found' })
   async getSubjectMaterials(@Param('id', ParseIntPipe) subjectId: number) {
     return await this.subjectsService.getSubjectMaterials(subjectId);
+  }
+  @Post(':id/materials')
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Add materials to a subject' })
+  @ApiParam({ name: 'id', type: Number, description: 'Subject ID' })
+  @ApiBody({
+    schema: {
+      properties: {
+        materials: {
+          example: [1, 2, 3],
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    schema: {
+      properties: {
+        message: {
+          example: {
+            message: 'Materials added to subject successfully',
+            added: 3,
+          },
+        },
+      },
+    },
+    description: 'Materials added to subject successfully',
+  })
+  @ApiNotFoundResponse({ description: 'Subject not found' })
+  async addSubjectMaterials(
+    @Param('id', ParseIntPipe) subjectId: number,
+    @Body() dto: CreateSubjectMaterialsDto,
+  ) {
+    return await this.subjectsService.addMaterialsToSubject(
+      subjectId,
+      dto.materials,
+    );
   }
 }

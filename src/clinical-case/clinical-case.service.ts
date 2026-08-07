@@ -26,6 +26,7 @@ import { ClinicalCaseSummaryDto } from './dto/clinical-case-summary.dto';
 import {
   AssignedClinicalCaseDetailsDto,
   ClinicalCaseDetailsDto,
+  toGender,
 } from './dto/clinical-case-details.sto';
 import { StudentService } from 'src/students/student.service';
 import { FilterClinicalCasesDto } from './dto/get-filtered-clinical-cases.dto';
@@ -224,7 +225,11 @@ export class ClinicalCaseService {
         fullName: clinicalCase.patient.full_name,
         phone: clinicalCase.patient.phone,
         medicalHistory: clinicalCase.patient.medical_history,
+        gender: toGender(clinicalCase.patient.gender),
         allergies: clinicalCase.patient.allergies,
+        dateOfBirth: clinicalCase.patient.dateOfBirth
+          ? DateTimeUtils.toDateString(clinicalCase.patient.dateOfBirth)
+          : null,
         currentMedications: clinicalCase.patient.current_medications,
       },
 

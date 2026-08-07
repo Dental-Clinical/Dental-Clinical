@@ -670,6 +670,7 @@ export class ClinicalCaseService {
         id: clinicalCase.id,
         patient: clinicalCase.patient.full_name,
         subject: clinicalCase.subject.name,
+        subjectId: clinicalCase.subject.id,
         clinic: clinicalCase.subject.clinic,
         coordinator: clinicalCase.initialExamination.coordinator.user.full_name,
         chiefComplaint: clinicalCase.request.chief_complaint,

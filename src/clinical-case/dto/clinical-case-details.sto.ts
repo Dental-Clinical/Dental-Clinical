@@ -2,6 +2,19 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ClinicalCaseStatus } from '../enums/clinical-case-status.enum';
 import { ClinicalCaseAssignedStudentDto } from './clinical-case-summary.dto';
 
+export enum Gender {
+  MALE = 'male',
+  FEMALE = 'female',
+}
+
+
+export function toGender(value: string | null | undefined): Gender | null {
+  const normalized = value?.toLowerCase();
+  return normalized === Gender.MALE || normalized === Gender.FEMALE
+    ? normalized
+    : null;
+}
+
 export class ClinicalCaseDetailsPatientDto {
   @ApiProperty({ example: 1 })
   id: number;
@@ -20,6 +33,21 @@ export class ClinicalCaseDetailsPatientDto {
 
   @ApiProperty({ example: 'Lisinopril 10mg', nullable: true })
   currentMedications: string;
+
+  @ApiProperty({
+    example: '1990-01-01',
+    format: 'date',
+    nullable: true,
+    description: 'Date of birth as an ISO date string (YYYY-MM-DD)',
+  })
+  dateOfBirth: string | null;
+
+  @ApiProperty({
+    enum: Gender,
+    example: Gender.MALE,
+    nullable: true,
+  })
+  gender: Gender | null;
 }
 
 export class ClinicalCaseDetailsRequestDto {

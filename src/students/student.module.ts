@@ -8,6 +8,8 @@ import { CommonModule } from 'src/common/common.module';
 import { StudentSubjectEnrollment } from 'src/student-subject-enrollment/student-subject-enrollment.entity';
 import { SectionSubject } from 'src/section-subject/section-subject.entity';
 import { StudentAcademicYear } from 'src/student-academic-years/student-academic-years.entity';
+import { SubjectProcedures } from 'src/subject-procedures/subject-procedures.entity';
+import { StudentProgress } from 'src/student-progress/student-progress.entity';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { StudentAcademicYear } from 'src/student-academic-years/student-academic
       StudentSubjectEnrollment,
       SectionSubject,
       StudentAcademicYear,
+      SubjectProcedures,
+      StudentProgress,
     ]),
     forwardRef(() => UserModule),
     CommonModule,

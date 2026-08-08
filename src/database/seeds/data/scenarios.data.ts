@@ -162,8 +162,6 @@ export const CASE_SCENARIOS: CaseBlueprint[] = [
       status: ClinicalAppointmentStatus.COMPLETED,
     },
     diagnosis: {
-      clinicalImpression:
-        'Findings on 46 are consistent with symptomatic irreversible pulpitis in a mandibular first molar with three canals; the tooth is restorable with sufficient ferrule after caries removal. Tooth 45 shows recurrent distal caries close to the pulp horn and is vital, so it is planned for pulp-preserving root canal treatment only if the pulp is exposed during excavation — otherwise a restoration will be arranged under Restorative. Smoking cessation advice given and recorded.',
       submittedDayOffset: -2,
       images: [
         {
@@ -240,8 +238,6 @@ export const CASE_SCENARIOS: CaseBlueprint[] = [
       status: ClinicalAppointmentStatus.COMPLETED,
     },
     diagnosis: {
-      clinicalImpression:
-        'Four restorable lesions in a medically controlled hypertensive patient with significant dental anxiety and a latex allergy. Treatment sequenced from the symptomatic upper left quadrant towards the lower arch, one quadrant per visit, with short appointments and latex-free isolation throughout. No endodontic involvement expected; pulp status to be re-checked at each visit.',
       submittedDayOffset: -28,
       images: [
         {
@@ -433,8 +429,6 @@ export const CASE_SCENARIOS: CaseBlueprint[] = [
       status: ClinicalAppointmentStatus.COMPLETED,
     },
     diagnosis: {
-      clinicalImpression:
-        'Generalised chronic periodontitis requiring full-mouth debridement followed by quadrant-by-quadrant root surface instrumentation under local anaesthesia. Oral hygiene is the limiting factor, so the first visit is dedicated to instruction and supragingival debridement, with re-evaluation six weeks after the final quadrant.',
       submittedDayOffset: -21,
       images: [
         {
@@ -594,8 +588,6 @@ export const CASE_SCENARIOS: CaseBlueprint[] = [
       status: ClinicalAppointmentStatus.COMPLETED,
     },
     diagnosis: {
-      clinicalImpression:
-        'Three straightforward restorations in a young healthy patient with good oral hygiene. The cervical lesion on 24 is non-carious and abrasion-related, so a glass ionomer is preferred over composite for fluoride release and moisture tolerance, alongside brushing technique correction.',
       submittedDayOffset: -27,
       images: [
         {
@@ -749,8 +741,6 @@ export const CASE_SCENARIOS: CaseBlueprint[] = [
       status: ClinicalAppointmentStatus.COMPLETED,
     },
     diagnosis: {
-      clinicalImpression:
-        'Two restorations to be replaced in an anticoagulated but otherwise stable patient. Treatment is entirely non-surgical, so warfarin is continued unchanged; care taken to avoid soft tissue trauma during matrix placement. Composite for 46 to restore the proximal contact and amalgam for 47 given the heavy occlusal load.',
       submittedDayOffset: -52,
       images: [
         {
@@ -887,8 +877,6 @@ export const CASE_SCENARIOS: CaseBlueprint[] = [
       status: ClinicalAppointmentStatus.COMPLETED,
     },
     diagnosis: {
-      clinicalImpression:
-        'Single-canal necrotic upper lateral incisor with an established periapical lesion. Emergency pulpectomy first for pain relief, then a two-visit approach with calcium hydroxide dressing before obturation. Coronal discolouration to be discussed at review once healing is confirmed; ibuprofen avoided because of gastric intolerance.',
       submittedDayOffset: -47,
       images: [
         {

@@ -84,13 +84,6 @@ export class DiagnosisSubmission {
   answers: SubjectDiagnosisAnswers[];
 
   @ApiProperty({
-    description: 'Clinical impression text',
-    example: 'Deep caries on tooth 36',
-  })
-  @Column({ type: 'text' })
-  clinical_impression: string;
-
-  @ApiProperty({
     description: 'Submission status',
     enum: DiagnosisSubmissionStatus,
     example: DiagnosisSubmissionStatus.PENDING_REVIEW,

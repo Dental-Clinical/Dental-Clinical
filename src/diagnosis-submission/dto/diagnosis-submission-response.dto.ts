@@ -10,6 +10,9 @@ export class DiagnosisSubmissionCreatedDataDto {
   @ApiProperty({ example: 'diagnosis_pending_review' })
   status: string;
 
+  @ApiProperty({ example: 3 })
+  answers: number;
+
   @ApiProperty({ example: 2 })
   plannedProcedures: number;
 
@@ -52,18 +55,40 @@ export class DiagnosisImageDto {
   file_name: string;
 }
 
-export class DiagnosisSubmissionDetailDto {
+export class DiagnosisAnswerQuestionDto {
   @ApiProperty({ example: 1 })
   id: number;
 
-  @ApiProperty({ example: 'Deep caries on tooth 36' })
-  clinical_impression: string;
+  @ApiProperty({ example: 'Is the tooth sensitive to cold?' })
+  question: string;
+
+  @ApiProperty({ example: 'single-choice' })
+  type: string;
+}
+
+export class DiagnosisAnswerDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+
+  @ApiProperty({ example: 'Yes' })
+  answer: string;
+
+  @ApiProperty({ type: DiagnosisAnswerQuestionDto })
+  question: DiagnosisAnswerQuestionDto;
+}
+
+export class DiagnosisSubmissionDetailDto {
+  @ApiProperty({ example: 1 })
+  id: number;
 
   @ApiProperty({ example: 'pending_review' })
   status: string;
 
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
   submittedAt: Date;
+
+  @ApiProperty({ type: [DiagnosisAnswerDto] })
+  answers: DiagnosisAnswerDto[];
 
   @ApiProperty({ type: [DiagnosisPlannedProcedureDto] })
   plannedProcedures: DiagnosisPlannedProcedureDto[];

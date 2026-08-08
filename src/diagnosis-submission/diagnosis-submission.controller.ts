@@ -52,17 +52,35 @@ export class DiagnosisSubmissionController {
   @ApiBody({
     schema: {
       type: 'object',
-      required: ['clinicalCaseId', 'clinicalImpression', 'plannedProcedures'],
+      required: ['clinicalCaseId', 'answers', 'plannedProcedures'],
       properties: {
         clinicalCaseId: {
           type: 'number',
           example: 1,
           description: 'Clinical case ID',
         },
-        clinicalImpression: {
-          type: 'string',
-          example: 'Deep caries on tooth 36',
-          description: 'Clinical impression text',
+        answers: {
+          type: 'array',
+          minItems: 1,
+          items: {
+            type: 'object',
+            required: ['questionId', 'answer'],
+            properties: {
+              questionId: {
+                type: 'number',
+                example: 1,
+                description: 'Subject diagnosis question ID',
+              },
+              answer: {
+                type: 'string',
+                example: 'Yes',
+                description:
+                  'Answer text (comma-separated option values for multiple-choice questions)',
+              },
+            },
+          },
+          description:
+            'Answers to the subject diagnosis questions (multipart fields: answers[0][questionId], answers[0][answer], ...)',
         },
         plannedProcedures: {
           type: 'array',

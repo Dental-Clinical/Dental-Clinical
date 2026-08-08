@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -17,6 +18,9 @@ import { DiagnosisSubmissionStatus } from './enums/diagnosis-submission-status.e
 import { DiagnosisImages } from 'src/diagnosis-images/diagnosis-images.entity';
 import { unlink } from 'fs/promises';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { SubjectDiagnosisQuestion } from 'src/subject-diagnosis/subject-diagnosis-questions.entity';
+import { SubjectDiagnosisAnswers } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
+import { QuestionType } from 'src/subject-diagnosis/enums/question-types.enum';
 
 @Injectable()
 export class DiagnosisSubmissionService {
@@ -116,6 +120,73 @@ export class DiagnosisSubmissionService {
 
       seen.add(key);
     }
+
+    const questions = await this.dataSource
+      .getRepository(SubjectDiagnosisQuestion)
+      .find({
+        where: { subject: { id: clinicalCase.subject.id }, isActive: true },
+        relations: { answerOptions: true },
+      });
+    const questionById = new Map(
+      questions.map((question) => [question.id, question]),
+    );
+
+    const answeredQuestionIds = new Set<number>();
+
+    for (const answer of dto.answers) {
+      if (answeredQuestionIds.has(answer.questionId)) {
+        throw new ConflictException(
+          `Duplicate answer for question ID ${answer.questionId}`,
+        );
+      }
+      answeredQuestionIds.add(answer.questionId);
+
+      const question = questionById.get(answer.questionId);
+
+      if (!question) {
+        throw new ConflictException(
+          `Question with ID ${answer.questionId} is not an active question for this subject`,
+        );
+      }
+
+      if (
+        question.type === QuestionType.SINGLE_CHOICE ||
+        question.type === QuestionType.MULTIPLE_CHOICE
+      ) {
+        const optionValues = new Set(
+          question.answerOptions.map((option) => option.value),
+        );
+        const values =
+          question.type === QuestionType.SINGLE_CHOICE
+            ? [answer.answer.trim()]
+            : answer.answer.split(',').map((value) => value.trim());
+
+        const seenValues = new Set<string>();
+
+        for (const value of values) {
+          if (!value || !optionValues.has(value)) {
+            throw new BadRequestException(
+              `Answer "${value}" is not a valid option for question ID ${answer.questionId}`,
+            );
+          }
+          if (seenValues.has(value)) {
+            throw new BadRequestException(
+              `Duplicate answer value "${value}" for question ID ${answer.questionId}`,
+            );
+          }
+          seenValues.add(value);
+        }
+      }
+    }
+
+    for (const question of questions) {
+      if (question.required && !answeredQuestionIds.has(question.id)) {
+        throw new BadRequestException(
+          `Required question "${question.question}" (ID ${question.id}) must be answered`,
+        );
+      }
+    }
+
     try {
       return await this.dataSource.transaction(async (manager) => {
         const diagnosisSubmission = manager
@@ -124,7 +195,6 @@ export class DiagnosisSubmissionService {
             clinicalCase: clinicalCase,
             student: student,
             supervisor: clinicalCase.assignedSupervisor,
-            clinical_impression: dto.clinicalImpression,
             status: DiagnosisSubmissionStatus.PENDING_REVIEW,
           });
         const savedSubmission = await manager.save(diagnosisSubmission);
@@ -139,6 +209,16 @@ export class DiagnosisSubmissionService {
           }),
         );
         await manager.save(plannedProcedures);
+
+        const answers = dto.answers.map((answer) =>
+          manager.getRepository(SubjectDiagnosisAnswers).create({
+            diagnosisSubmission: savedSubmission,
+            question: { id: answer.questionId },
+            answer: answer.answer.trim(),
+          }),
+        );
+        await manager.save(answers);
+
         if (files?.length) {
           const uploadedImages = await this.cloudinaryService.uploadMany(
             files,
@@ -167,6 +247,7 @@ export class DiagnosisSubmissionService {
             diagnosisSubmissionId: savedSubmission.id,
             clinicalCaseId: clinicalCase.id,
             status: clinicalCase.status,
+            answers: answers.length,
             plannedProcedures: plannedProcedures.length,
             uploadedImages: files?.length ?? 0,
           },
@@ -199,6 +280,16 @@ export class DiagnosisSubmissionService {
             subjectProcedure: true,
           },
           images: true,
+          answers: {
+            question: true,
+          },
+        },
+        order: {
+          answers: {
+            question: {
+              displayOrder: 'ASC',
+            },
+          },
         },
       });
 

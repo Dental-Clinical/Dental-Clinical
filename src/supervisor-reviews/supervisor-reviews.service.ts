@@ -72,6 +72,9 @@ export class SupervisorReviewsService {
             subjectProcedure: true,
           },
           images: true,
+          answers: {
+            question: true,
+          },
         },
       });
     if (!submission) {
@@ -82,7 +85,12 @@ export class SupervisorReviewsService {
       id: submission.id,
       student: submission.student.user.full_name,
       patient: submission.clinicalCase.patient.full_name,
-      clinicalImpression: submission.clinical_impression,
+      answers: [...submission.answers]
+        .sort((a, b) => a.question.displayOrder - b.question.displayOrder)
+        .map((answer) => ({
+          question: answer.question.question,
+          answer: answer.answer,
+        })),
       status: submission.status,
       plannedProcedures: submission.plannedProcedures.map((procedure) => {
         return {

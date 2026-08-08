@@ -24,8 +24,8 @@ export interface SeededDiagnosis {
 }
 
 /**
- * The student's diagnosis: clinical impression, supporting images, the planned
- * procedure list, and the supervisor's review once the plan is approved.
+ * The student's diagnosis: supporting images, the planned procedure list, and
+ * the supervisor's review once the plan is approved.
  *
  * The submission status is derived from the presence of a review rather than
  * declared separately — an approved plan with a `pending_review` submission is
@@ -52,7 +52,6 @@ export class DiagnosisSeeder {
       clinicalCase,
       student,
       supervisor,
-      clinical_impression: blueprint.clinicalImpression,
       status: blueprint.review
         ? DiagnosisSubmissionStatus.APPROVED
         : DiagnosisSubmissionStatus.PENDING_REVIEW,

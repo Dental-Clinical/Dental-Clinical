@@ -2,23 +2,22 @@ import { Transform, Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsInt,
-  IsNotEmpty,
   IsOptional,
-  IsString,
   Min,
   ValidateNested,
 } from 'class-validator';
 import { CreatePlannedProcedureDto } from 'src/planned-procedures/dto/create-planned-procedure.dto';
+import { CreateDiagnosisAnswerDto } from './create-diagnosis-answer.dto';
 
 export class CreateDiagnosisSubmissionDto {
   @IsInt()
   @Min(1)
   clinicalCaseId: number;
 
-  // needs to change to answers array of objects with questionId and answer
-  @IsString()
-  @IsNotEmpty()
-  clinicalImpression: string;
+  @ValidateNested({ each: true })
+  @Type(() => CreateDiagnosisAnswerDto)
+  @ArrayMinSize(1)
+  answers: CreateDiagnosisAnswerDto[];
 
   @ValidateNested({ each: true })
   @Type(() => CreatePlannedProcedureDto)

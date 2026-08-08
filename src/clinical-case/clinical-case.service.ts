@@ -275,6 +275,8 @@ export class ClinicalCaseService {
         'Clinical Case not found for this student or not assigned',
       );
     }
+    const sectionSubject = await this.studentService.getSectionSubjectForStudent(userId, clinicalCase?.subject.id)
+    const section = sectionSubject.section
     const nextAppointment = this.findNextScheduledAppointment(clinicalCase);
     return {
       id: clinicalCase.id,
@@ -288,6 +290,8 @@ export class ClinicalCaseService {
         medicalHistory: clinicalCase.patient.medical_history,
         allergies: clinicalCase.patient.allergies,
         currentMedications: clinicalCase.patient.current_medications,
+        gender: clinicalCase.patient.gender,
+        dateOfBirth: clinicalCase.patient.dateOfBirth
       },
 
       patientRequest: {
@@ -308,6 +312,7 @@ export class ClinicalCaseService {
       assignedSupervisor: {
         id: clinicalCase.assignedSupervisor.id,
         name: clinicalCase.assignedSupervisor.user.full_name,
+        section
       },
       nextAppointment: {
         id: nextAppointment?.id,

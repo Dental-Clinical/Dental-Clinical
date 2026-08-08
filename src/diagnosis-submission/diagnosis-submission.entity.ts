@@ -17,6 +17,7 @@ import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.ent
 import { DiagnosisImages } from 'src/diagnosis-images/diagnosis-images.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SupervisorReview } from 'src/supervisor-reviews/supervisor-reviews.entity';
+import { SubjectDiagnosisAnswers } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
 
 @Entity('diagnosis_submissions')
 export class DiagnosisSubmission {
@@ -71,6 +72,16 @@ export class DiagnosisSubmission {
     (supervisorReview) => supervisorReview.diagnosisSubmission,
   )
   supervisorReview: SupervisorReview;
+
+  @ApiPropertyOptional({
+    type: () => [SubjectDiagnosisAnswers],
+    description: 'Answers to subject diagnosis questions',
+  })
+  @OneToMany(
+    () => SubjectDiagnosisAnswers,
+    (answer) => answer.diagnosisSubmission,
+  )
+  answers: SubjectDiagnosisAnswers[];
 
   @ApiProperty({
     description: 'Clinical impression text',

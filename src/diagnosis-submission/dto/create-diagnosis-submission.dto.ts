@@ -15,6 +15,7 @@ export class CreateDiagnosisSubmissionDto {
   @Min(1)
   clinicalCaseId: number;
 
+  // needs to change to answers array of objects with questionId and answer
   @IsString()
   @IsNotEmpty()
   clinicalImpression: string;

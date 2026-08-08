@@ -17,6 +17,7 @@ import { Clinic } from 'src/clinic/clinic.entity';
 import { SectionSubject } from 'src/section-subject/section-subject.entity';
 import { Material } from 'src/materials/materials.entity';
 import { StudentSubjectEnrollment } from 'src/student-subject-enrollment/student-subject-enrollment.entity';
+import { SubjectDiagnosisQuestion } from 'src/subject-diagnosis/subject-diagnosis-questions.entity';
 
 @Entity('subjects')
 @Unique(['studyYear', 'name'])
@@ -73,4 +74,10 @@ export class Subject {
     },
   })
   materials: Material[];
+
+  @OneToMany(
+    () => SubjectDiagnosisQuestion,
+    (diagnosisQuestion) => diagnosisQuestion.subject,
+  )
+  diagnosisQuestions: SubjectDiagnosisQuestion[];
 }

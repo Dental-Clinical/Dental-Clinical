@@ -51,9 +51,6 @@ export class ClinicalAppointmentsService {
     dto: CreateStudentClinicalAppointmentDto,
   ) {
     return await this.dataSource.transaction(async (manager) => {
-      // Locks the row for the rest of the transaction. Kept separate from the
-      // read below because Postgres rejects FOR UPDATE on the nullable side of
-      // an outer join, and the assigned* relations are nullable.
       const lockedCase = await manager
         .getRepository(ClinicalCase)
         .createQueryBuilder('clinicalCase')
@@ -161,7 +158,10 @@ export class ClinicalAppointmentsService {
 
       await manager.save(loadedCase);
 
-      return manager.save(clinicalAppointment);
+      manager.save(clinicalAppointment);
+      return {
+        "message": "Appointment created successfully"
+      }
     });
   }
 

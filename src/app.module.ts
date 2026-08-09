@@ -44,6 +44,7 @@ import { ClinicModule } from './clinic/clinic.module';
 import { SectionSubjectModule } from './section-subject/section-subject.module';
 import { StudentSubjectEnrollmentModule } from './student-subject-enrollment/student-subject-enrollment.module';
 import { MaterialsModule } from './materials/materials.module';
+import { SubjectDiagnosisModule } from './subject-diagnosis/subject-diagnosis.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -102,6 +103,7 @@ const ENV = process.env.NODE_ENV;
     SectionSubjectModule,
     StudentSubjectEnrollmentModule,
     MaterialsModule,
+    SubjectDiagnosisModule,
   ],
   controllers: [AppController],
   providers: [

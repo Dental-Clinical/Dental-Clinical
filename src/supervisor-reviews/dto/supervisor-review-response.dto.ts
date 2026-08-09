@@ -33,6 +33,14 @@ export class ReviewImageDto {
   url: string;
 }
 
+export class ReviewAnswerDto {
+  @ApiProperty({ example: 'Is the tooth sensitive to cold?' })
+  question: string;
+
+  @ApiProperty({ example: 'Yes' })
+  answer: string;
+}
+
 export class SupervisorReviewDetailDataDto {
   @ApiProperty({ example: 1 })
   id: number;
@@ -43,8 +51,8 @@ export class SupervisorReviewDetailDataDto {
   @ApiProperty({ example: 'John Doe' })
   patient: string;
 
-  @ApiProperty({ example: 'Deep caries on tooth 36' })
-  clinicalImpression: string;
+  @ApiProperty({ type: [ReviewAnswerDto] })
+  answers: ReviewAnswerDto[];
 
   @ApiProperty({ example: 'pending_review' })
   status: string;

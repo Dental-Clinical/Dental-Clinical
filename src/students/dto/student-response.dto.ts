@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-class StudentUserDto {
+export class StudentUserDto {
   @ApiProperty({ example: 1 })
   id: number;
 
@@ -20,7 +20,7 @@ class StudentUserDto {
   is_active: boolean;
 }
 
-class StudentStudyYearDto {
+export class StudentStudyYearDto {
   @ApiProperty({ example: 1 })
   id: number;
 

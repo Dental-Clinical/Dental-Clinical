@@ -54,7 +54,6 @@ export interface PlannedProcedureBlueprint {
 }
 
 export interface DiagnosisBlueprint {
-  clinicalImpression: string;
   submittedDayOffset: number;
   images: MediaBlueprint[];
   procedures: PlannedProcedureBlueprint[];

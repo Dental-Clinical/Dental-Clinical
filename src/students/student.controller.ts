@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseIntPipe,
   Post,
   Query,
   UploadedFile,
@@ -14,6 +16,7 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -28,6 +31,10 @@ import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.i
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { GetStudentsQueryDto } from './dto/get-students-query.dto';
 import { PaginatedStudentsResponseDto } from './dto/student-response.dto';
+import { GetSupervisorStudentsQueryDto } from './dto/get-supervisor-students-query.dto';
+import { PaginatedSupervisorStudentsResponseDto } from './dto/supervisor-student-response.dto';
+import { GetSupervisedStudentQueryDto } from './dto/get-supervised-student-query.dto';
+import { SupervisedStudentDetailResponseDto } from './dto/supervised-student-detail-response.dto';
 
 @ApiTags('Students')
 @ApiBearerAuth('JWT-auth')
@@ -92,5 +99,50 @@ export class StudentController {
   })
   public async getMySubjects(@CurrentUser() user: AuthenticatedUser) {
     return await this.studentService.getMySubjects(user.userId);
+  }
+
+  @Get('supervised')
+  @Roles([UserRole.SUPERVISOR])
+  @ApiOperation({
+    summary:
+      '[Supervisor] Get the students this supervisor teaches, with per-subject procedure completion (paginated)',
+  })
+  @ApiOkResponse({
+    type: PaginatedSupervisorStudentsResponseDto,
+    description: 'Paginated list of supervised students',
+  })
+  public async getSupervisedStudents(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetSupervisorStudentsQueryDto,
+  ) {
+    return await this.studentService.getSupervisorStudents(user, query);
+  }
+
+  @Get('supervised/:id')
+  @Roles([UserRole.SUPERVISOR])
+  @ApiOperation({
+    summary:
+      "[Supervisor] Get one supervised student's procedure progress, by subject",
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Student ID' })
+  @ApiOkResponse({
+    type: SupervisedStudentDetailResponseDto,
+    description: 'The student and their progress in each subject taught',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Student is supervised by another supervisor',
+  })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  public async getSupervisedStudent(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetSupervisedStudentQueryDto,
+  ) {
+    return await this.studentService.getSupervisedStudentDetail(
+      user,
+      id,
+      query,
+    );
   }
 }

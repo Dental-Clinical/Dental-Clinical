@@ -17,7 +17,7 @@ import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.ent
 import { DiagnosisImages } from 'src/diagnosis-images/diagnosis-images.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SupervisorReview } from 'src/supervisor-reviews/supervisor-reviews.entity';
-import { SubjectDiagnosisAnswers } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
+import { SubjectDiagnosisAnswer } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
 
 @Entity('diagnosis_submissions')
 export class DiagnosisSubmission {
@@ -74,14 +74,14 @@ export class DiagnosisSubmission {
   supervisorReview: SupervisorReview;
 
   @ApiPropertyOptional({
-    type: () => [SubjectDiagnosisAnswers],
+    type: () => [SubjectDiagnosisAnswer],
     description: 'Answers to subject diagnosis questions',
   })
   @OneToMany(
-    () => SubjectDiagnosisAnswers,
+    () => SubjectDiagnosisAnswer,
     (answer) => answer.diagnosisSubmission,
   )
-  answers: SubjectDiagnosisAnswers[];
+  answers: SubjectDiagnosisAnswer[];
 
   @ApiProperty({
     description: 'Submission status',

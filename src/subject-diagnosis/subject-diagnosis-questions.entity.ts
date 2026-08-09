@@ -9,7 +9,8 @@ import {
   Unique,
 } from 'typeorm';
 import { QuestionType } from './enums/question-types.enum';
-import { SubjectDiagnosisAnswerOption } from './subject-diagnosis-answer-option.entity';
+import { SubjectDiagnosisAnswer } from './subject-diagnosis-answers.entity';
+import { SubjectDiagnosisQuestionOption } from './subject-diagnosis-answer-option.entity';
 
 @Entity({ name: 'subject_diagnosis_questions' })
 @Unique(['subject', 'question'])
@@ -38,9 +39,10 @@ export class SubjectDiagnosisQuestion {
 
   @Column({ default: true })
   isActive: boolean;
-  @OneToMany(
-    () => SubjectDiagnosisAnswerOption,
-    (answerOption) => answerOption.question,
-  )
-  answerOptions: SubjectDiagnosisAnswerOption[];
+
+  @OneToMany(() => SubjectDiagnosisQuestionOption, (option) => option.question)
+  answerOptions: SubjectDiagnosisQuestionOption[];
+
+  @OneToMany(() => SubjectDiagnosisAnswer, (answer) => answer.question)
+  answers: SubjectDiagnosisAnswer[];
 }

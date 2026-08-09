@@ -1,18 +1,65 @@
 import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 import { SubjectDiagnosisQuestion } from './subject-diagnosis-questions.entity';
+import { SubjectDiagnosisQuestionOption } from './subject-diagnosis-answer-option.entity';
 
+// @Entity('subject_diagnosis_answers')
+// export class SubjectDiagnosisAnswers {
+//   @PrimaryGeneratedColumn()
+//   id: number;
+
+//   @ManyToOne(() => DiagnosisSubmission, (submission) => submission.answers)
+//   diagnosisSubmission: DiagnosisSubmission;
+
+//   @ManyToOne(() => SubjectDiagnosisQuestion)
+//   question: SubjectDiagnosisQuestion;
+
+//   @Column('text')
+//   answer: string;
+// }
 @Entity('subject_diagnosis_answers')
-export class SubjectDiagnosisAnswers {
+@Unique(['diagnosisSubmission', 'question'])
+export class SubjectDiagnosisAnswer {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => DiagnosisSubmission, (submission) => submission.answers)
+  @ManyToOne(() => DiagnosisSubmission, (submission) => submission.answers, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'diagnosis_submission_id' })
   diagnosisSubmission: DiagnosisSubmission;
 
-  @ManyToOne(() => SubjectDiagnosisQuestion)
+  @ManyToOne(() => SubjectDiagnosisQuestion, (question) => question.answers, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'question_id' })
   question: SubjectDiagnosisQuestion;
 
-  @Column('text')
-  answer: string;
+  @Column({ type: 'text', nullable: true })
+  answer: string | null;
+
+  @ManyToMany(() => SubjectDiagnosisQuestionOption)
+  @JoinTable({
+    name: 'subject_diagnosis_answer_selected_options',
+    joinColumn: {
+      name: 'answer_id',
+      referencedColumnName: 'id',
+    },
+    inverseJoinColumn: {
+      name: 'option_id',
+      referencedColumnName: 'id',
+    },
+  })
+  selectedOptions: SubjectDiagnosisQuestionOption[];
 }

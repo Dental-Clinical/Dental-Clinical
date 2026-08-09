@@ -19,7 +19,7 @@ import { DiagnosisImages } from 'src/diagnosis-images/diagnosis-images.entity';
 import { unlink } from 'fs/promises';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { SubjectDiagnosisQuestion } from 'src/subject-diagnosis/subject-diagnosis-questions.entity';
-import { SubjectDiagnosisAnswers } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
+import { SubjectDiagnosisAnswer } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
 import { QuestionType } from 'src/subject-diagnosis/enums/question-types.enum';
 
 @Injectable()
@@ -125,7 +125,7 @@ export class DiagnosisSubmissionService {
       .getRepository(SubjectDiagnosisQuestion)
       .find({
         where: { subject: { id: clinicalCase.subject.id }, isActive: true },
-        relations: { answerOptions: true },
+        relations: { answers: true, answerOptions: true },
       });
     const questionById = new Map(
       questions.map((question) => [question.id, question]),
@@ -148,33 +148,113 @@ export class DiagnosisSubmissionService {
           `Question with ID ${answer.questionId} is not an active question for this subject`,
         );
       }
+      console.log(question);
 
-      if (
-        question.type === QuestionType.SINGLE_CHOICE ||
-        question.type === QuestionType.MULTIPLE_CHOICE
-      ) {
-        const optionValues = new Set(
-          question.answerOptions.map((option) => option.value),
-        );
-        const values =
-          question.type === QuestionType.SINGLE_CHOICE
-            ? [answer.answer.trim()]
-            : answer.answer.split(',').map((value) => value.trim());
+      // if (
+      //   question.type === QuestionType.SINGLE_CHOICE ||
+      //   question.type === QuestionType.MULTIPLE_CHOICE
+      // ) {
+      //   const optionValues = new Set(
+      //     question.answerOptions.map((option) => option.value),
+      //   );
+      //   const values =
+      //     question.type === QuestionType.SINGLE_CHOICE
+      //       ? [answer.answer.trim()]
+      //       : answer.answer.split(',').map((value) => value.trim());
 
-        const seenValues = new Set<string>();
+      //   const seenValues = new Set<string>();
 
-        for (const value of values) {
-          if (!value || !optionValues.has(value)) {
+      //   for (const value of values) {
+      //     if (!value || !optionValues.has(value)) {
+      //       throw new BadRequestException(
+      //         `Answer "${value}" is not a valid option for question ID ${answer.questionId}`,
+      //       );
+      //     }
+      //     if (seenValues.has(value)) {
+      //       throw new BadRequestException(
+      //         `Duplicate answer value "${value}" for question ID ${answer.questionId}`,
+      //       );
+      //     }
+      //     seenValues.add(value);
+      //   }
+      // }
+      switch (question.type) {
+        case QuestionType.TEXT:
+        case QuestionType.TEXTAREA:
+          if (!answer.answer?.trim()) {
             throw new BadRequestException(
-              `Answer "${value}" is not a valid option for question ID ${answer.questionId}`,
+              `Answer for question ID ${answer.questionId} cannot be empty`,
             );
           }
-          if (seenValues.has(value)) {
+          break;
+
+        case QuestionType.NUMBER:
+          if (
+            answer.answer === undefined ||
+            answer.answer.trim() === '' ||
+            !Number.isFinite(Number(answer.answer))
+          ) {
             throw new BadRequestException(
-              `Duplicate answer value "${value}" for question ID ${answer.questionId}`,
+              `Answer for question ID ${answer.questionId} must be a valid number.`,
             );
           }
-          seenValues.add(value);
+          break;
+
+        case QuestionType.BOOLEAN:
+          if (answer.answer !== 'true' && answer.answer !== 'false') {
+            throw new BadRequestException(
+              `Answer for question ID ${answer.questionId} must be true or false.`,
+            );
+          }
+          break;
+
+        case QuestionType.SINGLE_CHOICE:
+          if (!answer.optionIds || answer.optionIds.length !== 1) {
+            throw new BadRequestException(
+              `Answer for question ID ${answer.questionId} must have exactly one option selected.`,
+            );
+          }
+
+          const selectedOptionId = question.answerOptions.find(
+            (option) => option.id === answer.optionIds![0],
+          );
+          if (!selectedOptionId) {
+            throw new BadRequestException(
+              `Invalid option for question ID ${answer.questionId}.`,
+            );
+          }
+          break;
+
+        case QuestionType.MULTIPLE_CHOICE: {
+          if (!answer.optionIds || answer.optionIds.length === 0) {
+            throw new BadRequestException(
+              `Multiple-choice question ID ${answer.questionId} requires at least one option.`,
+            );
+          }
+
+          const uniqueOptionIds = new Set(answer.optionIds);
+
+          if (uniqueOptionIds.size !== answer.optionIds.length) {
+            throw new BadRequestException(
+              `Duplicate options are not allowed for question ID ${answer.questionId}.`,
+            );
+          }
+
+          const validOptionIds = new Set(
+            question.answerOptions
+              .filter((option) => option.isActive)
+              .map((option) => option.id),
+          );
+
+          for (const optionId of answer.optionIds) {
+            if (!validOptionIds.has(optionId)) {
+              throw new BadRequestException(
+                `Option ID ${optionId} is not valid for question ID ${answer.questionId}.`,
+              );
+            }
+          }
+
+          break;
         }
       }
     }
@@ -210,14 +290,36 @@ export class DiagnosisSubmissionService {
         );
         await manager.save(plannedProcedures);
 
-        const answers = dto.answers.map((answer) =>
-          manager.getRepository(SubjectDiagnosisAnswers).create({
+        // const answers = dto.answers.map((answer) =>
+        //   manager.getRepository(SubjectDiagnosisAnswers).create({
+        //     diagnosisSubmission: savedSubmission,
+        //     question: { id: answer.questionId },
+        //     answer: answer.answer.trim(),
+        //   }),
+        // );
+        // await manager.save(answers);
+        const answerRepository = manager.getRepository(SubjectDiagnosisAnswer);
+
+        const answers: SubjectDiagnosisAnswer[] = [];
+
+        for (const dtoAnswer of dto.answers) {
+          const diagnosisAnswer = answerRepository.create({
             diagnosisSubmission: savedSubmission,
-            question: { id: answer.questionId },
-            answer: answer.answer.trim(),
-          }),
-        );
-        await manager.save(answers);
+            question: { id: dtoAnswer.questionId },
+            answer: dtoAnswer.answer?.trim() ?? null,
+            selectedOptions: dtoAnswer.optionIds
+              ? questionById
+                  .get(dtoAnswer.questionId)!
+                  .answerOptions.filter((option) =>
+                    dtoAnswer.optionIds!.includes(option.id),
+                  )
+              : [],
+          });
+
+          answers.push(diagnosisAnswer);
+        }
+
+        await answerRepository.save(answers);
 
         if (files?.length) {
           const uploadedImages = await this.cloudinaryService.uploadMany(

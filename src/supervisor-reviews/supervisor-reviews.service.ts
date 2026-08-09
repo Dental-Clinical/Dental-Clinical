@@ -73,6 +73,7 @@ export class SupervisorReviewsService {
           },
           images: true,
           answers: {
+            selectedOptions: true,
             question: true,
           },
         },
@@ -90,10 +91,12 @@ export class SupervisorReviewsService {
         .map((answer) => ({
           question: answer.question.question,
           answer: answer.answer,
+          selectedOptions: answer.selectedOptions,
         })),
       status: submission.status,
       plannedProcedures: submission.plannedProcedures.map((procedure) => {
         return {
+          id: procedure.id,
           toothNumber: procedure.toothNumber,
           procedureName: procedure.subjectProcedure.name,
         };

@@ -9,7 +9,7 @@ import { DataSource, Repository } from 'typeorm';
 import { CreateSubjectDiagnosisQuestionDto } from './dto/creaet-subject-diagnosis-question.dto';
 import { Subject } from 'src/subjects/subjects.entity';
 import { QuestionType } from './enums/question-types.enum';
-import { SubjectDiagnosisAnswerOption } from './subject-diagnosis-answer-option.entity';
+import { SubjectDiagnosisQuestionOption } from './subject-diagnosis-answer-option.entity';
 
 @Injectable()
 export class SubjectDiagnosisService {
@@ -61,7 +61,6 @@ export class SubjectDiagnosisService {
         'Options can only be provided for choice questions.',
       );
     }
-    console.log(dto.options);
 
     const optionValues = dto.options?.map((o) => o.value) ?? [];
 
@@ -92,7 +91,7 @@ export class SubjectDiagnosisService {
       );
 
       const optionRepository = manager.getRepository(
-        SubjectDiagnosisAnswerOption,
+        SubjectDiagnosisQuestionOption,
       );
 
       const question = questionRepository.create({
@@ -104,6 +103,7 @@ export class SubjectDiagnosisService {
       });
 
       const savedQuestion = await questionRepository.save(question);
+      console.log(savedQuestion);
 
       if (isChoiceQuestion) {
         const options = dto.options!.map((option) =>
@@ -155,12 +155,14 @@ export class SubjectDiagnosisService {
         type: question.type,
         required: question.required,
         displayOrder: question.displayOrder,
-        options: question.answerOptions.map((option) => ({
-          id: option.id,
-          label: option.label,
-          value: option.value,
-          displayOrder: option.displayOrder,
-        })),
+        options: question.answerOptions
+          .filter((option) => option.isActive)
+          .map((option) => ({
+            id: option.id,
+            label: option.label,
+            value: option.value,
+            displayOrder: option.displayOrder,
+          })),
       })),
     };
   }

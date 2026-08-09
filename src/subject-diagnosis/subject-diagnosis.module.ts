@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SubjectDiagnosisController } from './subject-diagnosis.controller';
 import { SubjectDiagnosisService } from './subject-diagnosis.service';
-import { SubjectDiagnosisAnswerOption } from './subject-diagnosis-answer-option.entity';
+import { SubjectDiagnosisQuestionOption } from './subject-diagnosis-answer-option.entity';
 import { SubjectDiagnosisQuestion } from './subject-diagnosis-questions.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Subject } from 'src/subjects/subjects.entity';
@@ -10,7 +10,7 @@ import { Subject } from 'src/subjects/subjects.entity';
   imports: [
     TypeOrmModule.forFeature([
       SubjectDiagnosisQuestion,
-      SubjectDiagnosisAnswerOption,
+      SubjectDiagnosisQuestionOption,
       Subject,
     ]),
   ],

@@ -13,6 +13,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SessionProcedure } from 'src/sesssion-procedures/session-procedures.entity';
 import { PlannedProceduresStatus } from './enum/planned-procedures-status.enum';
+import { SubjectDiagnosisAnswer } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
 
 @Entity('planned_procedures')
 export class PlannedProcedures {
@@ -71,4 +72,7 @@ export class PlannedProcedures {
   @ApiProperty({ description: 'Last update timestamp' })
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @OneToMany(() => SubjectDiagnosisAnswer, (a) => a.plannedProcedure)
+  answers: SubjectDiagnosisAnswer[];
 }

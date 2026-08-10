@@ -30,31 +30,6 @@ export class SubmitDiagnosisResponseDto {
   data: DiagnosisSubmissionCreatedDataDto;
 }
 
-export class DiagnosisPlannedProcedureDto {
-  @ApiProperty({ example: 1 })
-  id: number;
-
-  @ApiProperty({ example: 36 })
-  toothNumber: number;
-
-  @ApiProperty({ example: 'planned' })
-  status: string;
-
-  @ApiProperty({ example: 'Root Canal Treatment' })
-  subjectProcedureName: string;
-}
-
-export class DiagnosisImageDto {
-  @ApiProperty({ example: 1 })
-  id: number;
-
-  @ApiProperty({ example: '/uploads/diagnosis-submissions/image1.jpg' })
-  file_path: string;
-
-  @ApiProperty({ example: 'xray.jpg' })
-  file_name: string;
-}
-
 export class DiagnosisAnswerQuestionDto {
   @ApiProperty({ example: 1 })
   id: number;
@@ -77,6 +52,34 @@ export class DiagnosisAnswerDto {
   question: DiagnosisAnswerQuestionDto;
 }
 
+export class DiagnosisPlannedProcedureDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+
+  @ApiProperty({ example: 36 })
+  toothNumber: number;
+
+  @ApiProperty({ example: 'planned' })
+  status: string;
+
+  @ApiProperty({ example: 'Root Canal Treatment' })
+  subjectProcedureName: string;
+
+  @ApiProperty({ type: [DiagnosisAnswerDto] })
+  answers: DiagnosisAnswerDto[];
+}
+
+export class DiagnosisImageDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+
+  @ApiProperty({ example: '/uploads/diagnosis-submissions/image1.jpg' })
+  file_path: string;
+
+  @ApiProperty({ example: 'xray.jpg' })
+  file_name: string;
+}
+
 export class DiagnosisSubmissionDetailDto {
   @ApiProperty({ example: 1 })
   id: number;
@@ -86,9 +89,6 @@ export class DiagnosisSubmissionDetailDto {
 
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
   submittedAt: Date;
-
-  @ApiProperty({ type: [DiagnosisAnswerDto] })
-  answers: DiagnosisAnswerDto[];
 
   @ApiProperty({ type: [DiagnosisPlannedProcedureDto] })
   plannedProcedures: DiagnosisPlannedProcedureDto[];

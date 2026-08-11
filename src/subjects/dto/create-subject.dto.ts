@@ -33,6 +33,10 @@ export class CreateSubjectDto {
   @IsString()
   shortName?: string;
 
+  @IsOptional()
+  @IsBoolean()
+  requiresDentalChart: boolean = true;
+
   @ApiPropertyOptional({
     description: 'Whether the subject is active',
     example: true,

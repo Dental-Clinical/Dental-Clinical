@@ -116,6 +116,7 @@ export class SubjectsService {
       name: dto.name,
       shortName: dto.shortName,
       is_active: dto.is_active,
+      requiresDentalChart: dto.requiresDentalChart,
       studyYear,
       clinic,
     });
@@ -228,6 +229,7 @@ export class SubjectsService {
     return {
       subjectId: subject.id,
       subjectName: subject.name,
+      requiresDentalChart: subject.requiresDentalChart,
       procedures: subject.subjectProcedures.map((procedure) => ({
         procedureId: procedure.id,
         procedureName: procedure.name,

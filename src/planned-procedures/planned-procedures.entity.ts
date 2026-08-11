@@ -49,8 +49,8 @@ export class PlannedProcedures {
   sessionProcedures: SessionProcedure[];
 
   @ApiProperty({ description: 'Tooth number', example: 36 })
-  @Column({ type: 'int', name: 'tooth_number' })
-  toothNumber: number;
+  @Column({ type: 'int', name: 'tooth_number', nullable: true })
+  toothNumber?: number;
 
   // todo Status instead of completedAt, to track the status of the procedure (planned, in progress, completed, etc.)
   @ApiProperty({

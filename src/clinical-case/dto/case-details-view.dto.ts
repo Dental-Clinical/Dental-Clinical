@@ -130,7 +130,7 @@ export class TargetTeethDto {
     type: Number,
     example: 36,
   })
-  tooth: number;
+  tooth?: number;
 
   @ApiProperty({
     description: 'The status of the planned procedure',

@@ -48,6 +48,7 @@ export class DiagnosisSubmissionService {
           assignedSupervisor: {
             user: true,
           },
+          clinicalAppointments: true,
           subject: {
             subjectProcedures: true,
           },

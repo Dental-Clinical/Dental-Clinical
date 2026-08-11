@@ -5,3 +5,20 @@ student orginal : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJzd
 
 admin : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInJvbGUiOiJhZG1pbiIsImp0aSI6ImQyOTlkMjM3LTE3MTAtNDdjNy05OTYzLThkY2NiOTIxNzI4NiIsImlhdCI6MTc4NjAwODgyMywiZXhwIjoxNzg2NjEzNjIzLCJhdWQiOiJsb2NhbGhvc3Q6ODAwMCIsImlzcyI6ImxvY2FsaG9zdDo4MDAwIn0.M5naVoZXWWnVM_Q5DyWfHkOMQdElyB735QvZda-sZIw
 student: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjUsInJvbGUiOiJzdHVkZW50IiwianRpIjoiZjVmNmU3Y2UtMDk0Mi00ODJiLWEwMjMtMmEzODYyMDU0MDU2IiwiaWF0IjoxNzg2MDEzMDgzLCJleHAiOjE3ODY2MTc4ODMsImF1ZCI6ImxvY2FsaG9zdDo4MDAwIiwiaXNzIjoibG9jYWxob3N0OjgwMDAifQ.V5Ephqk1Kk6IwLYgTfLUfLQiURe4hZ8-Y3xVGBke3iI
+
+
+patientInfo: {
+ "full_name": "Jane Doe",
+  "phone": "963912345678",
+  "dateOfBirth": "1990-01-01",
+  "gender": "female",
+  "medical_history": "Diabetes, High blood pressure",
+  "current_medications": "Metformin 500mg",
+  "allergies": "Penicillin, Aspirin"
+},
+caseInfo: {
+    subjectId: 1,
+},
+appointment: {
+    
+}

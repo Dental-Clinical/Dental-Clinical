@@ -1,7 +1,6 @@
 import {
   HttpException,
   HttpStatus,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -28,14 +27,13 @@ export class CoordinatorService {
     private readonly coordinatorRepository: Repository<Coordinator>,
     @InjectRepository(ExaminationAppointment)
     private readonly examinationAppointmentRepository: Repository<ExaminationAppointment>,
-  ) {}
+  ) { }
   async createCoordinator(dto: CreateCoordinatorDto) {
     return await this.dataSource.transaction(async (manager) => {
       dto.email = dto.email.trim().toLowerCase();
       dto.phone = dto.phone.replace(/\D/g, '');
-
       const existingUser = await manager.getRepository(User).findOne({
-        where: { email: dto.email },
+        where: [{ email: dto.email }, { phone: dto.phone }],
       });
       if (existingUser) {
         throw new HttpException('User already exists', HttpStatus.CONFLICT);

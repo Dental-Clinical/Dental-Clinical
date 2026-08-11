@@ -105,4 +105,5 @@ export class SupervisorReviewsController {
       dto,
     );
   }
+  // TODO add reject review endpoint here in the future if needed
 }

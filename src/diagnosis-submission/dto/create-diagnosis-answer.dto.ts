@@ -11,7 +11,7 @@ import {
 
 export class CreateDiagnosisAnswerDto {
   @IsInt()
-  @Min(1)
+  @IsPositive()
   questionId: number;
 
   @IsOptional()

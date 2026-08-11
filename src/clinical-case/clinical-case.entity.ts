@@ -41,7 +41,7 @@ export class ClinicalCase {
     description: 'Associated examination request',
   })
   @OneToOne(() => ExaminationRequest, (request) => request.clinicalCase, {
-    nullable: false,
+    nullable: true,
   })
   @JoinColumn({ name: 'request_id' })
   request: ExaminationRequest;
@@ -54,7 +54,7 @@ export class ClinicalCase {
     () => InitialExamination,
     (examination) => examination.clinicalCase,
     {
-      nullable: false,
+      nullable: true,
     },
   )
   @JoinColumn({ name: 'initial_examination_id' })

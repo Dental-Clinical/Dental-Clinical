@@ -21,6 +21,8 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { SubjectDiagnosisQuestion } from 'src/subject-diagnosis/subject-diagnosis-questions.entity';
 import { SubjectDiagnosisAnswer } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
 import { QuestionType } from 'src/subject-diagnosis/enums/question-types.enum';
+import { CreatePlannedProcedureDto } from 'src/planned-procedures/dto/create-planned-procedure.dto';
+import { CreatePlannedProcedureWithAnswersDto } from './dto/create-planned-procedure-with-answers.dto';
 
 @Injectable()
 export class DiagnosisSubmissionService {
@@ -48,6 +50,7 @@ export class DiagnosisSubmissionService {
           assignedSupervisor: {
             user: true,
           },
+          clinicalAppointments: true,
           subject: {
             subjectProcedures: true,
           },
@@ -93,6 +96,7 @@ export class DiagnosisSubmissionService {
         'Cannot submit diagnosis before the scheduled appointment date',
       );
     }
+
     const allowedProcedures = new Set(
       clinicalCase.subject.subjectProcedures
         .filter((p) => p.is_active)
@@ -103,6 +107,22 @@ export class DiagnosisSubmissionService {
       if (!allowedProcedures.has(procedure.subjectProcedureId)) {
         throw new ConflictException(
           `Procedure with ID ${procedure.subjectProcedureId} is not allowed for this subject`,
+        );
+      }
+      if (
+        procedure.toothNumber &&
+        clinicalCase.subject.requiresDentalChart === false
+      ) {
+        throw new ConflictException(
+          `Procedure with ID ${procedure.subjectProcedureId} has a tooth number specified, but the subject does not require a dental chart`,
+        );
+      }
+      if (
+        !procedure.toothNumber &&
+        clinicalCase.subject.requiresDentalChart === true
+      ) {
+        throw new ConflictException(
+          `Procedure with ID ${procedure.subjectProcedureId} does not have a tooth number specified, but the subject requires a dental chart`,
         );
       }
     }
@@ -125,202 +145,78 @@ export class DiagnosisSubmissionService {
       .getRepository(SubjectDiagnosisQuestion)
       .find({
         where: { subject: { id: clinicalCase.subject.id }, isActive: true },
-        relations: { answers: true, answerOptions: true },
+        relations: { answerOptions: true },
       });
+
     const questionById = new Map(
       questions.map((question) => [question.id, question]),
     );
 
-    const answeredQuestionIds = new Set<number>();
-
-    for (const answer of dto.answers) {
-      if (answeredQuestionIds.has(answer.questionId)) {
-        throw new ConflictException(
-          `Duplicate answer for question ID ${answer.questionId}`,
-        );
-      }
-      answeredQuestionIds.add(answer.questionId);
-
-      const question = questionById.get(answer.questionId);
-
-      if (!question) {
-        throw new ConflictException(
-          `Question with ID ${answer.questionId} is not an active question for this subject`,
-        );
-      }
-      console.log(question);
-
-      // if (
-      //   question.type === QuestionType.SINGLE_CHOICE ||
-      //   question.type === QuestionType.MULTIPLE_CHOICE
-      // ) {
-      //   const optionValues = new Set(
-      //     question.answerOptions.map((option) => option.value),
-      //   );
-      //   const values =
-      //     question.type === QuestionType.SINGLE_CHOICE
-      //       ? [answer.answer.trim()]
-      //       : answer.answer.split(',').map((value) => value.trim());
-
-      //   const seenValues = new Set<string>();
-
-      //   for (const value of values) {
-      //     if (!value || !optionValues.has(value)) {
-      //       throw new BadRequestException(
-      //         `Answer "${value}" is not a valid option for question ID ${answer.questionId}`,
-      //       );
-      //     }
-      //     if (seenValues.has(value)) {
-      //       throw new BadRequestException(
-      //         `Duplicate answer value "${value}" for question ID ${answer.questionId}`,
-      //       );
-      //     }
-      //     seenValues.add(value);
-      //   }
-      // }
-      switch (question.type) {
-        case QuestionType.TEXT:
-        case QuestionType.TEXTAREA:
-          if (!answer.answer?.trim()) {
-            throw new BadRequestException(
-              `Answer for question ID ${answer.questionId} cannot be empty`,
-            );
-          }
-          break;
-
-        case QuestionType.NUMBER:
-          if (
-            answer.answer === undefined ||
-            answer.answer.trim() === '' ||
-            !Number.isFinite(Number(answer.answer))
-          ) {
-            throw new BadRequestException(
-              `Answer for question ID ${answer.questionId} must be a valid number.`,
-            );
-          }
-          break;
-
-        case QuestionType.BOOLEAN:
-          if (answer.answer !== 'true' && answer.answer !== 'false') {
-            throw new BadRequestException(
-              `Answer for question ID ${answer.questionId} must be true or false.`,
-            );
-          }
-          break;
-
-        case QuestionType.SINGLE_CHOICE:
-          if (!answer.optionIds || answer.optionIds.length !== 1) {
-            throw new BadRequestException(
-              `Answer for question ID ${answer.questionId} must have exactly one option selected.`,
-            );
-          }
-
-          const selectedOptionId = question.answerOptions.find(
-            (option) => option.id === answer.optionIds![0],
-          );
-          if (!selectedOptionId) {
-            throw new BadRequestException(
-              `Invalid option for question ID ${answer.questionId}.`,
-            );
-          }
-          break;
-
-        case QuestionType.MULTIPLE_CHOICE: {
-          if (!answer.optionIds || answer.optionIds.length === 0) {
-            throw new BadRequestException(
-              `Multiple-choice question ID ${answer.questionId} requires at least one option.`,
-            );
-          }
-
-          const uniqueOptionIds = new Set(answer.optionIds);
-
-          if (uniqueOptionIds.size !== answer.optionIds.length) {
-            throw new BadRequestException(
-              `Duplicate options are not allowed for question ID ${answer.questionId}.`,
-            );
-          }
-
-          const validOptionIds = new Set(
-            question.answerOptions
-              .filter((option) => option.isActive)
-              .map((option) => option.id),
-          );
-
-          for (const optionId of answer.optionIds) {
-            if (!validOptionIds.has(optionId)) {
-              throw new BadRequestException(
-                `Option ID ${optionId} is not valid for question ID ${answer.questionId}.`,
-              );
-            }
-          }
-
-          break;
-        }
-      }
-    }
-
-    for (const question of questions) {
-      if (question.required && !answeredQuestionIds.has(question.id)) {
-        throw new BadRequestException(
-          `Required question "${question.question}" (ID ${question.id}) must be answered`,
-        );
-      }
+    for (const procedure of dto.plannedProcedures) {
+      this.validateProcedureAnswers(procedure, questions, questionById);
     }
 
     try {
       return await this.dataSource.transaction(async (manager) => {
-        const diagnosisSubmission = manager
-          .getRepository(DiagnosisSubmission)
-          .create({
-            clinicalCase: clinicalCase,
-            student: student,
-            supervisor: clinicalCase.assignedSupervisor,
-            status: DiagnosisSubmissionStatus.PENDING_REVIEW,
-          });
-        const savedSubmission = await manager.save(diagnosisSubmission);
-
-        const plannedProcedures = dto.plannedProcedures.map((procedure) =>
-          manager.getRepository(PlannedProcedures).create({
-            diagnosisSubmission: savedSubmission,
-            toothNumber: procedure.toothNumber,
-            subjectProcedure: {
-              id: procedure.subjectProcedureId,
-            },
-          }),
-        );
-        await manager.save(plannedProcedures);
-
-        // const answers = dto.answers.map((answer) =>
-        //   manager.getRepository(SubjectDiagnosisAnswers).create({
-        //     diagnosisSubmission: savedSubmission,
-        //     question: { id: answer.questionId },
-        //     answer: answer.answer.trim(),
-        //   }),
-        // );
-        // await manager.save(answers);
+        const submissionRepository = manager.getRepository(DiagnosisSubmission);
+        const procedureRepository = manager.getRepository(PlannedProcedures);
         const answerRepository = manager.getRepository(SubjectDiagnosisAnswer);
 
-        const answers: SubjectDiagnosisAnswer[] = [];
+        const diagnosisSubmission = submissionRepository.create({
+          clinicalCase,
+          student,
+          supervisor: clinicalCase.assignedSupervisor,
+          status: DiagnosisSubmissionStatus.PENDING_REVIEW,
+        });
+        const savedSubmission =
+          await submissionRepository.save(diagnosisSubmission);
 
-        for (const dtoAnswer of dto.answers) {
-          const diagnosisAnswer = answerRepository.create({
+        const savedProcedures: PlannedProcedures[] = [];
+        const savedAnswers: SubjectDiagnosisAnswer[] = [];
+
+        for (const procedure of dto.plannedProcedures) {
+          const plannedProcedure = procedureRepository.create({
             diagnosisSubmission: savedSubmission,
-            question: { id: dtoAnswer.questionId },
-            answer: dtoAnswer.answer?.trim() ?? null,
-            selectedOptions: dtoAnswer.optionIds
-              ? questionById
-                  .get(dtoAnswer.questionId)!
-                  .answerOptions.filter((option) =>
-                    dtoAnswer.optionIds!.includes(option.id),
-                  )
-              : [],
+            subjectProcedure: { id: procedure.subjectProcedureId },
+            toothNumber: procedure.toothNumber,
+            notes: procedure.notes,
           });
+          const savedProcedure =
+            await procedureRepository.save(plannedProcedure);
+          savedProcedures.push(savedProcedure);
 
-          answers.push(diagnosisAnswer);
+          for (const answer of procedure.answers) {
+            const subjectQuestion = questionById.get(answer.questionId);
+            if (!subjectQuestion) {
+              throw new ConflictException(
+                `Question with ID ${answer.questionId} is not an active question for this subject`,
+              );
+            }
+            const activeOptions = subjectQuestion.answerOptions.filter(
+              (option) => option.isActive,
+            );
+            const requestedOptionIds = answer.optionIds ?? [];
+
+            const selectedOptions = activeOptions.filter((option) =>
+              requestedOptionIds.includes(option.id),
+            );
+
+            if (selectedOptions.length !== requestedOptionIds.length) {
+              throw new BadRequestException(
+                `One or more selected options are invalid for question ID ${subjectQuestion.id}`,
+              );
+            }
+            const diagnosisAnswer = answerRepository.create({
+              diagnosisSubmission: savedSubmission,
+              plannedProcedure: savedProcedure,
+              question: { id: answer.questionId },
+              answer: answer.answer?.trim() ?? null,
+              selectedOptions,
+            });
+            const savedAnswer = await answerRepository.save(diagnosisAnswer);
+            savedAnswers.push(savedAnswer);
+          }
         }
-
-        await answerRepository.save(answers);
-
         if (files?.length) {
           const uploadedImages = await this.cloudinaryService.uploadMany(
             files,
@@ -345,14 +241,6 @@ export class DiagnosisSubmissionService {
 
         return {
           message: 'Diagnosis submitted successfully for supervisor review.',
-          data: {
-            diagnosisSubmissionId: savedSubmission.id,
-            clinicalCaseId: clinicalCase.id,
-            status: clinicalCase.status,
-            answers: answers.length,
-            plannedProcedures: plannedProcedures.length,
-            uploadedImages: files?.length ?? 0,
-          },
         };
       });
     } catch (err) {
@@ -361,6 +249,145 @@ export class DiagnosisSubmissionService {
       );
 
       throw err;
+    }
+  }
+  private validateProcedureAnswers(
+    procedure: CreatePlannedProcedureWithAnswersDto,
+    questions: SubjectDiagnosisQuestion[],
+    questionById: Map<number, SubjectDiagnosisQuestion>,
+  ) {
+    const answeredQuestionIds = new Set<number>();
+
+    for (const answer of procedure.answers) {
+      if (answeredQuestionIds.has(answer.questionId)) {
+        throw new ConflictException(
+          `Duplicate answer for question ID ${answer.questionId} for procedure ${procedure.subjectProcedureId} on tooth ${procedure.toothNumber}`,
+        );
+      }
+
+      answeredQuestionIds.add(answer.questionId);
+
+      const question = questionById.get(answer.questionId);
+
+      if (!question) {
+        throw new ConflictException(
+          `Question with ID ${answer.questionId} is not an active question for this subject`,
+        );
+      }
+
+      switch (question.type) {
+        case QuestionType.TEXT:
+        case QuestionType.TEXTAREA:
+          if (answer.optionIds?.length) {
+            throw new BadRequestException(
+              `Question ID ${answer.questionId} does not accept options`,
+            );
+          }
+
+          if (!answer.answer?.trim()) {
+            throw new BadRequestException(
+              `Answer for question ID ${answer.questionId} cannot be empty`,
+            );
+          }
+
+          break;
+
+        case QuestionType.NUMBER:
+          if (answer.optionIds?.length) {
+            throw new BadRequestException(
+              `Question ID ${answer.questionId} does not accept options`,
+            );
+          }
+
+          if (
+            !answer.answer?.trim() ||
+            !Number.isFinite(Number(answer.answer))
+          ) {
+            throw new BadRequestException(
+              `Answer for question ID ${answer.questionId} must be a valid number`,
+            );
+          }
+
+          break;
+
+        case QuestionType.BOOLEAN:
+          if (answer.optionIds?.length) {
+            throw new BadRequestException(
+              `Question ID ${answer.questionId} does not accept options`,
+            );
+          }
+
+          if (answer.answer !== 'true' && answer.answer !== 'false') {
+            throw new BadRequestException(
+              `Answer for question ID ${answer.questionId} must be true or false`,
+            );
+          }
+
+          break;
+
+        case QuestionType.SINGLE_CHOICE: {
+          if (!answer.optionIds || answer.optionIds.length !== 1) {
+            throw new BadRequestException(
+              `Question ID ${answer.questionId} requires exactly one option`,
+            );
+          }
+
+          const validOptionIds = new Set(
+            question.answerOptions
+              .filter((option) => option.isActive)
+              .map((option) => option.id),
+          );
+
+          if (!validOptionIds.has(answer.optionIds[0])) {
+            throw new BadRequestException(
+              `Invalid option for question ID ${answer.questionId}`,
+            );
+          }
+
+          break;
+        }
+
+        case QuestionType.MULTIPLE_CHOICE: {
+          if (!answer.optionIds?.length) {
+            throw new BadRequestException(
+              `Question ID ${answer.questionId} requires at least one option`,
+            );
+          }
+
+          const uniqueOptionIds = new Set(answer.optionIds);
+
+          if (uniqueOptionIds.size !== answer.optionIds.length) {
+            throw new BadRequestException(
+              `Duplicate options are not allowed for question ID ${answer.questionId}`,
+            );
+          }
+
+          const validOptionIds = new Set(
+            question.answerOptions
+              .filter((option) => option.isActive)
+              .map((option) => option.id),
+          );
+
+          for (const optionId of answer.optionIds) {
+            if (!validOptionIds.has(optionId)) {
+              throw new BadRequestException(
+                `Option ID ${optionId} is not valid for question ID ${answer.questionId}`,
+              );
+            }
+          }
+
+          break;
+        }
+      }
+    }
+
+    // Required questions must be answered FOR THIS PROCEDURE
+    for (const question of questions) {
+      if (question.required && !answeredQuestionIds.has(question.id)) {
+        throw new BadRequestException(
+          `Required question "${question.question}" must be answered for procedure ${procedure.subjectProcedureId} on tooth ${procedure.toothNumber}`,
+        );
+      }
     }
   }
   async getDiagnosisSubmission(id: number) {

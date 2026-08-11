@@ -976,7 +976,7 @@ export class TreatmentSessionsService {
         (sessionProcedure) => ({
           id: sessionProcedure.plannedProcedure.id,
           name: sessionProcedure.plannedProcedure.subjectProcedure.name,
-          tooth: sessionProcedure.plannedProcedure.toothNumber,
+          tooth: sessionProcedure.plannedProcedure.toothNumber ?? null,
           status: sessionProcedure.plannedProcedure.status,
         }),
       ),

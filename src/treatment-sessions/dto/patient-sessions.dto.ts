@@ -122,7 +122,7 @@ export class PatientSessionProcedureDto {
     type: Number,
     example: 36,
   })
-  tooth: number;
+  tooth: number | null;
 
   @ApiProperty({
     description: 'The status of the planned procedure',

@@ -12,6 +12,7 @@ import { PlannedProceduresStatus } from 'src/planned-procedures/enum/planned-pro
 import { StudentService } from 'src/students/student.service';
 import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 import { AwardedProcedureCredit } from './interfaces/award-procedure-credit.interface';
+import { ClinicalCaseService } from 'src/clinical-case/clinical-case.service';
 
 @Injectable()
 export class StudentProgressService {
@@ -21,6 +22,7 @@ export class StudentProgressService {
     @InjectRepository(SubjectProcedures)
     private readonly subjectProceduresRepository: Repository<SubjectProcedures>,
     private readonly studentService: StudentService,
+    private readonly clinicalCaseService: ClinicalCaseService,
   ) {}
 
   /**
@@ -204,6 +206,90 @@ export class StudentProgressService {
     return {
       message: 'Procedure progress retrieved successfully.',
       progress: [...subjects.values()],
+    };
+  }
+  public async getSubjectDetailsWithProgressAndCases(
+    user: AuthenticatedUser,
+    subjectId: number,
+  ) {
+    const student = await this.studentService.findByUserId(user.userId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    const studyYear = await this.studentService.getCurrentStudyYear(
+      user.userId,
+    );
+
+    const sectionSubject =
+      await this.studentService.getSectionSubjectForStudent(
+        user.userId,
+        subjectId,
+      );
+
+    const subjectProcedures = await this.subjectProceduresRepository
+      .createQueryBuilder('subjectProcedure')
+      .innerJoinAndSelect('subjectProcedure.subject', 'subject')
+      .leftJoinAndSelect(
+        'subjectProcedure.studentProgress',
+        'progress',
+        'progress.student_id = :studentId',
+        { studentId: student.id },
+      )
+      .where(
+        '(subject.study_year_id = :studyYearId AND subjectProcedure.is_active = true AND subject.id = :subjectId)',
+        { studyYearId: studyYear.id, subjectId },
+      )
+      // Keep already earned credit visible even if the procedure is no longer required.
+      .orWhere('progress.id IS NOT NULL')
+      .orderBy('subject.name', 'ASC')
+      .addOrderBy('subjectProcedure.name', 'ASC')
+      .getMany();
+
+    const subjects = new Map<
+      number,
+      {
+        subjectId: number;
+        subject: string;
+        section: string;
+        supervisor: string;
+        procedures: {
+          subjectProcedureId: number;
+          procedure: string;
+          completed: number;
+          required: number;
+        }[];
+        cases: any;
+      }
+    >();
+
+    const cases = await this.clinicalCaseService.findStudentCasesInSubject(
+      user.userId,
+      subjectId,
+    );
+    for (const subjectProcedure of subjectProcedures) {
+      const subject = subjectProcedure.subject;
+      if (!subjects.has(subject.id)) {
+        subjects.set(subject.id, {
+          subjectId: subject.id,
+          subject: subject.name,
+          section: sectionSubject.section.name,
+          supervisor: sectionSubject.supervisor.user.full_name,
+          procedures: [],
+          cases,
+        });
+      }
+
+      subjects.get(subject.id)!.procedures.push({
+        subjectProcedureId: subjectProcedure.id,
+        procedure: subjectProcedure.name,
+        completed: subjectProcedure.studentProgress[0]?.completedCount ?? 0,
+        required: subjectProcedure.required_count,
+      });
+    }
+
+    return {
+      message: 'Procedure progress retrieved successfully.',
+      ...subjects.values().next().value,
     };
   }
 }

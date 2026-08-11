@@ -84,6 +84,12 @@ export class SubjectsController {
       properties: {
         subjectId: { type: 'number', example: 1 },
         subjectName: { type: 'string', example: 'Restorative Dentistry' },
+        requiresDentalChart: { type: 'boolean', example: true },
+        description: {
+          type: 'string',
+          example:
+            'This subject covers the principles and techniques of restorative dentistry.',
+        },
         procedures: {
           type: 'array',
           items: {
@@ -91,9 +97,43 @@ export class SubjectsController {
             properties: {
               procedureId: { type: 'number', example: 1 },
               procedureName: { type: 'string', example: 'Composite Filling' },
+              requiredCount: { type: 'number', example: 5 },
               description: {
                 type: 'string',
                 example: 'Direct composite restoration',
+              },
+            },
+          },
+        },
+        questions: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              questionId: { type: 'number', example: 1 },
+              questionText: {
+                type: 'string',
+                example: 'What is the primary purpose of a composite filling?',
+              },
+              questionType: {
+                type: 'string',
+                example: 'multiple-choice',
+              },
+              required: { type: 'boolean', example: true },
+              displayOrder: { type: 'number', example: 1 },
+              answerOptions: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    optionId: { type: 'number', example: 1 },
+                    optionText: {
+                      type: 'string',
+                      example:
+                        'To restore the function and appearance of a tooth.',
+                    },
+                  },
+                },
               },
             },
           },

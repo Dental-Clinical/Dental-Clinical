@@ -8,7 +8,7 @@ import { UserRole } from 'src/constants/user-roles';
 export class SubjectDiagnosisController {
   constructor(
     private readonly subjectDiagnosisService: SubjectDiagnosisService,
-  ) { }
+  ) {}
   @Post(':id/diagnosis-questions')
   @Roles([UserRole.ADMIN])
   async createDiagnosisQuestions(
@@ -21,6 +21,7 @@ export class SubjectDiagnosisController {
     );
   }
   @Get(':id/diagnosis-questions')
+  @Roles([UserRole.STUDENT, UserRole.SUPERVISOR, UserRole.ADMIN])
   async getDiagnosisQuestions(@Param('id') subjectId: number) {
     return await this.subjectDiagnosisService.getDiagnosisQuestionsBySubjectId(
       subjectId,

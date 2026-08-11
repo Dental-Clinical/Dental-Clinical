@@ -19,7 +19,7 @@ export class SubjectDiagnosisService {
     @InjectRepository(Subject)
     private readonly subjectRepository: Repository<Subject>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
   async createDiagnosisQuestions(
     dto: CreateSubjectDiagnosisQuestionDto,
     subjectId: number,
@@ -128,13 +128,14 @@ export class SubjectDiagnosisService {
     const subjectExists = await this.subjectRepository.findOne({
       where: {
         id: subjectId,
-      },
+      }, relations: { subjectProcedures: true }
     });
     if (!subjectExists) {
       throw new ConflictException(
         'The subject with the provided ID does not exist.',
       );
     }
+    const requiredProcedures = subjectExists.subjectProcedures
     const questions = await this.subjectDiagnosisQuestionRepository.find({
       where: {
         subject: { id: subjectExists.id },
@@ -148,22 +149,27 @@ export class SubjectDiagnosisService {
       },
     });
     return {
-      message: 'Diagnosis questions retrieved successfully',
+      subjectId,
+      subjectName: subjectExists.name,
+      requiresDentalChart: true,
+      availableProcedures: requiredProcedures.map((procedure) => ({
+        id: procedure.id,
+        name: procedure.name,
+      })),
       questions: questions.map((question) => ({
         id: question.id,
         question: question.question,
         type: question.type,
         required: question.required,
         displayOrder: question.displayOrder,
-        options: question.answerOptions
-          .filter((option) => option.isActive)
-          .map((option) => ({
-            id: option.id,
-            label: option.label,
-            value: option.value,
-            displayOrder: option.displayOrder,
-          })),
-      })),
+        options: question.answerOptions.map((answer) => ({
+          id: answer.id,
+          label: answer.label,
+          value: answer.value,
+          displayOrder: answer.displayOrder
+        }))
+      }))
+
     };
   }
 }

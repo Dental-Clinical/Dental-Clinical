@@ -21,6 +21,7 @@ export class SubjectDiagnosisController {
     );
   }
   @Get(':id/diagnosis-questions')
+  @Roles([UserRole.STUDENT])
   async getDiagnosisQuestions(@Param('id') subjectId: number) {
     return await this.subjectDiagnosisService.getDiagnosisQuestionsBySubjectId(
       subjectId,

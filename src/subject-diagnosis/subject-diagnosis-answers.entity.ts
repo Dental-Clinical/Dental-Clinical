@@ -40,6 +40,13 @@ export class SubjectDiagnosisAnswer {
   @JoinColumn({ name: 'diagnosis_submission_id' })
   diagnosisSubmission: DiagnosisSubmission;
 
+  @ManyToOne(() => PlannedProcedures, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'planned_procedure_id' })
+  plannedProcedure: PlannedProcedures;
+
   @ManyToOne(() => SubjectDiagnosisQuestion, (question) => question.answers, {
     nullable: false,
     onDelete: 'RESTRICT',
@@ -63,8 +70,4 @@ export class SubjectDiagnosisAnswer {
     },
   })
   selectedOptions: SubjectDiagnosisQuestionOption[];
-
-  @ManyToOne(() => PlannedProcedures)
-  @JoinColumn({ name: 'planned_procedure_id' })
-  plannedProcedure: PlannedProcedures;
 }

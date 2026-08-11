@@ -94,7 +94,7 @@ export class StudentService {
     private readonly subjectProceduresRepository: Repository<SubjectProcedures>,
     @InjectRepository(StudentProgress)
     private readonly studentProgressRepository: Repository<StudentProgress>,
-  ) { }
+  ) {}
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
       where: { university_id },
@@ -190,7 +190,7 @@ export class StudentService {
         subject: { id: subjectId },
         academicYear: { is_active: true },
       },
-      relations: { section: true, supervisor: true },
+      relations: { section: true, supervisor: { user: true } },
     });
 
     if (!sectionSubject) {
@@ -352,10 +352,10 @@ export class StudentService {
         },
         studyYear: currentEnrollment
           ? {
-            id: currentEnrollment.studyYear.id,
-            name: currentEnrollment.studyYear.name,
-            level: currentEnrollment.studyYear.level,
-          }
+              id: currentEnrollment.studyYear.id,
+              name: currentEnrollment.studyYear.name,
+              level: currentEnrollment.studyYear.level,
+            }
           : null,
       };
     });
@@ -556,10 +556,10 @@ export class StudentService {
           },
           studyYear: currentEnrollment
             ? {
-              id: currentEnrollment.studyYear.id,
-              name: currentEnrollment.studyYear.name,
-              level: currentEnrollment.studyYear.level,
-            }
+                id: currentEnrollment.studyYear.id,
+                name: currentEnrollment.studyYear.name,
+                level: currentEnrollment.studyYear.level,
+              }
             : null,
           academicYear: {
             id: enrollment.academicYear.id,
@@ -711,10 +711,10 @@ export class StudentService {
       },
       studyYear: currentEnrollment
         ? {
-          id: currentEnrollment.studyYear.id,
-          name: currentEnrollment.studyYear.name,
-          level: currentEnrollment.studyYear.level,
-        }
+            id: currentEnrollment.studyYear.id,
+            name: currentEnrollment.studyYear.name,
+            level: currentEnrollment.studyYear.level,
+          }
         : null,
       academicYear: {
         id: enrollments[0].academicYear.id,

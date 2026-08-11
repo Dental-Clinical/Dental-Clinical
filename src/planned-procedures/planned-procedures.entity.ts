@@ -53,7 +53,13 @@ export class PlannedProcedures {
   @Column({ type: 'int', name: 'tooth_number', nullable: true })
   toothNumber?: number;
 
-  // todo Status instead of completedAt, to track the status of the procedure (planned, in progress, completed, etc.)
+  @ApiPropertyOptional({
+    description: 'Notes for the planned procedure',
+    example: 'This is a note.',
+  })
+  @Column({ type: 'text', nullable: true })
+  notes?: string;
+
   @ApiProperty({
     description: 'Status of the planned procedure',
     example: PlannedProceduresStatus.PLANNED,

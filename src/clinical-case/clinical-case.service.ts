@@ -275,8 +275,12 @@ export class ClinicalCaseService {
         'Clinical Case not found for this student or not assigned',
       );
     }
-    const sectionSubject = await this.studentService.getSectionSubjectForStudent(userId, clinicalCase?.subject.id)
-    const section = sectionSubject.section
+    const sectionSubject =
+      await this.studentService.getSectionSubjectForStudent(
+        userId,
+        clinicalCase?.subject.id,
+      );
+    const section = sectionSubject.section;
     const nextAppointment = this.findNextScheduledAppointment(clinicalCase);
     return {
       id: clinicalCase.id,
@@ -291,7 +295,7 @@ export class ClinicalCaseService {
         allergies: clinicalCase.patient.allergies,
         currentMedications: clinicalCase.patient.current_medications,
         gender: clinicalCase.patient.gender,
-        dateOfBirth: clinicalCase.patient.dateOfBirth
+        dateOfBirth: clinicalCase.patient.dateOfBirth,
       },
 
       patientRequest: {
@@ -313,7 +317,7 @@ export class ClinicalCaseService {
       assignedSupervisor: {
         id: clinicalCase.assignedSupervisor.id,
         name: clinicalCase.assignedSupervisor.user.full_name,
-        section
+        section,
       },
       nextAppointment: {
         id: nextAppointment?.id,
@@ -387,7 +391,12 @@ export class ClinicalCaseService {
     const diagnosisSubmission =
       await this.diagnosisSubmissionRepository.findOne({
         where: { clinicalCase: { id: clinicalCase.id } },
-        relations: { plannedProcedures: { subjectProcedure: true } },
+        relations: {
+          plannedProcedures: {
+            subjectProcedure: true,
+            answers: { selectedOptions: true, question: true },
+          },
+        },
       });
 
     const treatmentSessions = await this.treatmentSessionsRepository.find({
@@ -507,7 +516,17 @@ export class ClinicalCaseService {
           procedureId: procedure.id,
           procedure: procedure.subjectProcedure.name,
           tooth: procedure.toothNumber,
+          notes: procedure.notes,
           status: procedure.status,
+          answers: procedure.answers.map((answer) => ({
+            question: answer.question.question,
+            answer: answer.answer,
+            selectedOptions:
+              answer.selectedOptions.map((option) => ({
+                id: option.id,
+                label: option.label,
+              })) ?? [],
+          })),
         };
       }) ?? [];
     return { targetTeeth: treatmentPlan };
@@ -753,6 +772,36 @@ export class ClinicalCaseService {
       };
     });
     return result;
+  }
+  async findStudentCasesInSubject(userId: number, subjectId: number) {
+    const student = await this.studentService.findByUserId(userId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    const clinicalCases = await this.clinicalCaseRepository.find({
+      where: {
+        assignedStudent: { id: student.id },
+        subject: { id: subjectId },
+      },
+      relations: {
+        patient: true,
+        subject: true,
+        treatmentSessions: true,
+      },
+    });
+    const cases = clinicalCases.map((clinicalCase) => {
+      return {
+        id: clinicalCase.id,
+        patientName: clinicalCase.patient.full_name,
+        subjectName: clinicalCase.subject.name,
+        status: clinicalCase.status,
+        sessionCount:
+          clinicalCase.status !== ClinicalCaseStatus.ASSIGNED
+            ? clinicalCase.treatmentSessions.length
+            : null,
+      };
+    });
+    return cases;
   }
   public async createFromInitialExamination(
     initialExaminationId: number,

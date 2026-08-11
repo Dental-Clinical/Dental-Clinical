@@ -20,5 +20,6 @@ caseInfo: {
     subjectId: 1,
 },
 appointment: {
-    
+    appointmentDate: 2026-08-12,
+    appointmentStart: "09:00"
 }

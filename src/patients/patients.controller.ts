@@ -41,7 +41,7 @@ export class PatientsController {
   constructor(private readonly patientService: PatientsService) {}
 
   @Post()
-  @Roles([UserRole.STUDENT])
+  @Roles([UserRole.STUDENT, UserRole.COORDINATOR])
   @ApiOperation({ summary: '[Student] Create a walk-in patient' })
   @ApiCreatedResponse({
     type: PatientResponseDto,

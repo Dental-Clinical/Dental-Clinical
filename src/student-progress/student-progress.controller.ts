@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -37,5 +37,28 @@ export class StudentProgressController {
   })
   public async getMyProcedureProgress(@CurrentUser() user: AuthenticatedUser) {
     return await this.studentProgressService.getMyProcedureProgress(user);
+  }
+  @Get('me/subjects/:id')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary:
+      "[Student] Get the current student's procedure progress for a specific subject",
+  })
+  // @ApiOkResponse({
+  //   type: GetStudentProcedureProgressResponseDto,
+  //   description: 'Procedure progress retrieved successfully',
+  // })
+  @ApiResponse({
+    status: 404,
+    description: 'Student or current enrollment not found',
+  })
+  public async getMyProcedureProgressBySubject(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') subjectId: number,
+  ) {
+    return await this.studentProgressService.getSubjectDetailsWithProgressAndCases(
+      user,
+      subjectId,
+    );
   }
 }

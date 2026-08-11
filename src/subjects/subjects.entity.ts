@@ -31,6 +31,9 @@ export class Subject {
   @Column({ name: 'short_name', nullable: true })
   shortName: string;
 
+  @Column({ name: 'requires_dental_chart', default: true })
+  requiresDentalChart: boolean;
+
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
 

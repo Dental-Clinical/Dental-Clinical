@@ -73,6 +73,10 @@ export class SubjectsService {
   async getSubjectById(id: number) {
     const subject = await this.subjectRepository.findOne({
       where: { id },
+      relations: {
+        clinic: true,
+        subjectProcedures: true,
+      },
     });
 
     if (!subject) {
@@ -81,7 +85,22 @@ export class SubjectsService {
 
     return {
       message: 'Subject retrieved successfully',
-      data: subject,
+      subject: {
+        id: subject.id,
+        name: subject.name,
+        shortName: subject.shortName,
+        requiresDentalChart: subject.requiresDentalChart,
+        clinic: {
+          id: subject.clinic.id,
+          name: subject.clinic.name,
+        },
+        procedures: subject.subjectProcedures.map((procedure) => ({
+          procedureId: procedure.id,
+          procedureName: procedure.name,
+          requiredCount: procedure.required_count,
+          description: procedure.description,
+        })),
+      },
     };
   }
 
@@ -116,6 +135,7 @@ export class SubjectsService {
       name: dto.name,
       shortName: dto.shortName,
       is_active: dto.is_active,
+      requiresDentalChart: dto.requiresDentalChart,
       studyYear,
       clinic,
     });
@@ -220,6 +240,9 @@ export class SubjectsService {
       where: { id },
       relations: {
         subjectProcedures: true,
+        diagnosisQuestions: {
+          answerOptions: true,
+        },
       },
     });
     if (!subject) {
@@ -228,11 +251,30 @@ export class SubjectsService {
     return {
       subjectId: subject.id,
       subjectName: subject.name,
+      requiresDentalChart: subject.requiresDentalChart,
       procedures: subject.subjectProcedures.map((procedure) => ({
         procedureId: procedure.id,
         procedureName: procedure.name,
+        requiredCount: procedure.required_count,
         description: procedure.description,
       })),
+      questions: subject.diagnosisQuestions
+        .filter((question) => question.isActive)
+        .map((question) => ({
+          questionId: question.id,
+          questionText: question.question,
+          questionType: question.type,
+          required: question.required,
+          displayOrder: question.displayOrder,
+          answerOptions:
+            question.answerOptions
+              .filter((option) => option.isActive)
+              .map((option) => ({
+                optionId: option.id,
+                optionText: option.label,
+                displayOrder: option.displayOrder,
+              })) ?? [],
+        })),
     };
   }
 

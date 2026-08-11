@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { SubjectDiagnosisQuestion } from './subject-diagnosis-questions.entity';
 import { SubjectDiagnosisQuestionOption } from './subject-diagnosis-answer-option.entity';
+import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.entity';
 
 // @Entity('subject_diagnosis_answers')
 // export class SubjectDiagnosisAnswers {
@@ -27,7 +28,7 @@ import { SubjectDiagnosisQuestionOption } from './subject-diagnosis-answer-optio
 //   answer: string;
 // }
 @Entity('subject_diagnosis_answers')
-@Unique(['diagnosisSubmission', 'question'])
+@Unique(['plannedProcedure', 'question'])
 export class SubjectDiagnosisAnswer {
   @PrimaryGeneratedColumn()
   id: number;
@@ -38,6 +39,13 @@ export class SubjectDiagnosisAnswer {
   })
   @JoinColumn({ name: 'diagnosis_submission_id' })
   diagnosisSubmission: DiagnosisSubmission;
+
+  @ManyToOne(() => PlannedProcedures, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'planned_procedure_id' })
+  plannedProcedure: PlannedProcedures;
 
   @ManyToOne(() => SubjectDiagnosisQuestion, (question) => question.answers, {
     nullable: false,

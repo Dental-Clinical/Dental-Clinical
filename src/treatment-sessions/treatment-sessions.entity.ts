@@ -59,6 +59,13 @@ export class TreatmentSession {
   })
   status: TreatmentSessionStatus;
 
+  @Column({
+    name: 'supervisor_viewed_at',
+    type: 'timestamp',
+    nullable: true,
+  })
+  supervisorViewedAt?: Date;
+
   @CreateDateColumn({ name: 'started_at' })
   startedAt: Date;
 

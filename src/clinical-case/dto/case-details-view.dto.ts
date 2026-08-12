@@ -46,10 +46,18 @@ export class CaseInfoDto {
 
   @ApiProperty({
     description: 'The subject of the clinical case',
-    type: String,
-    example: 'Endodontics',
+    type: Object,
+    example: {
+      id: 1,
+      name: 'Endodontics',
+      requiresDentalChart: true,
+    },
   })
-  subject: string;
+  subject: {
+    id: number;
+    name: string;
+    requiresDentalChart: boolean;
+  };
 
   @ApiProperty({
     description:

@@ -113,7 +113,11 @@ export class SupervisorReviewsController {
   @Roles([UserRole.SUPERVISOR])
   @ApiOperation({
     summary:
-      '[Supervisor] Reassign an open clinical case to a different subject',
+      '[Supervisor] Reassign a case pending diagnosis review to a different subject',
+    description:
+      'Only the supervisor assigned to review the diagnosis submission may reassign the case. ' +
+      'The pending diagnosis submission is discarded and the case reopens under the new subject, ' +
+      'unassigned from its student and supervisor, with its scheduled appointment cancelled.',
   })
   @ApiParam({
     name: 'id',
@@ -126,12 +130,17 @@ export class SupervisorReviewsController {
     description: 'Clinical case reassigned successfully',
   })
   @ApiResponse({
+    status: 403,
+    description: 'Not the supervisor assigned to review this case',
+  })
+  @ApiResponse({
     status: 404,
     description: 'Clinical case or subject not found',
   })
   @ApiResponse({
     status: 409,
-    description: 'Case is not open, same subject, or subject is inactive',
+    description:
+      'Case is not pending diagnosis review, same subject, or subject is inactive',
   })
   public async changeClinicalCaseSubject(
     @CurrentUser() user: AuthenticatedUser,

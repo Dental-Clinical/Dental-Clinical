@@ -312,7 +312,7 @@ export class StudentService {
       header: 1,
     });
 
-    const students: any = rows.slice(3).filter((row: any) => row[1] && row[2]);
+    const students: any = rows.slice(1).filter((row: any) => row[1]);
 
     for (const row of students) {
       const fatherName = row[0];

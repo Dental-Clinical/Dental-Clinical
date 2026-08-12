@@ -29,7 +29,7 @@ export class SupervisorReviewsService {
     private readonly supervisorService: SupervisorService,
     private readonly dataSource: DataSource,
     private readonly cloudinaryService: CloudinaryService,
-  ) { }
+  ) {}
   async getPendingReviews(user: AuthenticatedUser) {
     const supervisor = await this.getSupervisor(user);
 
@@ -231,6 +231,10 @@ export class SupervisorReviewsService {
           .createQueryBuilder('submission')
           .setLock('pessimistic_write')
           .innerJoinAndSelect('submission.supervisor', 'supervisor')
+          .innerJoinAndSelect(
+            'submission.plannedProcedures',
+            'plannedProcedures',
+          )
           .where('submission.clinical_case_id = :id', { id })
           .andWhere('submission.status = :status', {
             status: DiagnosisSubmissionStatus.PENDING_REVIEW,
@@ -301,12 +305,23 @@ export class SupervisorReviewsService {
 
         const submissionRef = {
           diagnosisSubmission: { id: diagnosisSubmission.id },
+          plannedProcedures: diagnosisSubmission.plannedProcedures.map(
+            (procedure) => ({
+              id: procedure.id,
+            }),
+          ),
         };
+        for (const procedure of submissionRef.plannedProcedures) {
+          await manager
+            .getRepository(SubjectDiagnosisAnswer)
+            .delete({ plannedProcedure: { id: procedure.id } });
+        }
         await manager
-          .getRepository(SubjectDiagnosisAnswer)
-          .delete(submissionRef);
-        await manager.getRepository(PlannedProcedures).delete(submissionRef);
-        await manager.getRepository(DiagnosisImages).delete(submissionRef);
+          .getRepository(PlannedProcedures)
+          .delete(submissionRef.diagnosisSubmission);
+        await manager
+          .getRepository(DiagnosisImages)
+          .delete(submissionRef.diagnosisSubmission);
         await manager
           .getRepository(DiagnosisSubmission)
           .delete(diagnosisSubmission.id);

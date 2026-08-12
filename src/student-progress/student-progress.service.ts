@@ -250,6 +250,7 @@ export class StudentProgressService {
       {
         subjectId: number;
         subject: string;
+        requiresDentalChart: boolean;
         section: string;
         supervisor: string;
         procedures: {
@@ -272,6 +273,7 @@ export class StudentProgressService {
         subjects.set(subject.id, {
           subjectId: subject.id,
           subject: subject.name,
+          requiresDentalChart: subject.requiresDentalChart,
           section: sectionSubject.section.name,
           supervisor: sectionSubject.supervisor.user.full_name,
           procedures: [],

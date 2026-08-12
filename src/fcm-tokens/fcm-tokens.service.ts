@@ -1,7 +1,10 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import type { ConfigType } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BatchResponse, Messaging } from 'firebase-admin/messaging';
-import { In, Repository } from 'typeorm';
+import { In, LessThan, Repository } from 'typeorm';
+import firebaseConfig from 'src/config/firebase.config';
 import { FIREBASE_MESSAGING } from '../firebase/firebase.provider';
 import { DeviceToken } from './fcm-token.entity';
 import { RegisterDeviceTokenDto } from './dto/register-device-token.dto';
@@ -19,6 +22,8 @@ export class FcmTokensService {
     @Inject(FIREBASE_MESSAGING) private readonly messaging: Messaging,
     @InjectRepository(DeviceToken)
     private readonly tokens: Repository<DeviceToken>,
+    @Inject(firebaseConfig.KEY)
+    private readonly config: ConfigType<typeof firebaseConfig>,
   ) {}
 
   async registerToken(userId: number, dto: RegisterDeviceTokenDto) {
@@ -71,12 +76,14 @@ export class FcmTokensService {
           android: { priority: 'high', notification: { channelId } },
           apns: {
             payload: {
-              aps: {
-                sound: 'default',
-                badge: payload.badge,
-                contentAvailable: true,
-              },
+              aps: { sound: 'default', badge: payload.badge },
             },
+          },
+          // FCM applies only the block matching each token's platform, so all
+          // three can ride along on one multicast to a mixed set of devices.
+          webpush: {
+            notification: { title: payload.title, body: payload.body },
+            fcmOptions: payload.link ? { link: payload.link } : undefined,
           },
         });
 
@@ -93,6 +100,28 @@ export class FcmTokensService {
     }
 
     return { sent, failed };
+  }
+
+  /**
+   * `pruneInvalid` only reaps tokens FCM has actively rejected, which never
+   * happens for a device we stop sending to. This sweeps the rest.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async pruneStaleTokens() {
+    const cutoff = new Date(
+      Date.now() - this.config.tokenTtlDays * 24 * 60 * 60 * 1000,
+    );
+    const { affected } = await this.tokens.delete({
+      lastSeenAt: LessThan(cutoff),
+    });
+
+    if (affected) {
+      this.logger.log(
+        `Pruned ${affected} device token(s) not seen since ${cutoff.toISOString()}`,
+      );
+    }
+
+    return { pruned: affected ?? 0 };
   }
 
   private async pruneInvalid(response: BatchResponse, tokens: string[]) {

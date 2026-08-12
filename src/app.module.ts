@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ScheduleModule } from '@nestjs/schedule';
 import { redisStore } from 'cache-manager-redis-store';
 import { AppController } from './app.controller';
 import { connectionSource } from './database/database.config';
@@ -58,6 +59,7 @@ const ENV = process.env.NODE_ENV;
       load: [redisConfig, firebaseConfig],
     }),
     HttpModule.register({ global: true }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot(connectionSource.options),
     CacheModule.registerAsync({
       isGlobal: true,

@@ -1,5 +1,6 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   Index,
   JoinColumn,
@@ -42,6 +43,10 @@ export class DeviceToken {
   @ApiProperty({
     description: 'Last time the token was registered or refreshed',
   })
-  @Column({ type: 'timestamptz', default: () => 'now()' })
+  @Column({ name: 'last_seen_at', type: 'timestamptz', default: () => 'now()' })
   lastSeenAt: Date;
+
+  @ApiProperty({ description: 'When the device first registered' })
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 }

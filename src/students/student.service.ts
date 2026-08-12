@@ -94,7 +94,7 @@ export class StudentService {
     private readonly subjectProceduresRepository: Repository<SubjectProcedures>,
     @InjectRepository(StudentProgress)
     private readonly studentProgressRepository: Repository<StudentProgress>,
-  ) {}
+  ) { }
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
       where: { university_id },
@@ -246,6 +246,24 @@ export class StudentService {
         throw new HttpException('Student already exists', HttpStatus.CONFLICT);
       }
 
+      const studyYear = await manager.getRepository(StudyYear).findOne({
+        where: { level: student.study_year },
+      });
+
+      if (!studyYear) {
+        throw new NotFoundException(
+          `No study year found for level ${student.study_year}`,
+        );
+      }
+
+      const academicYear = await manager.getRepository(AcademicYear).findOne({
+        where: { is_active: true },
+      });
+
+      if (!academicYear) {
+        throw new NotFoundException('No active academic year is configured');
+      }
+
       const passwordHash = await this.passwordService.hash(
         student.university_id,
       );
@@ -253,6 +271,7 @@ export class StudentService {
       const user = manager.getRepository(User).create({
         full_name: student.full_name,
         father_name: student.father_name,
+        email: student.email,
         role: UserRole.STUDENT,
         password_hash: passwordHash,
       });
@@ -263,7 +282,20 @@ export class StudentService {
         university_id: student.university_id,
         user: savedUser,
       });
+
       const savedStudent = await manager.save(newStudent);
+
+      const studentAcademicYear = manager
+        .getRepository(StudentAcademicYear)
+        .create({
+          student: savedStudent,
+          academicYear,
+          studyYear,
+          isCurrent: true,
+        });
+
+      await manager.save(studentAcademicYear);
+
       return {
         studentId: savedStudent.id,
       };
@@ -286,11 +318,15 @@ export class StudentService {
       const fatherName = row[0];
       const fullName = row[1];
       const universityId = String(row[2]);
+      const email = String(row[3]);
+      const study_year = Number(row[4]);
 
       await this.createStudent({
         full_name: fullName,
         father_name: fatherName,
         university_id: universityId,
+        email,
+        study_year
       });
     }
   }
@@ -353,10 +389,10 @@ export class StudentService {
         },
         studyYear: currentEnrollment
           ? {
-              id: currentEnrollment.studyYear.id,
-              name: currentEnrollment.studyYear.name,
-              level: currentEnrollment.studyYear.level,
-            }
+            id: currentEnrollment.studyYear.id,
+            name: currentEnrollment.studyYear.name,
+            level: currentEnrollment.studyYear.level,
+          }
           : null,
       };
     });
@@ -557,10 +593,10 @@ export class StudentService {
           },
           studyYear: currentEnrollment
             ? {
-                id: currentEnrollment.studyYear.id,
-                name: currentEnrollment.studyYear.name,
-                level: currentEnrollment.studyYear.level,
-              }
+              id: currentEnrollment.studyYear.id,
+              name: currentEnrollment.studyYear.name,
+              level: currentEnrollment.studyYear.level,
+            }
             : null,
           academicYear: {
             id: enrollment.academicYear.id,
@@ -712,10 +748,10 @@ export class StudentService {
       },
       studyYear: currentEnrollment
         ? {
-            id: currentEnrollment.studyYear.id,
-            name: currentEnrollment.studyYear.name,
-            level: currentEnrollment.studyYear.level,
-          }
+          id: currentEnrollment.studyYear.id,
+          name: currentEnrollment.studyYear.name,
+          level: currentEnrollment.studyYear.level,
+        }
         : null,
       academicYear: {
         id: enrollments[0].academicYear.id,

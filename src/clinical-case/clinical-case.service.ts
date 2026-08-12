@@ -192,6 +192,7 @@ export class ClinicalCaseService {
       subject: {
         id: clinicalCase.subject.id,
         name: clinicalCase.subject.name,
+        requiresDentalChart: clinicalCase.subject.requiresDentalChart,
       },
       assignedStudent: clinicalCase.assignedStudent
         ? {
@@ -243,6 +244,7 @@ export class ClinicalCaseService {
       subject: {
         id: clinicalCase.subject.id,
         name: clinicalCase.subject.name,
+        requiresDentalChart: clinicalCase.subject.requiresDentalChart,
       },
     };
   }
@@ -472,7 +474,11 @@ export class ClinicalCaseService {
 
       status: clinicalCase.status,
 
-      subject: clinicalCase.subject.name,
+      subject: {
+        id: clinicalCase.subject.id,
+        name: clinicalCase.subject.name,
+        requiresDentalChart: clinicalCase.subject.requiresDentalChart,
+      },
 
       supervisor: clinicalCase.assignedSupervisor?.user?.full_name ?? null,
 
@@ -615,7 +621,11 @@ export class ClinicalCaseService {
       return {
         id: clinicalCase.id,
         patientName: clinicalCase.patient.full_name,
-        subjectName: clinicalCase.subject.name,
+        subject: {
+          id: clinicalCase.subject.id,
+          name: clinicalCase.subject.name,
+          requiresDentalChart: clinicalCase.subject.requiresDentalChart,
+        },
         status: clinicalCase.status,
         sessionCount:
           clinicalCase.treatmentSessions.length == 0
@@ -703,8 +713,11 @@ export class ClinicalCaseService {
       return {
         id: clinicalCase.id,
         patient: clinicalCase.patient.full_name,
-        subject: clinicalCase.subject.name,
-        subjectId: clinicalCase.subject.id,
+        subject: {
+          id: clinicalCase.subject.id,
+          name: clinicalCase.subject.name,
+          requiresDentalChart: clinicalCase.subject.requiresDentalChart,
+        },
         clinic: clinicalCase.subject.clinic,
         coordinator: clinicalCase.initialExamination.coordinator.user.full_name,
         chiefComplaint: clinicalCase.request.chief_complaint,
@@ -763,7 +776,11 @@ export class ClinicalCaseService {
         id: clinicalCase.id,
         status: clinicalCase.status,
         patient: clinicalCase.patient.full_name,
-        subject: clinicalCase.subject.name,
+        subject: {
+          id: clinicalCase.subject.id,
+          name: clinicalCase.subject.name,
+          requiresDentalChart: clinicalCase.subject.requiresDentalChart,
+        },
         section: sectionsBySubjectId.get(clinicalCase.subject.id)?.name ?? null,
         chiefComplaint: clinicalCase.request.chief_complaint,
         nextAppointment: nextAppointment

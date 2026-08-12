@@ -14,6 +14,9 @@ import { UpdatePatientMedicalRecordsDto } from './dto/update-patient-medical-rec
 import { User } from 'src/users/user.entity';
 import { log } from 'console';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { PatientInfoDto } from 'src/clinical-case/dto/create-walk-in-clinical-case.dto';
+import { ExaminationRequest } from 'src/examination-requests/entities/examination-request.entity';
+import { ExaminationRequestStatus } from 'src/examination-requests/Enums/examination-request.enum';
 
 @Injectable()
 export class PatientsService {
@@ -23,7 +26,26 @@ export class PatientsService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly dataSource: DataSource,
   ) {}
+  public async createWalkInPatient(dto: PatientInfoDto) {
+    return await this.dataSource.transaction(async (manager) => {
+      const pateint = await this.createPatient(dto.patientInfo, manager);
+      const examinationRequest = manager
+        .getRepository(ExaminationRequest)
+        .create({
+          patient: pateint,
+          chief_complaint: dto.chiefComplaint,
+          symptoms: dto.symptoms,
+          status: ExaminationRequestStatus.PENDING,
+        });
+      await manager.save(examinationRequest);
+      return {
+        message: 'Walk-in patient created successfully',
+      };
+    });
+  }
+
   public async createPatient(
     patient: CreatePatientDto,
     manager?: EntityManager,

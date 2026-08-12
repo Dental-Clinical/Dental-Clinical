@@ -14,6 +14,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SessionProcedure } from 'src/sesssion-procedures/session-procedures.entity';
 import { PlannedProceduresStatus } from './enum/planned-procedures-status.enum';
 import { SubjectDiagnosisAnswer } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
+import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 
 @Entity('planned_procedures')
 export class PlannedProcedures {
@@ -39,9 +40,24 @@ export class PlannedProcedures {
   @ManyToOne(
     () => DiagnosisSubmission,
     (diagnosisSubmission) => diagnosisSubmission.plannedProcedures,
+    {
+      nullable: true,
+      onDelete: 'SET NULL',
+    },
   )
   @JoinColumn({ name: 'diagnosis_submission_id' })
-  diagnosisSubmission: DiagnosisSubmission;
+  diagnosisSubmission: DiagnosisSubmission | null;
+
+  @ManyToOne(
+    () => ClinicalCase,
+    (clinicalCase) => clinicalCase.plannedProcedures,
+    {
+      nullable: false,
+      onDelete: 'CASCADE',
+    },
+  )
+  @JoinColumn({ name: 'clinical_case_id' })
+  clinicalCase: ClinicalCase;
 
   @OneToMany(
     () => SessionProcedure,
@@ -58,7 +74,7 @@ export class PlannedProcedures {
     example: 'This is a note.',
   })
   @Column({ type: 'text', nullable: true })
-  notes?: string;
+  notes?: string | null;
 
   @ApiProperty({
     description: 'Status of the planned procedure',

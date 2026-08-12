@@ -44,7 +44,7 @@ export class ClinicalAppointmentsService {
     private readonly studentService: StudentService,
     private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
     @InjectRepository(Patient) readonly patientRepository: Repository<Patient>,
-  ) { }
+  ) {}
 
   async createStudentClinicalAppointment(
     currentUser: AuthenticatedUser,
@@ -160,8 +160,8 @@ export class ClinicalAppointmentsService {
 
       manager.save(clinicalAppointment);
       return {
-        "message": "Appointment created successfully"
-      }
+        message: 'Appointment created successfully',
+      };
     });
   }
 
@@ -210,38 +210,15 @@ export class ClinicalAppointmentsService {
   async getAvailableSlots(
     currentUser: AuthenticatedUser,
     date: Date,
-    clinicalCaseId: number,
+    subjectId: number,
   ) {
-    const clinicalCase = await this.clinicalCaseRepository.findOne({
-      where: { id: clinicalCaseId },
-      relations: {
-        subject: true,
-        assignedStudent: true,
-      },
-    });
-    if (!clinicalCase) {
-      throw new NotFoundException('Clinical case not found');
-    }
-    if (
-      ![
-        ClinicalCaseStatus.OPEN,
-        ClinicalCaseStatus.TREATMENT_IN_PROGRESS,
-      ].includes(clinicalCase.status)
-    ) {
-      throw new ConflictException('This clinical case cannot be scheduled.');
-    }
-
-    if (clinicalCase.assignedStudent) {
-      throw new ConflictException('Clinical case has already been assigned');
-    }
-
     const sectionSubject =
       await this.studentService.getSectionSubjectForStudent(
         currentUser.userId,
-        clinicalCase.subject.id,
+        subjectId,
       );
 
-    return await this.supervisorAvailibilityService.getAvailableSlots(
+    return this.supervisorAvailibilityService.getAvailableSlots(
       date,
       sectionSubject.supervisor.id,
     );
@@ -259,16 +236,16 @@ export class ClinicalAppointmentsService {
       relations: {
         clinicalCase: {
           subject: {
-            clinic: true
-          }
+            clinic: true,
+          },
         },
         patient: true,
-        supervisor: true
+        supervisor: true,
       },
     });
 
     if (appointments.length === 0) {
-      return []
+      return [];
     }
     const now = new Date();
     return appointments.map((appointment) => {

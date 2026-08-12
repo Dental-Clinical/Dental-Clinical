@@ -226,6 +226,7 @@ export class StudentService {
       subjects: enrollments.map((enrollment) => ({
         id: enrollment.subject.id,
         name: enrollment.subject.name,
+        requiresDentalChart: enrollment.subject.requiresDentalChart,
         shortName: enrollment.subject.shortName,
         section: enrollment.section.name,
         supervisor:

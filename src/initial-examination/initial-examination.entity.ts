@@ -15,6 +15,7 @@ import {
 import { InitialExaminationStatus } from './enums/initial-examination-status.enum';
 import { ClinicalCase } from '../clinical-case/clinical-case.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Patient } from 'src/patients/patient.entity';
 
 @Entity('initial_examinations')
 @Unique(['request'])
@@ -27,9 +28,23 @@ export class InitialExamination {
     type: () => ExaminationRequest,
     description: 'Associated examination request',
   })
-  @OneToOne(() => ExaminationRequest, (request) => request.initialExamination)
+  @OneToOne(() => ExaminationRequest, (request) => request.initialExamination, {
+    nullable: false,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'request_id' })
   request: ExaminationRequest;
+
+  @ApiProperty({
+    type: () => Patient,
+    description: 'Associated patient',
+  })
+  @ManyToOne(() => Patient, (patient) => patient.initialExaminations, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'patient_id' })
+  patient: Patient;
 
   @ApiProperty({
     type: () => ExaminationAppointment,
@@ -38,9 +53,13 @@ export class InitialExamination {
   @OneToOne(
     () => ExaminationAppointment,
     (appointment) => appointment.initialExamination,
+    {
+      nullable: true,
+      onDelete: 'SET NULL',
+    },
   )
   @JoinColumn({ name: 'appointment_id' })
-  appointment: ExaminationAppointment;
+  appointment?: ExaminationAppointment | null;
 
   @ApiProperty({ type: () => Coordinator, description: 'Assigned coordinator' })
   @ManyToOne(

@@ -70,7 +70,7 @@ export class ClinicalAppointmentsController {
     return await this.clinicalAppointmentService.getAvailableSlots(
       currentUser,
       new Date(dto.date),
-      dto.clinicalCaseId,
+      dto.subjectId,
     );
   }
 

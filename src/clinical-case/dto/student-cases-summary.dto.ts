@@ -19,10 +19,18 @@ export class StudentCaseDto {
   patientName: string;
 
   @ApiProperty({
-    description: 'The name of the subject associated with the clinical case',
-    example: 'Endodontics',
+    description: 'The subject associated with the clinical case',
+    example: {
+      id: 1,
+      name: 'Endodontics',
+      requiresDentalChart: true,
+    },
   })
-  subjectName: string;
+  subject: {
+    id: number;
+    name: string;
+    requiresDentalChart: boolean;
+  };
 
   @ApiProperty({
     description: 'The status of the clinical case',

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -10,6 +11,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClinicalCase } from './clinical-case.entity';
 import {
+  DataSource,
   EntityManager,
   FindOptionsWhere,
   In,
@@ -56,6 +58,17 @@ import {
   TimelineEntryDto,
   TreatmentPlanDto,
 } from './dto/case-details-view.dto';
+import { CreateWalkInClinicalCaseDto } from './dto/create-walk-in-clinical-case.dto';
+import { PatientsService } from 'src/patients/patients.service';
+import { ClinicalAppointment } from 'src/clinical-appointments/clinical-appointments.entity';
+import { ExaminationRequest } from 'src/examination-requests/entities/examination-request.entity';
+import { ExaminationRequestStatus } from 'src/examination-requests/Enums/examination-request.enum';
+import { SubjectProcedures } from 'src/subject-procedures/subject-procedures.entity';
+import { SubjectDiagnosisQuestion } from 'src/subject-diagnosis/subject-diagnosis-questions.entity';
+import { DiagnosisSubmissionService } from 'src/diagnosis-submission/diagnosis-submission.service';
+import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.entity';
+import { SubjectDiagnosisAnswer } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
+import { SupervisorAvailabilityService } from 'src/clinical-appointments/supervisor-availability.service';
 
 @Injectable()
 export class ClinicalCaseService {
@@ -69,15 +82,188 @@ export class ClinicalCaseService {
     @InjectRepository(SessionMaterial)
     private readonly sessionMaterialRepository: Repository<SessionMaterial>,
     private readonly studentService: StudentService,
+    private readonly patientService: PatientsService,
+    private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
+    private readonly dataSource: DataSource,
   ) {}
+  public async createWalkInClinicalCase(
+    userId: number,
+    dto: CreateWalkInClinicalCaseDto,
+  ) {
+    return this.dataSource.transaction(async (manager) => {
+      const examinationRepo = manager.getRepository(ExaminationRequest);
+      const clinicalCaseRepo = manager.getRepository(ClinicalCase);
+      const clinicalAppointmentRepo =
+        manager.getRepository(ClinicalAppointment);
+      const subjectRepo = manager.getRepository(Subject);
+      const subjectProcedureRepo = manager.getRepository(SubjectProcedures);
+      const subjectDiagnosisQuestionRepo = manager.getRepository(
+        SubjectDiagnosisQuestion,
+      );
+      const procedureRepository = manager.getRepository(PlannedProcedures);
+      const answerRepository = manager.getRepository(SubjectDiagnosisAnswer);
+
+      const student = await this.studentService.findByUserId(userId, manager);
+      if (!student) {
+        throw new NotFoundException('Student not found');
+      }
+      const studentStudyYear = await this.studentService.getCurrentStudyYear(
+        userId,
+        manager,
+      );
+
+      const patient = await this.patientService.createPatient(
+        dto.patient.patientInfo,
+        manager,
+      );
+      const examination = examinationRepo.create({
+        chief_complaint: dto.patient.chiefComplaint,
+        symptoms: dto.patient.symptoms,
+        patient,
+        status: ExaminationRequestStatus.CONVERTED_TO_CASE,
+      });
+      await examinationRepo.save(examination);
+      const subject = await subjectRepo.findOne({
+        where: {
+          id: dto.caseInfo.subjectId,
+        },
+      });
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
+      if (studentStudyYear.id !== subject.study_year_id) {
+        throw new ConflictException(
+          'Student is not eligible for this subject study year',
+        );
+      }
+      const sectionSubject =
+        await this.studentService.getSectionSubjectForStudent(
+          userId,
+          subject.id,
+          manager,
+        );
+      const supervisor = sectionSubject.supervisor;
+      const subjectProcedureIds = dto.caseInfo.plannedProcedures.map(
+        (procedure) => procedure.subjectProcedureId,
+      );
+      const subjectProcedures = await subjectProcedureRepo.find({
+        where: {
+          id: In(subjectProcedureIds),
+          subject: { id: subject.id },
+          is_active: true,
+        },
+      });
+
+      if (subjectProcedures.length !== subjectProcedureIds.length) {
+        throw new ConflictException(
+          'One or more planned procedures do not belong to this subject.',
+        );
+      }
+      const questions = await subjectDiagnosisQuestionRepo.find({
+        where: {
+          subject: { id: subject.id },
+          isActive: true,
+        },
+        relations: {
+          answerOptions: true,
+        },
+      });
+      const questionById = new Map(
+        questions.map((question) => [question.id, question]),
+      );
+      for (const procedure of dto.caseInfo.plannedProcedures) {
+        DiagnosisSubmissionService.validateProcedureAnswers(
+          procedure,
+          questions,
+          questionById,
+        );
+      }
+      const clinicalCase = clinicalCaseRepo.create({
+        patient,
+        assignedStudent: student,
+        subject,
+        assignedSupervisor: supervisor,
+        request: examination,
+        status: ClinicalCaseStatus.PENDING_SUPERVISOR_APPROVAL,
+      });
+      await clinicalCaseRepo.save(clinicalCase);
+
+      const savedProcedures: PlannedProcedures[] = [];
+      const savedAnswers: SubjectDiagnosisAnswer[] = [];
+
+      for (const procedure of dto.caseInfo.plannedProcedures) {
+        const plannedProcedure = procedureRepository.create({
+          clinicalCase,
+          subjectProcedure: { id: procedure.subjectProcedureId },
+          toothNumber: procedure.toothNumber,
+          notes: procedure.notes?.trim() ?? null,
+        });
+        const savedProcedure = await procedureRepository.save(plannedProcedure);
+        savedProcedures.push(savedProcedure);
+
+        for (const answer of procedure.answers) {
+          const subjectQuestion = questionById.get(answer.questionId);
+          if (!subjectQuestion) {
+            throw new ConflictException(
+              `Question with ID ${answer.questionId} is not an active question for this subject`,
+            );
+          }
+          const activeOptions = subjectQuestion.answerOptions.filter(
+            (option) => option.isActive,
+          );
+          const requestedOptionIds = answer.optionIds ?? [];
+
+          const selectedOptions = activeOptions.filter((option) =>
+            requestedOptionIds.includes(option.id),
+          );
+
+          if (selectedOptions.length !== requestedOptionIds.length) {
+            throw new BadRequestException(
+              `One or more selected options are invalid for question ID ${subjectQuestion.id}`,
+            );
+          }
+          const diagnosisAnswer = answerRepository.create({
+            plannedProcedure: savedProcedure,
+            question: { id: answer.questionId },
+            answer: answer.answer?.trim() ?? null,
+            selectedOptions,
+          });
+          const savedAnswer = await answerRepository.save(diagnosisAnswer);
+          savedAnswers.push(savedAnswer);
+        }
+      }
+      const { startTime, endTime } =
+        await this.supervisorAvailibilityService.validateSlotAvailability(
+          new Date(dto.appointment.appointmentDate),
+          dto.appointment.appointmentStart,
+          supervisor.id,
+          manager,
+        );
+
+      const appointment = clinicalAppointmentRepo.create({
+        clinicalCase,
+        supervisor,
+        patient,
+        student,
+        appointmentDate: dto.appointment.appointmentDate,
+        appointmentStart: startTime,
+        appointmentEnd: endTime,
+        status: ClinicalAppointmentStatus.SCHEDULED,
+      });
+
+      await clinicalAppointmentRepo.save(appointment);
+      return {
+        message: 'Case created successfully waiting for appointment',
+      };
+    });
+  }
   private async create(dto: CreateClinicalCaseDto, manager: EntityManager) {
     const initialExamination = await manager.findOne(InitialExamination, {
       where: { id: dto.initialExaminationId },
       relations: {
         clinicalCase: true,
-        request: {
-          patient: true,
-        },
+        patient: true,
+        request: true,
       },
     });
 
@@ -110,7 +296,7 @@ export class ClinicalCaseService {
 
     const clinicalCase = manager.getRepository(ClinicalCase).create({
       initialExamination: initialExamination,
-      patient: initialExamination.request.patient,
+      patient: initialExamination.patient,
       request: initialExamination.request,
       subject,
       status: ClinicalCaseStatus.OPEN,
@@ -192,6 +378,7 @@ export class ClinicalCaseService {
       subject: {
         id: clinicalCase.subject.id,
         name: clinicalCase.subject.name,
+        requiresDentalChart: clinicalCase.subject.requiresDentalChart,
       },
       assignedStudent: clinicalCase.assignedStudent
         ? {
@@ -209,6 +396,7 @@ export class ClinicalCaseService {
       relations: {
         patient: true,
         request: true,
+        initialExamination: true,
         subject: true,
         clinicalAppointments: true,
       },
@@ -225,12 +413,12 @@ export class ClinicalCaseService {
         id: clinicalCase.patient.id,
         fullName: clinicalCase.patient.full_name,
         phone: clinicalCase.patient.phone,
-        medicalHistory: clinicalCase.patient.medical_history,
         gender: toGender(clinicalCase.patient.gender),
-        allergies: clinicalCase.patient.allergies,
         dateOfBirth: clinicalCase.patient.dateOfBirth
           ? DateTimeUtils.toDateString(clinicalCase.patient.dateOfBirth)
           : null,
+        allergies: clinicalCase.patient.allergies,
+        medicalHistory: clinicalCase.patient.medical_history,
         currentMedications: clinicalCase.patient.current_medications,
       },
 
@@ -243,6 +431,7 @@ export class ClinicalCaseService {
       subject: {
         id: clinicalCase.subject.id,
         name: clinicalCase.subject.name,
+        requiresDentalChart: clinicalCase.subject.requiresDentalChart,
       },
     };
   }
@@ -375,6 +564,13 @@ export class ClinicalCaseService {
         clinicalAppointments: true,
         subject: true,
         media: true,
+        plannedProcedures: {
+          subjectProcedure: true,
+          answers: {
+            question: true,
+            selectedOptions: true,
+          },
+        },
       },
     });
     if (!clinicalCase) {
@@ -424,7 +620,7 @@ export class ClinicalCaseService {
 
     return {
       caseInfo: this.buildCaseInfo(clinicalCase, policy),
-      treatmentPlan: this.buildTreatmentPlan(diagnosisSubmission),
+      treatmentPlan: this.buildTreatmentPlan(clinicalCase),
       materials: this.buildMaterials(sessionMaterials),
       caseMedia: this.buildCaseMedia(clinicalCase.media),
       timeline: this.buildTimeline(treatmentSessions),
@@ -472,7 +668,11 @@ export class ClinicalCaseService {
 
       status: clinicalCase.status,
 
-      subject: clinicalCase.subject.name,
+      subject: {
+        id: clinicalCase.subject.id,
+        name: clinicalCase.subject.name,
+        requiresDentalChart: clinicalCase.subject.requiresDentalChart,
+      },
 
       supervisor: clinicalCase.assignedSupervisor?.user?.full_name ?? null,
 
@@ -509,10 +709,10 @@ export class ClinicalCaseService {
     };
   }
   private buildTreatmentPlan(
-    diagnosisSubmission: DiagnosisSubmission | null,
+    clinicalCase: ClinicalCase | null,
   ): TreatmentPlanDto {
     const treatmentPlan =
-      diagnosisSubmission?.plannedProcedures?.map((procedure) => {
+      clinicalCase?.plannedProcedures?.map((procedure) => {
         return {
           procedureId: procedure.id,
           procedure: procedure.subjectProcedure.name,
@@ -615,7 +815,11 @@ export class ClinicalCaseService {
       return {
         id: clinicalCase.id,
         patientName: clinicalCase.patient.full_name,
-        subjectName: clinicalCase.subject.name,
+        subject: {
+          id: clinicalCase.subject.id,
+          name: clinicalCase.subject.name,
+          requiresDentalChart: clinicalCase.subject.requiresDentalChart,
+        },
         status: clinicalCase.status,
         sessionCount:
           clinicalCase.treatmentSessions.length == 0
@@ -678,12 +882,11 @@ export class ClinicalCaseService {
     return await this.clinicalCaseRepository.save(clinicalCase);
   }
   async findOpenCases(userId: number): Promise<OpenCasesSummary> {
-    // approved
     const studyYear = await this.studentService.getCurrentStudyYear(userId);
 
     const openCases = await this.clinicalCaseRepository.find({
       where: {
-        status: In([ClinicalCaseStatus.OPEN, ClinicalCaseStatus.ASSIGNED]),
+        status: ClinicalCaseStatus.OPEN,
         assignedStudent: IsNull(),
         subject: {
           is_active: true,
@@ -703,8 +906,11 @@ export class ClinicalCaseService {
       return {
         id: clinicalCase.id,
         patient: clinicalCase.patient.full_name,
-        subject: clinicalCase.subject.name,
-        subjectId: clinicalCase.subject.id,
+        subject: {
+          id: clinicalCase.subject.id,
+          name: clinicalCase.subject.name,
+          requiresDentalChart: clinicalCase.subject.requiresDentalChart,
+        },
         clinic: clinicalCase.subject.clinic,
         coordinator: clinicalCase.initialExamination.coordinator.user.full_name,
         chiefComplaint: clinicalCase.request.chief_complaint,
@@ -763,7 +969,11 @@ export class ClinicalCaseService {
         id: clinicalCase.id,
         status: clinicalCase.status,
         patient: clinicalCase.patient.full_name,
-        subject: clinicalCase.subject.name,
+        subject: {
+          id: clinicalCase.subject.id,
+          name: clinicalCase.subject.name,
+          requiresDentalChart: clinicalCase.subject.requiresDentalChart,
+        },
         section: sectionsBySubjectId.get(clinicalCase.subject.id)?.name ?? null,
         chiefComplaint: clinicalCase.request.chief_complaint,
         nextAppointment: nextAppointment
@@ -800,7 +1010,7 @@ export class ClinicalCaseService {
         subjectName: clinicalCase.subject.name,
         status: clinicalCase.status,
         sessionCount:
-          clinicalCase.status !== ClinicalCaseStatus.ASSIGNED
+          clinicalCase.treatmentSessions.length > 0
             ? clinicalCase.treatmentSessions.length
             : null,
       };

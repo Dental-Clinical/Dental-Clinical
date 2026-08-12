@@ -35,7 +35,7 @@ export class CoordinatorService {
       dto.phone = dto.phone.replace(/\D/g, '');
 
       const existingUser = await manager.getRepository(User).findOne({
-        where: { email: dto.email },
+        where: [{ email: dto.email }, { phone: dto.phone }],
       });
       if (existingUser) {
         throw new HttpException('User already exists', HttpStatus.CONFLICT);

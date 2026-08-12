@@ -9,6 +9,8 @@ import { ClinicalAppointment } from 'src/clinical-appointments/clinical-appointm
 import { TreatmentSession } from 'src/treatment-sessions/treatment-sessions.entity';
 import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
 import { SessionMaterial } from 'src/session-materials/session-materials.entity';
+import { PatientsModule } from 'src/patients/patients.module';
+import { ClinicalAppointmentsModule } from 'src/clinical-appointments/clinical-appointments.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { SessionMaterial } from 'src/session-materials/session-materials.entity'
       SessionMaterial,
     ]),
     StudentModule,
+    PatientsModule,
+    ClinicalAppointmentsModule,
   ],
   providers: [ClinicalCaseService],
   controllers: [ClinicalCaseController],

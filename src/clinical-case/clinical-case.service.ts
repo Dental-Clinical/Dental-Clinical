@@ -14,6 +14,7 @@ import {
   FindOptionsWhere,
   In,
   IsNull,
+  Not,
   Repository,
 } from 'typeorm';
 import { CreateClinicalCaseDto } from './dto/create-clinical-case.dto';
@@ -598,7 +599,10 @@ export class ClinicalCaseService {
       throw new NotFoundException('Student not found');
     }
     const clinicalCases = await this.clinicalCaseRepository.find({
-      where: { assignedStudent: { id: student.id } },
+      where: {
+        assignedStudent: { id: student.id },
+        status: Not(ClinicalCaseStatus.ASSIGNED),
+      },
       relations: {
         patient: true,
         subject: true,
@@ -614,9 +618,9 @@ export class ClinicalCaseService {
         subjectName: clinicalCase.subject.name,
         status: clinicalCase.status,
         sessionCount:
-          clinicalCase.status !== ClinicalCaseStatus.ASSIGNED
-            ? clinicalCase.treatmentSessions.length
-            : null,
+          clinicalCase.treatmentSessions.length == 0
+            ? null
+            : clinicalCase.treatmentSessions.length,
       };
     });
     return { cases };

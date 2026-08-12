@@ -41,11 +41,11 @@ import { CreateSubjectMaterialsDto } from './dto/create-subject-materials.dto';
 @ApiBearerAuth('JWT-auth')
 @Controller('subjects')
 export class SubjectsController {
-  constructor(private readonly subjectsService: SubjectsService) {}
+  constructor(private readonly subjectsService: SubjectsService) { }
 
   @Post()
   @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: '[Admin, Coordinator] Create a subject' })
+  @ApiOperation({ summary: '[Admin] Create a subject' })
   @ApiBody({ type: CreateSubjectDto })
   @ApiCreatedResponse({
     type: CreateSubjectResponseDto,

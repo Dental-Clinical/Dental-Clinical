@@ -124,10 +124,11 @@ export class DiagnosisSubmissionController {
     description: 'Clinical case is not ready for diagnosis submission',
   })
   async submitDiagnosis(
-    @Body() dto: CreateDiagnosisSubmissionDto,
+    @Body('data') data: string,
     @CurrentUser() user: AuthenticatedUser,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
+    const dto: CreateDiagnosisSubmissionDto = JSON.parse(data);
     return await this.diagnosisSubmissionService.submitDiagnosis(
       dto,
       user,

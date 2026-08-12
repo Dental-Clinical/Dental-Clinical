@@ -9,6 +9,7 @@ import { ExaminationRequest } from 'src/examination-requests/entities/examinatio
 import { ClinicalCaseModule } from 'src/clinical-case/clinical-case.module';
 import { ExaminationAppointment } from 'src/examination-appointments/examination-appointment.entity';
 import { Subject } from 'src/subjects/subjects.entity';
+import { Patient } from 'src/patients/patient.entity';
 
 @Module({
   providers: [InitialExaminationService],
@@ -21,6 +22,7 @@ import { Subject } from 'src/subjects/subjects.entity';
       ExaminationRequest,
       ExaminationAppointment,
       Subject,
+      Patient,
     ]),
     ClinicalCaseModule,
   ],

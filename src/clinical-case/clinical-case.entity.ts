@@ -22,6 +22,7 @@ import { TreatmentSession } from 'src/treatment-sessions/treatment-sessions.enti
 import { ClinicalAppointment } from 'src/clinical-appointments/clinical-appointments.entity';
 import { ClinicalCaseEvaluation } from 'src/clinical-case-evaluation/clinical-case-evaluation.entity';
 import { ClinicalCaseMedia } from 'src/clinical-case-media/clinical-case-media.entity';
+import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.entity';
 
 @Entity('clinical_cases')
 export class ClinicalCase {
@@ -40,9 +41,7 @@ export class ClinicalCase {
     type: () => ExaminationRequest,
     description: 'Associated examination request',
   })
-  @OneToOne(() => ExaminationRequest, (request) => request.clinicalCase, {
-    nullable: true,
-  })
+  @OneToOne(() => ExaminationRequest, (request) => request.clinicalCase)
   @JoinColumn({ name: 'request_id' })
   request: ExaminationRequest;
 
@@ -92,7 +91,13 @@ export class ClinicalCase {
     () => DiagnosisSubmission,
     (diagnosisSubmission) => diagnosisSubmission.clinicalCase,
   )
-  diagnosisSubmission: DiagnosisSubmission;
+  diagnosisSubmission?: DiagnosisSubmission;
+
+  @OneToMany(
+    () => PlannedProcedures,
+    (plannedProcedure) => plannedProcedure.clinicalCase,
+  )
+  plannedProcedures: PlannedProcedures[];
 
   @OneToMany(
     () => TreatmentSession,

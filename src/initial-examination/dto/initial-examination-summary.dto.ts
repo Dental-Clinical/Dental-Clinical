@@ -19,7 +19,7 @@ export class InitialExaminationSummaryDto {
   status: string;
 
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
-  appointmentDate: Date;
+  appointmentDate?: Date;
 
   @ApiProperty({ enum: ClinicalCaseStatus, example: ClinicalCaseStatus.OPEN })
   clinicalCaseStatus: ClinicalCaseStatus;

@@ -33,6 +33,7 @@ import {
 } from './dto/patient-response.dto';
 import { UpdatePatientMedicalRecordsDto } from './dto/update-patient-medical-records.dto';
 import { FileUploadInterceptor } from 'src/common/interceptors/files.interceptor';
+import { PatientInfoDto } from 'src/clinical-case/dto/create-walk-in-clinical-case.dto';
 
 @ApiTags('Patients')
 @ApiBearerAuth('JWT-auth')
@@ -41,14 +42,15 @@ export class PatientsController {
   constructor(private readonly patientService: PatientsService) {}
 
   @Post()
-  @Roles([UserRole.STUDENT, UserRole.COORDINATOR])
+  @Roles([UserRole.COORDINATOR])
   @ApiOperation({ summary: '[Student] Create a walk-in patient' })
+  @ApiBody({ type: PatientInfoDto })
   @ApiCreatedResponse({
     type: PatientResponseDto,
     description: 'Walk-in patient created',
   })
-  async createWalkinPatient(@Body() dto: CreatePatientWalkinDto) {
-    return await this.patientService.createPatient(dto);
+  async createWalkinPatient(@Body() dto: PatientInfoDto) {
+    return await this.patientService.createWalkInPatient(dto);
   }
 
   @Get('me')

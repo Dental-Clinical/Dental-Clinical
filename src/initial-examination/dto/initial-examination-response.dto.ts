@@ -42,7 +42,7 @@ export class InitialExaminationResponseDto {
   examinedAt: Date;
 
   @ApiProperty({ type: InitialExaminationRequestSummaryDto })
-  request: InitialExaminationRequestSummaryDto;
+  request?: InitialExaminationRequestSummaryDto;
 
   @ApiProperty({ type: InitialExaminationClinicalCaseSummaryDto })
   clinicalCase: InitialExaminationClinicalCaseSummaryDto;

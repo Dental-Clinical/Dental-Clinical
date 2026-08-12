@@ -11,6 +11,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { InitialExamination } from 'src/initial-examination/initial-examination.entity';
 
 @Entity('patients')
 export class Patient {
@@ -124,4 +125,10 @@ export class Patient {
   })
   @OneToMany(() => ClinicalCase, (clinicalCase) => clinicalCase.patient)
   clinical_cases: ClinicalCase[];
+
+  @OneToMany(
+    () => InitialExamination,
+    (initialExamination) => initialExamination.patient,
+  )
+  initialExaminations: InitialExamination[];
 }

@@ -24,6 +24,8 @@ import {
 import { UpdateInitialExaminationDto } from './dto/update-initial-examination.dto';
 import { InitialExaminationResponseDto } from './dto/initial-examination-response.dto';
 import { InitialExaminationSummaryDto } from './dto/initial-examination-summary.dto';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 
 @ApiTags('Initial Examination')
 @ApiBearerAuth('JWT-auth')
@@ -47,8 +49,14 @@ export class InitialExaminationController {
     description:
       'An Initial Examination already exists for this Examination Request',
   })
-  async createInitialExamination(@Body() dto: CreateInitialExaminationDto) {
-    return await this.initialExaminationService.createInitialExamination(dto);
+  async createInitialExamination(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CreateInitialExaminationDto,
+  ) {
+    return await this.initialExaminationService.createInitialExamination(
+      user.userId,
+      dto,
+    );
   }
 
   @Get('student/:id')

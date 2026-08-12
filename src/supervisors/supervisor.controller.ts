@@ -20,6 +20,23 @@ import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.i
 export class SupervisorController {
   constructor(private readonly supervisorService: SupervisorService) {}
 
+  @Get('clinical-cases/pending-approval')
+  @Roles([UserRole.SUPERVISOR])
+  @ApiOperation({
+    summary:
+      '[Supervisor] Get clinical cases pending approval for the supervisor',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of clinical cases pending approval for the supervisor',
+  })
+  public async getClinicalCasesPendingApproval(
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.supervisorService.getClinicalCasesPendingReview(
+      user.userId,
+    );
+  }
   @Post()
   @Roles([UserRole.ADMIN])
   @ApiOperation({ summary: '[Admin] Create a new supervisor' })

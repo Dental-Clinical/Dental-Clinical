@@ -16,6 +16,9 @@ import { UserRole } from 'src/constants/user-roles';
 import { WhatsappService } from 'src/notifications/whatsapp.service';
 import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
+import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
+import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status.enum';
+import { ClinicalAppointmentStatus } from 'src/clinical-appointments/enums/clinical-appointment.enum';
 
 @Injectable()
 export class SupervisorService {
@@ -72,6 +75,45 @@ export class SupervisorService {
       return {
         supervisorId: savedSupervisor.id,
         tempPassword,
+      };
+    });
+  }
+  async getClinicalCasesPendingReview(userId: number) {
+    const supervisor = await this.findByUserId(userId);
+    if (!supervisor) {
+      throw new NotFoundException('Supervisor not found');
+    }
+    const clinicalCases = await this.dataSource
+      .getRepository(ClinicalCase)
+      .find({
+        where: {
+          assignedSupervisor: { id: supervisor.id },
+          status: ClinicalCaseStatus.PENDING_SUPERVISOR_APPROVAL,
+        },
+        relations: {
+          assignedStudent: { user: true },
+          patient: true,
+          subject: true,
+          clinicalAppointments: true,
+          plannedProcedures: true,
+        },
+      });
+    return clinicalCases.map((clinicalCase) => {
+      const nextScheduledAppointment = clinicalCase.clinicalAppointments
+        .filter(
+          (appointment) =>
+            appointment.status === ClinicalAppointmentStatus.SCHEDULED,
+        )
+        .sort(
+          (a, b) => a.appointmentDate.getTime() - b.appointmentDate.getTime(),
+        )[0];
+      return {
+        id: clinicalCase.id,
+        patientName: clinicalCase.patient.full_name,
+        subjectName: clinicalCase.subject.name,
+        studentName: clinicalCase.assignedStudent?.user.full_name || null,
+        nextScheduledAppointment,
+        procedureCount: clinicalCase.plannedProcedures.length,
       };
     });
   }

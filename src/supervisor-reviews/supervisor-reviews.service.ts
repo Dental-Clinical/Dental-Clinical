@@ -70,12 +70,12 @@ export class SupervisorReviewsService {
           },
           plannedProcedures: {
             subjectProcedure: true,
+            answers: {
+              selectedOptions: true,
+              question: true,
+            },
           },
           images: true,
-          answers: {
-            selectedOptions: true,
-            question: true,
-          },
         },
       });
     if (!submission) {
@@ -86,19 +86,24 @@ export class SupervisorReviewsService {
       id: submission.id,
       student: submission.student.user.full_name,
       patient: submission.clinicalCase.patient.full_name,
-      answers: [...submission.answers]
-        .sort((a, b) => a.question.displayOrder - b.question.displayOrder)
-        .map((answer) => ({
-          question: answer.question.question,
-          answer: answer.answer,
-          selectedOptions: answer.selectedOptions,
-        })),
       status: submission.status,
       plannedProcedures: submission.plannedProcedures.map((procedure) => {
         return {
           id: procedure.id,
           toothNumber: procedure.toothNumber,
+          notes: procedure.notes,
           procedureName: procedure.subjectProcedure.name,
+          answers: procedure.answers.map((answer) => {
+            return {
+              question: answer.question.question,
+              answer: answer.answer,
+              selectedOptions:
+                answer.selectedOptions.map((option) => ({
+                  id: option.id,
+                  label: option.label,
+                })) ?? [],
+            };
+          }),
         };
       }),
       images: submission.images.map((image) => ({

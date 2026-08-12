@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -18,6 +19,8 @@ import { Subject } from 'src/subjects/subjects.entity';
 import { ExaminationAppointmentStatus } from 'src/examination-requests/Enums/examination-appointment.enum';
 import { InitialExaminationResponseDto } from './dto/initial-examination-response.dto';
 import { InitialExaminationSummaryDto } from './dto/initial-examination-summary.dto';
+import { Patient } from 'src/patients/patient.entity';
+import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 
 @Injectable()
 export class InitialExaminationService {
@@ -30,6 +33,8 @@ export class InitialExaminationService {
     private readonly examinationAppointmentRepository: Repository<ExaminationAppointment>,
     @InjectRepository(ExaminationRequest)
     private readonly examinationRequestRepository: Repository<ExaminationRequest>,
+    @InjectRepository(Patient)
+    private readonly patientRepository: Repository<Patient>,
     @InjectRepository(Subject)
     private readonly subjectRepository: Repository<Subject>,
     private readonly dataSource: DataSource,
@@ -37,117 +42,150 @@ export class InitialExaminationService {
   ) {}
 
   async createInitialExamination(
+    userId: number,
     dto: CreateInitialExaminationDto,
-  ): Promise<InitialExaminationResponseDto> {
-    const [request, appointment, coordinator, subject] = await Promise.all([
-      this.examinationRequestRepository.findOneBy({ id: dto.request_id }),
-      this.examinationAppointmentRepository.findOneBy({
-        id: dto.appointment_id,
+  ) {
+    if (dto.request_id === undefined && dto.appointment_id !== undefined) {
+      throw new BadRequestException(
+        'request_id and appointment_id must be provided together',
+      );
+    }
+    const coordinator = await this.coordinatorRepository.findOne({
+      where: { user: { id: userId } },
+      relations: { user: true },
+    });
+
+    const [patient, subject] = await Promise.all([
+      this.patientRepository.findOne({
+        where: { id: dto.patient_id },
       }),
-      this.coordinatorRepository.findOne({
-        where: { id: dto.coordinator_id },
-        relations: { user: true },
+      this.subjectRepository.findOne({
+        where: { id: dto.subject_id, is_active: true },
       }),
-      this.subjectRepository.findOneBy({ id: dto.subject_id }),
     ]);
 
-    if (!request) {
-      throw new NotFoundException("Examination Request doesn't exist");
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
     }
-    if (!appointment) {
-      throw new NotFoundException('Appointment Not Found');
-    }
-    if (!coordinator || !coordinator.user?.is_active) {
-      throw new NotFoundException('Coordinator Not Found or disabled');
-    }
+
     if (!subject) {
-      throw new NotFoundException('Subject Not Found');
+      throw new NotFoundException('Subject not found');
     }
 
-    if (request.status !== ExaminationRequestStatus.PENDING) {
-      throw new ConflictException(
-        'Examination Request is not in a valid state for initial examination',
-      );
-    }
-
-    if (appointment.coordinator_id !== coordinator.id) {
-      throw new ConflictException(
-        'Coordinator is not assigned to this appointment',
-      );
-    }
-    if (appointment.status !== ExaminationAppointmentStatus.SCHEDULED) {
-      throw new ConflictException('Appointment is not in a valid state');
-    }
-
-    const existingInitialExamination =
-      await this.initialExaminationRepository.findOne({
-        where: { request: { id: dto.request_id } },
-      });
-
-    if (existingInitialExamination) {
-      throw new ConflictException(
-        'An Initial Examination already exists for this Examination Request',
-      );
-    }
-    if (appointment.request_id !== request.id) {
-      throw new ConflictException(
-        'Appointment does not belong to the examination request',
-      );
+    if (!coordinator || !coordinator.user?.is_active) {
+      throw new NotFoundException('Coordinator not found or disabled');
     }
 
     return await this.dataSource.transaction(async (manager) => {
-      const initialExamination = manager
-        .getRepository(InitialExamination)
-        .create({
-          request,
-          appointment,
-          coordinator,
-          diagnosis: dto.diagnosis,
-          clinicalFindings: dto.clinicalFindings,
-          status: InitialExaminationStatus.COMPLETED,
-          examined_at: new Date(),
-        });
+      const requestRepository = manager.getRepository(ExaminationRequest);
 
-      await manager.save(initialExamination);
-
-      request.status = ExaminationRequestStatus.CONVERTED_TO_CASE;
-      await manager.save(request);
-
-      appointment.status = ExaminationAppointmentStatus.COMPLETED;
-      await manager.save(appointment);
-
-      await this.clinicalCaseService.createFromInitialExamination(
-        initialExamination.id,
-        dto.subject_id,
-        manager,
+      const appointmentRepository = manager.getRepository(
+        ExaminationAppointment,
       );
-
-      const createdExamination = await manager.findOne(InitialExamination, {
-        where: { id: initialExamination.id },
+      let request: ExaminationRequest | null = null;
+      let appointment: ExaminationAppointment | null = null;
+      request = await requestRepository.findOne({
+        where: { id: dto.request_id },
         relations: {
-          request: true,
-          clinicalCase: true,
-          coordinator: true,
+          patient: true,
         },
       });
-      if (!createdExamination) {
-        throw new NotFoundException(
-          'Initial Examination not found after creation',
+
+      if (!request) {
+        throw new NotFoundException("Examination request doesn't exist");
+      }
+
+      if (request.patient.id !== patient.id) {
+        throw new ConflictException(
+          'Examination request does not belong to this patient',
         );
       }
+
+      if (request.status !== ExaminationRequestStatus.PENDING) {
+        throw new ConflictException(
+          'Examination request is not in a valid state for initial examination',
+        );
+      }
+      if (dto.appointment_id !== undefined) {
+        appointment = await appointmentRepository.findOne({
+          where: { id: dto.appointment_id },
+        });
+
+        if (!appointment) {
+          throw new NotFoundException('Appointment not found');
+        }
+
+        if (appointment.request_id !== request.id) {
+          throw new ConflictException(
+            'Appointment does not belong to the examination request',
+          );
+        }
+
+        if (appointment.coordinator_id !== coordinator.id) {
+          throw new ConflictException(
+            'Coordinator is not assigned to this appointment',
+          );
+        }
+
+        if (appointment.status !== ExaminationAppointmentStatus.SCHEDULED) {
+          throw new ConflictException('Appointment is not in a valid state');
+        }
+        const existingExamination = await manager
+          .getRepository(InitialExamination)
+          .findOne({
+            where: {
+              request: { id: request.id },
+            },
+          });
+
+        if (existingExamination) {
+          throw new ConflictException(
+            'An initial examination already exists for this examination request',
+          );
+        }
+      }
+
+      const initialExamination = manager.create(InitialExamination, {
+        request: request!,
+        appointment: appointment || null,
+        patient,
+        subject,
+        coordinator,
+        diagnosis: dto.diagnosis,
+        clinicalFindings: dto.clinicalFindings,
+        examined_at: new Date(),
+        status: InitialExaminationStatus.COMPLETED,
+      });
+      await manager.save(initialExamination);
+
+      const clinicalCase =
+        await this.clinicalCaseService.createFromInitialExamination(
+          initialExamination.id,
+          subject.id,
+          manager,
+        );
+
+      request!.status = ExaminationRequestStatus.CONVERTED_TO_CASE;
+
+      await requestRepository.save(request!);
+      if (appointment) {
+        appointment!.status = ExaminationAppointmentStatus.COMPLETED;
+        await appointmentRepository.save(appointment!);
+      }
+
       return {
-        id: createdExamination.id,
-        diagnosis: createdExamination.diagnosis,
-        clinicalFindings: createdExamination.clinicalFindings,
-        status: createdExamination.status,
-        examinedAt: createdExamination.examined_at,
+        id: initialExamination.id,
+        status: initialExamination.status,
+        diagnosis: initialExamination.diagnosis,
+        clinicalFindings: initialExamination.clinicalFindings,
+        examinedAt: initialExamination.examined_at,
+        // clinicalCase: {
+        //   id: clinicalCase.id,
+        //   status: clinicalCase.status,
+        // },
         request: {
-          id: createdExamination.request.id,
-          status: createdExamination.request.status,
-        },
-        clinicalCase: {
-          id: createdExamination.clinicalCase.id,
-          status: createdExamination.clinicalCase.status,
+          id: request?.id,
+          status: request?.status,
         },
       };
     });
@@ -180,26 +218,26 @@ export class InitialExaminationService {
       clinicalFindings: examination.clinicalFindings,
 
       patient: {
-        id: examination.request.patient.id,
-        fullName: examination.request.patient.full_name,
-        phone: examination.request.patient.phone,
-        medicalHistory: examination.request.patient.medical_history,
-        allergies: examination.request.patient.allergies,
-        currentMedications: examination.request.patient.current_medications,
+        id: examination.patient.id,
+        fullName: examination.patient.full_name,
+        phone: examination.patient.phone,
+        medicalHistory: examination.patient.medical_history,
+        allergies: examination.patient.allergies,
+        currentMedications: examination.patient.current_medications,
       },
 
       request: {
-        id: examination.request.id,
-        chiefComplaint: examination.request.chief_complaint,
-        symptoms: examination.request.symptoms,
-        status: examination.request.status,
+        id: examination.request?.id,
+        chiefComplaint: examination.request?.chief_complaint,
+        symptoms: examination.request?.symptoms,
+        status: examination.request?.status,
       },
 
       appointment: {
-        date: examination.appointment.appointment_date,
-        startTime: examination.appointment.appointment_start,
-        endTime: examination.appointment.appointment_end,
-        status: examination.appointment.status,
+        date: examination.appointment?.appointment_date,
+        startTime: examination.appointment?.appointment_start,
+        endTime: examination.appointment?.appointment_end,
+        status: examination.appointment?.status,
       },
 
       coordinator: {
@@ -233,7 +271,6 @@ export class InitialExaminationService {
         coordinator: {
           user: true,
         },
-        clinicalCase: { patient: true },
       },
       order: {
         created_at: 'DESC',
@@ -241,10 +278,10 @@ export class InitialExaminationService {
     });
     return initialExaminations.map((examination) => ({
       id: examination.id,
-      patient: examination.clinicalCase.patient.full_name,
+      patient: examination.patient.full_name,
       coordinator: examination.coordinator.user.full_name,
       status: examination.status,
-      appointmentDate: examination.appointment.appointment_date,
+      appointmentDate: examination.appointment?.appointment_date,
       clinicalCaseStatus: examination.clinicalCase.status,
     }));
   }

@@ -1,4 +1,12 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ClinicalCaseService } from './clinical-case.service';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/constants/user-roles';
@@ -24,12 +32,13 @@ import { StudentAssignedCaseDetailsDto } from './dto/student-assigned-case-detai
 import { PatientCaseDetailsDto } from './dto/patient-case-details.dto';
 import { PatientCasesSummaryDto } from './dto/patient-cases-summary.dto';
 import { SupervisorCaseDetailsDto } from './dto/supervisor-case-details.dto';
+import { CreateWalkInClinicalCaseDto } from './dto/create-walk-in-clinical-case.dto';
 
 @ApiTags('Clinical Cases')
 @ApiBearerAuth('JWT-auth')
 @Controller('clinical-cases')
 export class ClinicalCaseController {
-  constructor(private readonly clinicalCaseService: ClinicalCaseService) { }
+  constructor(private readonly clinicalCaseService: ClinicalCaseService) {}
   @Get()
   @ApiOperation({ summary: 'Get all clinical cases, optionally filtered' })
   @ApiOkResponse({
@@ -58,8 +67,7 @@ export class ClinicalCaseController {
   }
   @Get('assigned') // after being assigned
   @ApiOperation({
-    summary:
-      '[Student] Get assigned clinical cases for the student study year',
+    summary: '[Student] Get assigned clinical cases for the student study year',
   })
   @ApiOkResponse({
     type: OpenCasesSummary,
@@ -197,6 +205,17 @@ export class ClinicalCaseController {
     return await this.clinicalCaseService.findSupervisorCaseDetails(
       id,
       user.userId,
+    );
+  }
+  @Post('walk-in')
+  @Roles([UserRole.STUDENT])
+  async createWalkInClinicalCase(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CreateWalkInClinicalCaseDto,
+  ) {
+    return await this.clinicalCaseService.createWalkInClinicalCase(
+      user.userId,
+      dto,
     );
   }
 }

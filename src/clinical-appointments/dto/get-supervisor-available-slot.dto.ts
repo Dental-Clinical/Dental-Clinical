@@ -9,7 +9,7 @@ export class GetSupervisorAvailableSlotDto {
   @IsDateString()
   date: string;
 
-  @ApiProperty({ description: 'Clinical case ID', example: 1 })
+  @ApiProperty({ description: 'Subject ID', example: 1 })
   @IsNumber()
-  clinicalCaseId: number;
+  subjectId: number;
 }

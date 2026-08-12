@@ -153,7 +153,11 @@ export class DiagnosisSubmissionService {
     );
 
     for (const procedure of dto.plannedProcedures) {
-      this.validateProcedureAnswers(procedure, questions, questionById);
+      DiagnosisSubmissionService.validateProcedureAnswers(
+        procedure,
+        questions,
+        questionById,
+      );
     }
 
     try {
@@ -177,6 +181,7 @@ export class DiagnosisSubmissionService {
         for (const procedure of dto.plannedProcedures) {
           const plannedProcedure = procedureRepository.create({
             diagnosisSubmission: savedSubmission,
+            clinicalCase,
             subjectProcedure: { id: procedure.subjectProcedureId },
             toothNumber: procedure.toothNumber,
             notes: procedure.notes,
@@ -207,7 +212,6 @@ export class DiagnosisSubmissionService {
               );
             }
             const diagnosisAnswer = answerRepository.create({
-              diagnosisSubmission: savedSubmission,
               plannedProcedure: savedProcedure,
               question: { id: answer.questionId },
               answer: answer.answer?.trim() ?? null,
@@ -251,7 +255,7 @@ export class DiagnosisSubmissionService {
       throw err;
     }
   }
-  private validateProcedureAnswers(
+  public static validateProcedureAnswers(
     procedure: CreatePlannedProcedureWithAnswersDto,
     questions: SubjectDiagnosisQuestion[],
     questionById: Map<number, SubjectDiagnosisQuestion>,
@@ -409,16 +413,6 @@ export class DiagnosisSubmissionService {
             subjectProcedure: true,
           },
           images: true,
-          answers: {
-            question: true,
-          },
-        },
-        order: {
-          answers: {
-            question: {
-              displayOrder: 'ASC',
-            },
-          },
         },
       });
 

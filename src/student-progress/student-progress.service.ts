@@ -34,7 +34,7 @@ export class StudentProgressService {
     studentId: number,
     clinicalCaseId: number,
   ) {
-    // const completedProcedures = await manager
+    /// const completedProcedures = await manager
     //   .getRepository(PlannedProcedures)
     //   .createQueryBuilder('plannedProcedure')
     //   .innerJoinAndSelect(
@@ -54,8 +54,8 @@ export class StudentProgressService {
       .createQueryBuilder('pp')
       .select('pp.subject_procedure_id', 'subjectProcedureId')
       .addSelect('COUNT(*)', 'awarded')
-      .innerJoin('pp.diagnosisSubmission', 'ds')
-      .where('ds.clinical_case_id = :clinicalCaseId', { clinicalCaseId })
+      .innerJoin('pp.clinicalCase', 'cc')
+      .where('cc.id = :clinicalCaseId', { clinicalCaseId })
       .andWhere('pp.status = :status', {
         status: PlannedProceduresStatus.COMPLETED,
       })

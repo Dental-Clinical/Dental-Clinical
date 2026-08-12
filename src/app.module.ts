@@ -36,8 +36,10 @@ import { TreatmentSessionsModule } from './treatment-sessions/treatment-sessions
 import { ClinicalCaseEvaluationModule } from './clinical-case-evaluation/clinical-case-evaluation.module';
 import { StudentProgressModule } from './student-progress/student-progress.module';
 import redisConfig from './config/redis.config';
+import firebaseConfig from './config/firebase.config';
 import { RedisHealthService } from './redis-health.service';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { FirebaseModule } from './firebase/firebase.module';
 import { ClinicalCaseMediaModule } from './clinical-case-media/clinical-case-media.module';
 import { SectionModule } from './section/section.module';
 import { ClinicModule } from './clinic/clinic.module';
@@ -45,6 +47,7 @@ import { SectionSubjectModule } from './section-subject/section-subject.module';
 import { StudentSubjectEnrollmentModule } from './student-subject-enrollment/student-subject-enrollment.module';
 import { MaterialsModule } from './materials/materials.module';
 import { SubjectDiagnosisModule } from './subject-diagnosis/subject-diagnosis.module';
+import { FcmTokensModule } from './fcm-tokens/fcm-tokens.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -52,7 +55,7 @@ const ENV = process.env.NODE_ENV;
     ConfigModule.forRoot({
       envFilePath: !ENV ? '.env' : `.env.${ENV}`,
       isGlobal: true,
-      load: [redisConfig],
+      load: [redisConfig, firebaseConfig],
     }),
     HttpModule.register({ global: true }),
     TypeOrmModule.forRoot(connectionSource.options),
@@ -97,6 +100,7 @@ const ENV = process.env.NODE_ENV;
     ClinicalCaseEvaluationModule,
     StudentProgressModule,
     CloudinaryModule,
+    FirebaseModule,
     ClinicalCaseMediaModule,
     SectionModule,
     ClinicModule,
@@ -104,6 +108,7 @@ const ENV = process.env.NODE_ENV;
     StudentSubjectEnrollmentModule,
     MaterialsModule,
     SubjectDiagnosisModule,
+    FcmTokensModule,
   ],
   controllers: [AppController],
   providers: [

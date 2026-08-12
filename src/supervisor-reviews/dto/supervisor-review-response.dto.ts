@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status.enum';
 
 export class PendingReviewItemDto {
   @ApiProperty({ example: 1 })
@@ -72,4 +73,24 @@ export class GetPendingReviewsResponseDto {
 export class ApproveReviewResponseDto {
   @ApiProperty({ example: 'Diagnosis approved successfully.' })
   message: string;
+}
+
+export class ChangeClinicalCaseSubjectResponseDto {
+  @ApiProperty({
+    example:
+      'Clinical case reassigned successfully. The pending diagnosis was discarded and the case is open again.',
+  })
+  message: string;
+
+  @ApiProperty({ example: 1 })
+  clinicalCaseId: number;
+
+  @ApiProperty({ example: 3 })
+  subjectId: number;
+
+  @ApiProperty({ example: 'Endodontics' })
+  subjectName: string;
+
+  @ApiProperty({ enum: ClinicalCaseStatus, example: ClinicalCaseStatus.OPEN })
+  status: ClinicalCaseStatus;
 }

@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
 } from '@nestjs/common';
 import {
@@ -24,9 +25,11 @@ import { SupervisorReviewsService } from './supervisor-reviews.service';
 import { ApproveReviewDto } from './dto/approve-review.dto';
 import {
   ApproveReviewResponseDto,
+  ChangeClinicalCaseSubjectResponseDto,
   GetPendingReviewsResponseDto,
   SupervisorReviewDetailDataDto,
 } from './dto/supervisor-review-response.dto';
+import { ChangeClinicalCaseSubjectDto } from './dto/change-clinical-case-subject.dto';
 
 @ApiTags('Supervisor Reviews')
 @ApiBearerAuth('JWT-auth')
@@ -102,6 +105,42 @@ export class SupervisorReviewsController {
     return await this.supervisorReviewService.approveReview(
       user,
       submissionId,
+      dto,
+    );
+  }
+
+  @Patch('/clinical-cases/:id/subject')
+  @Roles([UserRole.SUPERVISOR])
+  @ApiOperation({
+    summary:
+      '[Supervisor] Reassign an open clinical case to a different subject',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Clinical case ID',
+  })
+  @ApiBody({ type: ChangeClinicalCaseSubjectDto })
+  @ApiOkResponse({
+    type: ChangeClinicalCaseSubjectResponseDto,
+    description: 'Clinical case reassigned successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Clinical case or subject not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Case is not open, same subject, or subject is inactive',
+  })
+  public async changeClinicalCaseSubject(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ChangeClinicalCaseSubjectDto,
+  ) {
+    return await this.supervisorReviewService.changeClinicalCaseSubject(
+      user,
+      id,
       dto,
     );
   }

@@ -73,3 +73,17 @@ export class ApproveReviewResponseDto {
   @ApiProperty({ example: 'Diagnosis approved successfully.' })
   message: string;
 }
+
+export class ChangeClinicalCaseSubjectResponseDto {
+  @ApiProperty({ example: 'Clinical case reassigned successfully.' })
+  message: string;
+
+  @ApiProperty({ example: 1 })
+  clinicalCaseId: number;
+
+  @ApiProperty({ example: 3 })
+  subjectId: number;
+
+  @ApiProperty({ example: 'Endodontics' })
+  subjectName: string;
+}

@@ -13,6 +13,8 @@ import { ApproveReviewDto } from './dto/approve-review.dto';
 import { SupervisorReview } from './supervisor-reviews.entity';
 import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status.enum';
+import { ChangeClinicalCaseSubjectDto } from './dto/change-clinical-case-subject.dto';
+import { Subject } from 'src/subjects/subjects.entity';
 
 @Injectable()
 export class SupervisorReviewsService {
@@ -201,5 +203,59 @@ export class SupervisorReviewsService {
     }
 
     return supervisor;
+  }
+  public async changeClinicalCaseSubject(
+    user: AuthenticatedUser,
+    id: number,
+    dto: ChangeClinicalCaseSubjectDto,
+  ) {
+    await this.getSupervisor(user);
+
+    return await this.dataSource.transaction(async (manager) => {
+      const clinicalCase = await manager
+        .getRepository(ClinicalCase)
+        .createQueryBuilder('clinicalCase')
+        .setLock('pessimistic_write')
+        .innerJoinAndSelect('clinicalCase.subject', 'subject')
+        .where('clinicalCase.id = :id', { id })
+        .getOne();
+
+      if (!clinicalCase) {
+        throw new NotFoundException('Clinical case not found');
+      }
+
+      if (clinicalCase.status !== ClinicalCaseStatus.OPEN) {
+        throw new ConflictException(
+          "Clinical case is not open, can't be reassigned",
+        );
+      }
+
+      if (clinicalCase.subject.id === dto.subjectId) {
+        throw new ConflictException("Can't reassign to the same subject");
+      }
+
+      const newSubject = await manager
+        .getRepository(Subject)
+        .findOneBy({ id: dto.subjectId });
+
+      if (!newSubject) {
+        throw new NotFoundException('Subject not found');
+      }
+
+      if (!newSubject.is_active) {
+        throw new ConflictException("Subject is not active, can't be assigned");
+      }
+
+      await manager
+        .getRepository(ClinicalCase)
+        .update(clinicalCase.id, { subject: newSubject });
+
+      return {
+        message: 'Clinical case reassigned successfully.',
+        clinicalCaseId: clinicalCase.id,
+        subjectId: newSubject.id,
+        subjectName: newSubject.name,
+      };
+    });
   }
 }

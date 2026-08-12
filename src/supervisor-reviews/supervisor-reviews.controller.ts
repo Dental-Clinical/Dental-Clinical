@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
 } from '@nestjs/common';
 import {
@@ -24,9 +25,11 @@ import { SupervisorReviewsService } from './supervisor-reviews.service';
 import { ApproveReviewDto } from './dto/approve-review.dto';
 import {
   ApproveReviewResponseDto,
+  ChangeClinicalCaseSubjectResponseDto,
   GetPendingReviewsResponseDto,
   SupervisorReviewDetailDataDto,
 } from './dto/supervisor-review-response.dto';
+import { ChangeClinicalCaseSubjectDto } from './dto/change-clinical-case-subject.dto';
 
 @ApiTags('Supervisor Reviews')
 @ApiBearerAuth('JWT-auth')
@@ -102,6 +105,51 @@ export class SupervisorReviewsController {
     return await this.supervisorReviewService.approveReview(
       user,
       submissionId,
+      dto,
+    );
+  }
+
+  @Patch('/clinical-cases/:id/subject')
+  @Roles([UserRole.SUPERVISOR])
+  @ApiOperation({
+    summary:
+      '[Supervisor] Reassign a case pending diagnosis review to a different subject',
+    description:
+      'Only the supervisor assigned to review the diagnosis submission may reassign the case. ' +
+      'The pending diagnosis submission is discarded and the case reopens under the new subject, ' +
+      'unassigned from its student and supervisor, with its scheduled appointment cancelled.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Clinical case ID',
+  })
+  @ApiBody({ type: ChangeClinicalCaseSubjectDto })
+  @ApiOkResponse({
+    type: ChangeClinicalCaseSubjectResponseDto,
+    description: 'Clinical case reassigned successfully',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Not the supervisor assigned to review this case',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Clinical case or subject not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Case is not pending diagnosis review, same subject, or subject is inactive',
+  })
+  public async changeClinicalCaseSubject(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ChangeClinicalCaseSubjectDto,
+  ) {
+    return await this.supervisorReviewService.changeClinicalCaseSubject(
+      user,
+      id,
       dto,
     );
   }

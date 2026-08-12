@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -13,13 +14,22 @@ import { ApproveReviewDto } from './dto/approve-review.dto';
 import { SupervisorReview } from './supervisor-reviews.entity';
 import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status.enum';
+import { ChangeClinicalCaseSubjectDto } from './dto/change-clinical-case-subject.dto';
+import { Subject } from 'src/subjects/subjects.entity';
+import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.entity';
+import { DiagnosisImages } from 'src/diagnosis-images/diagnosis-images.entity';
+import { SubjectDiagnosisAnswer } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
+import { ClinicalAppointment } from 'src/clinical-appointments/clinical-appointments.entity';
+import { ClinicalAppointmentStatus } from 'src/clinical-appointments/enums/clinical-appointment.enum';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class SupervisorReviewsService {
   constructor(
     private readonly supervisorService: SupervisorService,
     private readonly dataSource: DataSource,
-  ) {}
+    private readonly cloudinaryService: CloudinaryService,
+  ) { }
   async getPendingReviews(user: AuthenticatedUser) {
     const supervisor = await this.getSupervisor(user);
 
@@ -206,5 +216,137 @@ export class SupervisorReviewsService {
     }
 
     return supervisor;
+  }
+  public async changeClinicalCaseSubject(
+    user: AuthenticatedUser,
+    id: number,
+    dto: ChangeClinicalCaseSubjectDto,
+  ) {
+    const supervisor = await this.getSupervisor(user);
+
+    const { imagePublicIds, ...result } = await this.dataSource.transaction(
+      async (manager) => {
+        const diagnosisSubmission = await manager
+          .getRepository(DiagnosisSubmission)
+          .createQueryBuilder('submission')
+          .setLock('pessimistic_write')
+          .innerJoinAndSelect('submission.supervisor', 'supervisor')
+          .where('submission.clinical_case_id = :id', { id })
+          .andWhere('submission.status = :status', {
+            status: DiagnosisSubmissionStatus.PENDING_REVIEW,
+          })
+          .getOne();
+
+        if (!diagnosisSubmission) {
+          const caseExists = await manager
+            .getRepository(ClinicalCase)
+            .exists({ where: { id } });
+
+          if (!caseExists) {
+            throw new NotFoundException('Clinical case not found');
+          }
+
+          throw new ConflictException(
+            "Clinical case is not pending diagnosis review, can't be reassigned",
+          );
+        }
+
+        if (diagnosisSubmission.supervisor.id !== supervisor.id) {
+          throw new ForbiddenException(
+            'You are not the supervisor assigned to review this case',
+          );
+        }
+
+        const clinicalCase = await manager
+          .getRepository(ClinicalCase)
+          .createQueryBuilder('clinicalCase')
+          .setLock('pessimistic_write')
+          .innerJoinAndSelect('clinicalCase.subject', 'subject')
+          .where('clinicalCase.id = :id', { id })
+          .getOne();
+
+        if (!clinicalCase) {
+          throw new NotFoundException('Clinical case not found');
+        }
+
+        if (
+          clinicalCase.status !== ClinicalCaseStatus.DIAGNOSIS_PENDING_REVIEW
+        ) {
+          throw new ConflictException(
+            "Clinical case is not pending diagnosis review, can't be reassigned",
+          );
+        }
+
+        if (clinicalCase.subject.id === dto.subjectId) {
+          throw new ConflictException("Can't reassign to the same subject");
+        }
+
+        const newSubject = await manager
+          .getRepository(Subject)
+          .findOneBy({ id: dto.subjectId });
+
+        if (!newSubject) {
+          throw new NotFoundException('Subject not found');
+        }
+
+        if (!newSubject.is_active) {
+          throw new ConflictException(
+            "Subject is not active, can't be assigned",
+          );
+        }
+
+        const images = await manager.getRepository(DiagnosisImages).find({
+          where: { diagnosisSubmission: { id: diagnosisSubmission.id } },
+        });
+
+        const submissionRef = {
+          diagnosisSubmission: { id: diagnosisSubmission.id },
+        };
+        await manager
+          .getRepository(SubjectDiagnosisAnswer)
+          .delete(submissionRef);
+        await manager.getRepository(PlannedProcedures).delete(submissionRef);
+        await manager.getRepository(DiagnosisImages).delete(submissionRef);
+        await manager
+          .getRepository(DiagnosisSubmission)
+          .delete(diagnosisSubmission.id);
+
+        await manager.getRepository(ClinicalAppointment).update(
+          {
+            clinicalCase: { id: clinicalCase.id },
+            status: ClinicalAppointmentStatus.SCHEDULED,
+          },
+          { status: ClinicalAppointmentStatus.CANCELLED },
+        );
+
+        await manager
+          .createQueryBuilder()
+          .update(ClinicalCase)
+          .set({
+            subject: newSubject,
+            status: ClinicalCaseStatus.OPEN,
+            assignedStudent: () => 'NULL',
+            assignedSupervisor: () => 'NULL',
+          })
+          .where('id = :id', { id: clinicalCase.id })
+          .execute();
+
+        return {
+          imagePublicIds: images.map((image) => image.publicId),
+          message:
+            'Clinical case reassigned successfully. The pending diagnosis was discarded and the case is open again.',
+          clinicalCaseId: clinicalCase.id,
+          subjectId: newSubject.id,
+          subjectName: newSubject.name,
+          status: ClinicalCaseStatus.OPEN,
+        };
+      },
+    );
+
+    await Promise.allSettled(
+      imagePublicIds.map((publicId) => this.cloudinaryService.delete(publicId)),
+    );
+
+    return result;
   }
 }

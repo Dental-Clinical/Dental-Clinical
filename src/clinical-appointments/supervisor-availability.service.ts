@@ -45,7 +45,7 @@ export class SupervisorAvailabilityService {
     });
 
     if (!schedule) {
-      throw new NotFoundException('Supervisor is not available on this day');
+      return [];
     }
 
     const slots = SlotGenerator.generateFixedDurationSlots(

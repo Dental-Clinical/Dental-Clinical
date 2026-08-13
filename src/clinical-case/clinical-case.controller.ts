@@ -188,31 +188,7 @@ export class ClinicalCaseController {
       user.userId,
     );
   }
-  @Get('supervisor/:id')
-  @ApiOperation({
-    summary:
-      '[Supervisor] Get a clinical case supervised by the current supervisor',
-  })
-  @ApiParam({ name: 'id', type: Number, description: 'Clinical case ID' })
-  @ApiOkResponse({
-    type: SupervisorCaseDetailsDto,
-    description: 'Details of a clinical case',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Clinical Case is supervised by another supervisor',
-  })
-  @ApiResponse({ status: 404, description: 'Clinical Case not found' })
-  @Roles([UserRole.SUPERVISOR])
-  async getSupervisorClinicalCase(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return await this.clinicalCaseService.findSupervisorCaseDetails(
-      id,
-      user.userId,
-    );
-  }
+
   @Post('walk-in')
   @Roles([UserRole.STUDENT])
   @UseInterceptors(

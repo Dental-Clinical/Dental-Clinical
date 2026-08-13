@@ -62,9 +62,10 @@ export class SubjectsController {
   }
 
   @Get()
-  @Roles([UserRole.ADMIN, UserRole.COORDINATOR])
+  @Roles([UserRole.ADMIN, UserRole.COORDINATOR, UserRole.SUPERVISOR])
   @ApiOperation({
-    summary: '[Admin, Coordinator] Get a paginated list of subjects',
+    summary:
+      '[Admin, Coordinator, Supervisor] Get a paginated list of subjects',
   })
   @ApiOkResponse({
     type: GetSubjectsResponseDto,

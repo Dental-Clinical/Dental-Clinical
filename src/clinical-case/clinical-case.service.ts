@@ -782,9 +782,7 @@ export class ClinicalCaseService {
   private buildCaseMedia(media: ClinicalCaseMedia[]): CaseMediaDto[] {
     return (media ?? []).map((item) => ({
       id: item.id,
-      type: item.mimeType,
       url: item.fileUrl,
-      fileName: item.fileName,
       description: item.description ?? null,
       takenAt: item.createdAt,
     }));

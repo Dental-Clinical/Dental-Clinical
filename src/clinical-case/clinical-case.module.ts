@@ -11,6 +11,7 @@ import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submissi
 import { SessionMaterial } from 'src/session-materials/session-materials.entity';
 import { PatientsModule } from 'src/patients/patients.module';
 import { ClinicalAppointmentsModule } from 'src/clinical-appointments/clinical-appointments.module';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ClinicalAppointmentsModule } from 'src/clinical-appointments/clinical-a
     StudentModule,
     PatientsModule,
     ClinicalAppointmentsModule,
+    CloudinaryModule,
   ],
   providers: [ClinicalCaseService],
   controllers: [ClinicalCaseController],

@@ -31,12 +31,39 @@ export class CloudinaryService {
       uploadStream.end(file.buffer);
     });
   }
+  // async uploadMany(
+  //   files: Express.Multer.File[],
+  //   folder: string,
+  // ): Promise<UploadApiResponse[]> {
+  //   const uploadPromises = files.map((file) => this.uploadImage(file, folder));
+  //   return Promise.all(uploadPromises);
+  // }
   async uploadMany(
     files: Express.Multer.File[],
     folder: string,
   ): Promise<UploadApiResponse[]> {
-    const uploadPromises = files.map((file) => this.uploadImage(file, folder));
-    return Promise.all(uploadPromises);
+    const results = await Promise.allSettled(
+      files.map((file) => this.uploadImage(file, folder)),
+    );
+
+    const successful = results
+      .filter(
+        (result): result is PromiseFulfilledResult<UploadApiResponse> =>
+          result.status === 'fulfilled',
+      )
+      .map((result) => result.value);
+
+    const failed = results.find((result) => result.status === 'rejected');
+
+    if (failed) {
+      await Promise.all(
+        successful.map((image) => this.delete(image.public_id).catch(() => {})),
+      );
+
+      throw failed.reason;
+    }
+
+    return successful;
   }
 
   async delete(publicId: string): Promise<void> {

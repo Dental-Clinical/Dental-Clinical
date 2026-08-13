@@ -70,6 +70,10 @@ import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.ent
 import { SubjectDiagnosisAnswer } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
 import { SupervisorAvailabilityService } from 'src/clinical-appointments/supervisor-availability.service';
 import { DiagnosisSubmissionStatus } from 'src/diagnosis-submission/enums/diagnosis-submission-status.enum';
+import { DiagnosisImages } from 'src/diagnosis-images/diagnosis-images.entity';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { unlink } from 'fs/promises';
+import { UploadApiResponse } from 'cloudinary';
 
 @Injectable()
 export class ClinicalCaseService {
@@ -85,189 +89,220 @@ export class ClinicalCaseService {
     private readonly studentService: StudentService,
     private readonly patientService: PatientsService,
     private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
+    private readonly cloudinaryService: CloudinaryService,
     private readonly dataSource: DataSource,
   ) {}
   public async createWalkInClinicalCase(
     userId: number,
     dto: CreateWalkInClinicalCaseDto,
+    files: Express.Multer.File[],
   ) {
-    return this.dataSource.transaction(async (manager) => {
-      const examinationRepo = manager.getRepository(ExaminationRequest);
-      const clinicalCaseRepo = manager.getRepository(ClinicalCase);
-      const clinicalAppointmentRepo =
-        manager.getRepository(ClinicalAppointment);
-      const subjectRepo = manager.getRepository(Subject);
-      const subjectProcedureRepo = manager.getRepository(SubjectProcedures);
-      const diagnosisSubmissionRepo =
-        manager.getRepository(DiagnosisSubmission);
-      const subjectDiagnosisQuestionRepo = manager.getRepository(
-        SubjectDiagnosisQuestion,
-      );
-      const procedureRepository = manager.getRepository(PlannedProcedures);
-      const answerRepository = manager.getRepository(SubjectDiagnosisAnswer);
-
-      const student = await this.studentService.findByUserId(userId, manager);
-      if (!student) {
-        throw new NotFoundException('Student not found');
-      }
-      const studentStudyYear = await this.studentService.getCurrentStudyYear(
-        userId,
-        manager,
-      );
-
-      const patient = await this.patientService.createPatient(
-        dto.patient.patientInfo,
-        manager,
-      );
-      const examination = examinationRepo.create({
-        chief_complaint: dto.patient.chiefComplaint,
-        symptoms: dto.patient.symptoms,
-        patient,
-        status: ExaminationRequestStatus.CONVERTED_TO_CASE,
-      });
-      await examinationRepo.save(examination);
-      const subject = await subjectRepo.findOne({
-        where: {
-          id: dto.caseInfo.subjectId,
-        },
-      });
-      if (!subject) {
-        throw new NotFoundException('Subject not found');
-      }
-      if (studentStudyYear.id !== subject.study_year_id) {
-        throw new ConflictException(
-          'Student is not eligible for this subject study year',
+    let uploadedImages: UploadApiResponse[] = [];
+    try {
+      return this.dataSource.transaction(async (manager) => {
+        const examinationRepo = manager.getRepository(ExaminationRequest);
+        const clinicalCaseRepo = manager.getRepository(ClinicalCase);
+        const clinicalAppointmentRepo =
+          manager.getRepository(ClinicalAppointment);
+        const subjectRepo = manager.getRepository(Subject);
+        const subjectProcedureRepo = manager.getRepository(SubjectProcedures);
+        const diagnosisSubmissionRepo =
+          manager.getRepository(DiagnosisSubmission);
+        const subjectDiagnosisQuestionRepo = manager.getRepository(
+          SubjectDiagnosisQuestion,
         );
-      }
-      const sectionSubject =
-        await this.studentService.getSectionSubjectForStudent(
-          userId,
-          subject.id,
-          manager,
-        );
-      const supervisor = sectionSubject.supervisor;
-      const subjectProcedureIds = dto.caseInfo.plannedProcedures.map(
-        (procedure) => procedure.subjectProcedureId,
-      );
-      const subjectProcedures = await subjectProcedureRepo.find({
-        where: {
-          id: In(subjectProcedureIds),
-          subject: { id: subject.id },
-          is_active: true,
-        },
-      });
+        const procedureRepository = manager.getRepository(PlannedProcedures);
+        const answerRepository = manager.getRepository(SubjectDiagnosisAnswer);
 
-      if (subjectProcedures.length !== subjectProcedureIds.length) {
-        throw new ConflictException(
-          'One or more planned procedures do not belong to this subject.',
-        );
-      }
-      const questions = await subjectDiagnosisQuestionRepo.find({
-        where: {
-          subject: { id: subject.id },
-          isActive: true,
-        },
-        relations: {
-          answerOptions: true,
-        },
-      });
-      const questionById = new Map(
-        questions.map((question) => [question.id, question]),
-      );
-      for (const procedure of dto.caseInfo.plannedProcedures) {
-        DiagnosisSubmissionService.validateProcedureAnswers(
-          procedure,
-          questions,
-          questionById,
-        );
-      }
-      const clinicalCase = clinicalCaseRepo.create({
-        patient,
-        assignedStudent: student,
-        subject,
-        assignedSupervisor: supervisor,
-        request: examination,
-        status: ClinicalCaseStatus.DIAGNOSIS_PENDING_REVIEW,
-      });
-      const savedCase = await clinicalCaseRepo.save(clinicalCase);
-      const diagnosisSubmission = diagnosisSubmissionRepo.create({
-        clinicalCase: savedCase,
-        supervisor,
-        student,
-        status: DiagnosisSubmissionStatus.PENDING_REVIEW,
-      });
-      const savedSubmission =
-        await diagnosisSubmissionRepo.save(diagnosisSubmission);
-
-      const savedProcedures: PlannedProcedures[] = [];
-      const savedAnswers: SubjectDiagnosisAnswer[] = [];
-
-      for (const procedure of dto.caseInfo.plannedProcedures) {
-        const plannedProcedure = procedureRepository.create({
-          diagnosisSubmission: savedSubmission,
-          clinicalCase: savedCase,
-          subjectProcedure: { id: procedure.subjectProcedureId },
-          toothNumber: procedure.toothNumber,
-          notes: procedure.notes?.trim() ?? null,
-        });
-        const savedProcedure = await procedureRepository.save(plannedProcedure);
-        savedProcedures.push(savedProcedure);
-
-        for (const answer of procedure.answers) {
-          const subjectQuestion = questionById.get(answer.questionId);
-          if (!subjectQuestion) {
-            throw new ConflictException(
-              `Question with ID ${answer.questionId} is not an active question for this subject`,
-            );
-          }
-          const activeOptions = subjectQuestion.answerOptions.filter(
-            (option) => option.isActive,
-          );
-          const requestedOptionIds = answer.optionIds ?? [];
-
-          const selectedOptions = activeOptions.filter((option) =>
-            requestedOptionIds.includes(option.id),
-          );
-
-          if (selectedOptions.length !== requestedOptionIds.length) {
-            throw new BadRequestException(
-              `One or more selected options are invalid for question ID ${subjectQuestion.id}`,
-            );
-          }
-          const diagnosisAnswer = answerRepository.create({
-            plannedProcedure: savedProcedure,
-            question: { id: answer.questionId },
-            answer: answer.answer?.trim() ?? null,
-            selectedOptions,
-          });
-          const savedAnswer = await answerRepository.save(diagnosisAnswer);
-          savedAnswers.push(savedAnswer);
+        const student = await this.studentService.findByUserId(userId, manager);
+        if (!student) {
+          throw new NotFoundException('Student not found');
         }
-      }
-      const { startTime, endTime } =
-        await this.supervisorAvailibilityService.validateSlotAvailability(
-          new Date(dto.appointment.appointmentDate),
-          dto.appointment.appointmentStart,
-          supervisor.id,
+        const studentStudyYear = await this.studentService.getCurrentStudyYear(
+          userId,
           manager,
         );
 
-      const appointment = clinicalAppointmentRepo.create({
-        clinicalCase: savedCase,
-        supervisor,
-        patient,
-        student,
-        appointmentDate: dto.appointment.appointmentDate,
-        appointmentStart: startTime,
-        appointmentEnd: endTime,
-        status: ClinicalAppointmentStatus.SCHEDULED,
-      });
+        const patient = await this.patientService.createPatient(
+          dto.patient.patientInfo,
+          manager,
+        );
+        const examination = examinationRepo.create({
+          chief_complaint: dto.patient.chiefComplaint,
+          symptoms: dto.patient.symptoms,
+          patient,
+          status: ExaminationRequestStatus.CONVERTED_TO_CASE,
+        });
+        await examinationRepo.save(examination);
+        const subject = await subjectRepo.findOne({
+          where: {
+            id: dto.caseInfo.subjectId,
+          },
+        });
+        if (!subject) {
+          throw new NotFoundException('Subject not found');
+        }
+        if (studentStudyYear.id !== subject.study_year_id) {
+          throw new ConflictException(
+            'Student is not eligible for this subject study year',
+          );
+        }
+        const sectionSubject =
+          await this.studentService.getSectionSubjectForStudent(
+            userId,
+            subject.id,
+            manager,
+          );
+        const supervisor = sectionSubject.supervisor;
+        const subjectProcedureIds = dto.caseInfo.plannedProcedures.map(
+          (procedure) => procedure.subjectProcedureId,
+        );
+        const subjectProcedures = await subjectProcedureRepo.find({
+          where: {
+            id: In(subjectProcedureIds),
+            subject: { id: subject.id },
+            is_active: true,
+          },
+        });
 
-      await clinicalAppointmentRepo.save(appointment);
-      return {
-        message: 'Case created successfully waiting for appointment',
-      };
-    });
+        if (subjectProcedures.length !== subjectProcedureIds.length) {
+          throw new ConflictException(
+            'One or more planned procedures do not belong to this subject.',
+          );
+        }
+        const questions = await subjectDiagnosisQuestionRepo.find({
+          where: {
+            subject: { id: subject.id },
+            isActive: true,
+          },
+          relations: {
+            answerOptions: true,
+          },
+        });
+        const questionById = new Map(
+          questions.map((question) => [question.id, question]),
+        );
+        for (const procedure of dto.caseInfo.plannedProcedures) {
+          DiagnosisSubmissionService.validateProcedureAnswers(
+            procedure,
+            questions,
+            questionById,
+          );
+        }
+        const clinicalCase = clinicalCaseRepo.create({
+          patient,
+          assignedStudent: student,
+          subject,
+          assignedSupervisor: supervisor,
+          request: examination,
+          status: ClinicalCaseStatus.DIAGNOSIS_PENDING_REVIEW,
+        });
+        const savedCase = await clinicalCaseRepo.save(clinicalCase);
+        const diagnosisSubmission = diagnosisSubmissionRepo.create({
+          clinicalCase: savedCase,
+          supervisor,
+          student,
+          status: DiagnosisSubmissionStatus.PENDING_REVIEW,
+        });
+        const savedSubmission =
+          await diagnosisSubmissionRepo.save(diagnosisSubmission);
+
+        const savedProcedures: PlannedProcedures[] = [];
+        const savedAnswers: SubjectDiagnosisAnswer[] = [];
+
+        for (const procedure of dto.caseInfo.plannedProcedures) {
+          const plannedProcedure = procedureRepository.create({
+            diagnosisSubmission: savedSubmission,
+            clinicalCase: savedCase,
+            subjectProcedure: { id: procedure.subjectProcedureId },
+            toothNumber: procedure.toothNumber,
+            notes: procedure.notes?.trim() ?? null,
+          });
+          const savedProcedure =
+            await procedureRepository.save(plannedProcedure);
+          savedProcedures.push(savedProcedure);
+
+          for (const answer of procedure.answers) {
+            const subjectQuestion = questionById.get(answer.questionId);
+            if (!subjectQuestion) {
+              throw new ConflictException(
+                `Question with ID ${answer.questionId} is not an active question for this subject`,
+              );
+            }
+            const activeOptions = subjectQuestion.answerOptions.filter(
+              (option) => option.isActive,
+            );
+            const requestedOptionIds = answer.optionIds ?? [];
+
+            const selectedOptions = activeOptions.filter((option) =>
+              requestedOptionIds.includes(option.id),
+            );
+
+            if (selectedOptions.length !== requestedOptionIds.length) {
+              throw new BadRequestException(
+                `One or more selected options are invalid for question ID ${subjectQuestion.id}`,
+              );
+            }
+            const diagnosisAnswer = answerRepository.create({
+              plannedProcedure: savedProcedure,
+              question: { id: answer.questionId },
+              answer: answer.answer?.trim() ?? null,
+              selectedOptions,
+            });
+            const savedAnswer = await answerRepository.save(diagnosisAnswer);
+            savedAnswers.push(savedAnswer);
+          }
+          if (files?.length) {
+            uploadedImages = await this.cloudinaryService.uploadMany(
+              files,
+              'diagnosis-submissions',
+            );
+            const images = uploadedImages.map((image, index) =>
+              manager.getRepository(DiagnosisImages).create({
+                diagnosisSubmission: savedSubmission,
+                publicId: image.public_id,
+                fileUrl: image.secure_url,
+                fileName: files[index].originalname,
+                mimeType: files[index].mimetype,
+              }),
+            );
+            await manager.save(images);
+          }
+        }
+        const { startTime, endTime } =
+          await this.supervisorAvailibilityService.validateSlotAvailability(
+            new Date(dto.appointment.appointmentDate),
+            dto.appointment.appointmentStart,
+            supervisor.id,
+            manager,
+          );
+
+        const appointment = clinicalAppointmentRepo.create({
+          clinicalCase: savedCase,
+          supervisor,
+          patient,
+          student,
+          appointmentDate: dto.appointment.appointmentDate,
+          appointmentStart: startTime,
+          appointmentEnd: endTime,
+          status: ClinicalAppointmentStatus.SCHEDULED,
+        });
+
+        await clinicalAppointmentRepo.save(appointment);
+        return {
+          message: 'Case created successfully waiting for appointment',
+        };
+      });
+    } catch (err) {
+      await Promise.all([
+        ...(uploadedImages ?? []).map((image) =>
+          this.cloudinaryService.delete(image.public_id).catch(() => {}),
+        ),
+        ...(files ?? []).map((file) => unlink(file.path).catch(() => {})),
+      ]);
+
+      throw err;
+    }
   }
   private async create(dto: CreateClinicalCaseDto, manager: EntityManager) {
     const initialExamination = await manager.findOne(InitialExamination, {

@@ -69,6 +69,7 @@ import { DiagnosisSubmissionService } from 'src/diagnosis-submission/diagnosis-s
 import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.entity';
 import { SubjectDiagnosisAnswer } from 'src/subject-diagnosis/subject-diagnosis-answers.entity';
 import { SupervisorAvailabilityService } from 'src/clinical-appointments/supervisor-availability.service';
+import { DiagnosisSubmissionStatus } from 'src/diagnosis-submission/enums/diagnosis-submission-status.enum';
 
 @Injectable()
 export class ClinicalCaseService {
@@ -97,6 +98,8 @@ export class ClinicalCaseService {
         manager.getRepository(ClinicalAppointment);
       const subjectRepo = manager.getRepository(Subject);
       const subjectProcedureRepo = manager.getRepository(SubjectProcedures);
+      const diagnosisSubmissionRepo =
+        manager.getRepository(DiagnosisSubmission);
       const subjectDiagnosisQuestionRepo = manager.getRepository(
         SubjectDiagnosisQuestion,
       );
@@ -184,16 +187,25 @@ export class ClinicalCaseService {
         subject,
         assignedSupervisor: supervisor,
         request: examination,
-        status: ClinicalCaseStatus.PENDING_SUPERVISOR_APPROVAL,
+        status: ClinicalCaseStatus.DIAGNOSIS_PENDING_REVIEW,
       });
-      await clinicalCaseRepo.save(clinicalCase);
+      const savedCase = await clinicalCaseRepo.save(clinicalCase);
+      const diagnosisSubmission = diagnosisSubmissionRepo.create({
+        clinicalCase: savedCase,
+        supervisor,
+        student,
+        status: DiagnosisSubmissionStatus.PENDING_REVIEW,
+      });
+      const savedSubmission =
+        await diagnosisSubmissionRepo.save(diagnosisSubmission);
 
       const savedProcedures: PlannedProcedures[] = [];
       const savedAnswers: SubjectDiagnosisAnswer[] = [];
 
       for (const procedure of dto.caseInfo.plannedProcedures) {
         const plannedProcedure = procedureRepository.create({
-          clinicalCase,
+          diagnosisSubmission: savedSubmission,
+          clinicalCase: savedCase,
           subjectProcedure: { id: procedure.subjectProcedureId },
           toothNumber: procedure.toothNumber,
           notes: procedure.notes?.trim() ?? null,
@@ -241,7 +253,7 @@ export class ClinicalCaseService {
         );
 
       const appointment = clinicalAppointmentRepo.create({
-        clinicalCase,
+        clinicalCase: savedCase,
         supervisor,
         patient,
         student,

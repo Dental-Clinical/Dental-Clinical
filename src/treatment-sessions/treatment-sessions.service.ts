@@ -59,6 +59,50 @@ export class TreatmentSessionsService {
     @InjectRepository(Material)
     private readonly materialRepository: Repository<Material>,
   ) {}
+  public async getTreatmentSessionsForClinicalCase(
+    userId: number,
+    clinicalCaseId: number,
+  ) {
+    const student = await this.studentService.findByUserId(userId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    const clinicalCase = await this.clinicalCaseRepository.findOne({
+      where: { id: clinicalCaseId, assignedStudent: { id: student.id } },
+      relations: {
+        assignedStudent: true,
+        treatmentSessions: {
+          clinicalAppointment: true,
+        },
+      },
+    });
+    if (!clinicalCase) {
+      throw new NotFoundException('Clinical case not found');
+    }
+
+    if (clinicalCase.assignedStudent.id !== student.id) {
+      throw new ConflictException(
+        'Clinical case does not belong to this student',
+      );
+    }
+    return clinicalCase.treatmentSessions.map((session) => {
+      return {
+        sessionId: session.id,
+
+        title: session.title,
+
+        status: session.status,
+        notes: session.studentNotes,
+        appointmentDate: session.clinicalAppointment
+          ? DateTimeUtils.toDateString(
+              session.clinicalAppointment.appointmentDate,
+            )
+          : null,
+
+        startTime: session.clinicalAppointment?.appointmentStart ?? null,
+      };
+    });
+  }
   public async createTreatmentSession(
     userId: number,
     dto: CreateTreatmentSessionDto,

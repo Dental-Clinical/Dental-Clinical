@@ -6,6 +6,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -14,6 +15,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -286,7 +288,7 @@ export class TreatmentSessionsController {
     );
   }
 
-  @Get()
+  @Get('')
   @Roles([UserRole.PATIENT])
   @ApiOperation({
     summary: '[Patient] List all of their own treatment sessions',
@@ -298,6 +300,26 @@ export class TreatmentSessionsController {
   })
   async getAllTreatmentSessions(@CurrentUser() user: AuthenticatedUser) {
     return await this.treatmentSessionsService.getAllTreatmentSessions(user);
+  }
+
+  @Get('student')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary: '[Student] List all treatment sessions for a clinical case',
+  })
+  @ApiQuery({
+    name: 'clinicalCaseId',
+    type: Number,
+    description: 'Clinical case ID',
+  })
+  async getTreatmentSessionsForClinicalCase(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('clinicalCaseId', ParseIntPipe) clinicalCaseId: number,
+  ) {
+    return await this.treatmentSessionsService.getTreatmentSessionsForClinicalCase(
+      user.userId,
+      clinicalCaseId,
+    );
   }
 
   @Get(':treatmentSessionId')

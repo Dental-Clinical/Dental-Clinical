@@ -266,7 +266,7 @@ export class ClinicalCaseService {
                 mimeType: files[index].mimetype,
               }),
             );
-            await manager.save(images);
+            await manager.getRepository(DiagnosisImages).save(images);
           }
         }
         const { startTime, endTime } =

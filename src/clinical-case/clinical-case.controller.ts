@@ -248,9 +248,8 @@ export class ClinicalCaseController {
     });
 
     if (errors.length > 0) {
-      const messages = errors.flatMap((error) =>
-        Object.values(error.constraints ?? {}),
-      );
+      const messages = this.extractValidationMessages(errors);
+
       throw new BadRequestException(messages);
     }
     return await this.clinicalCaseService.createWalkInClinicalCase(
@@ -258,5 +257,28 @@ export class ClinicalCaseController {
       dto,
       files,
     );
+  }
+  private extractValidationMessages(errors: any[]): string[] {
+    const messages: any[] = [];
+
+    function traverse(error: any) {
+      // Check if current node has constraints
+      if (error.constraints) {
+        messages.push(...Object.values(error.constraints));
+      }
+
+      // Recursively traverse children
+      if (error.children && Array.isArray(error.children)) {
+        for (const child of error.children) {
+          traverse(child);
+        }
+      }
+    }
+
+    for (const error of errors) {
+      traverse(error);
+    }
+
+    return messages;
   }
 }

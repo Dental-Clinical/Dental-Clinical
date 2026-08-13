@@ -73,7 +73,7 @@ export class PatientsService {
       is_walkin: !patient.userId,
     });
 
-    return await this.patientRepository.save(newPatient);
+    return await repo.save(newPatient);
   }
   async updatePatient(id: number, updatePatientDto: UpdatePatientDto) {
     const patient = await this.patientRepository.findOne({

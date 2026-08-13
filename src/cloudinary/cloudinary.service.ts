@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 @Injectable()
@@ -60,7 +60,7 @@ export class CloudinaryService {
         successful.map((image) => this.delete(image.public_id).catch(() => {})),
       );
 
-      throw failed.reason;
+      throw new HttpException(failed.reason, HttpStatus.BAD_REQUEST);
     }
 
     return successful;

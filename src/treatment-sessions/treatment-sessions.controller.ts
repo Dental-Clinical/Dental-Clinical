@@ -288,7 +288,7 @@ export class TreatmentSessionsController {
     );
   }
 
-  @Get('')
+  @Get()
   @Roles([UserRole.PATIENT])
   @ApiOperation({
     summary: '[Patient] List all of their own treatment sessions',
@@ -322,6 +322,34 @@ export class TreatmentSessionsController {
     );
   }
 
+  @Get('summary/:treatmentSessionId')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary: '[Student] Get a treatment session summary for a clinical case',
+  })
+  @ApiParam({
+    name: 'treatmentSessionId',
+    type: Number,
+    description: 'Treatment session ID',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Student or treatment session not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Treatment session does not belong to this student or is not active.',
+  })
+  async getTreatmentSessionSummary(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('treatmentSessionId', ParseIntPipe) treatmentSessionId: number,
+  ) {
+    return await this.treatmentSessionsService.treatmentSessionSummary(
+      user.userId,
+      treatmentSessionId,
+    );
+  }
   @Get(':treatmentSessionId')
   @Roles([UserRole.PATIENT])
   @ApiOperation({

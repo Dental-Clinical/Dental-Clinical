@@ -78,45 +78,7 @@ export class SupervisorService {
       };
     });
   }
-  async getClinicalCasesPendingReview(userId: number) {
-    const supervisor = await this.findByUserId(userId);
-    if (!supervisor) {
-      throw new NotFoundException('Supervisor not found');
-    }
-    const clinicalCases = await this.dataSource
-      .getRepository(ClinicalCase)
-      .find({
-        where: {
-          assignedSupervisor: { id: supervisor.id },
-          status: ClinicalCaseStatus.PENDING_SUPERVISOR_APPROVAL,
-        },
-        relations: {
-          assignedStudent: { user: true },
-          patient: true,
-          subject: true,
-          clinicalAppointments: true,
-          plannedProcedures: true,
-        },
-      });
-    return clinicalCases.map((clinicalCase) => {
-      const nextScheduledAppointment = clinicalCase.clinicalAppointments
-        .filter(
-          (appointment) =>
-            appointment.status === ClinicalAppointmentStatus.SCHEDULED,
-        )
-        .sort(
-          (a, b) => a.appointmentDate.getTime() - b.appointmentDate.getTime(),
-        )[0];
-      return {
-        id: clinicalCase.id,
-        patientName: clinicalCase.patient.full_name,
-        subjectName: clinicalCase.subject.name,
-        studentName: clinicalCase.assignedStudent?.user.full_name || null,
-        nextScheduledAppointment,
-        procedureCount: clinicalCase.plannedProcedures.length,
-      };
-    });
-  }
+
   async findByUserId(userId: number) {
     return await this.dataSource.getRepository(Supervisor).findOne({
       where: { user: { id: userId } },

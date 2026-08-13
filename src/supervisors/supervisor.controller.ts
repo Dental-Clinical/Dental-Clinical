@@ -11,8 +11,6 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/constants/user-roles';
 import { CreateSupervisorDto } from './dto/create-supervisor.dto';
 import { CreateSupervisorResponseDto } from './dto/create-supervisor-response.dto';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
-import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 
 @ApiTags('Supervisors')
 @ApiBearerAuth('JWT-auth')
@@ -20,23 +18,6 @@ import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.i
 export class SupervisorController {
   constructor(private readonly supervisorService: SupervisorService) {}
 
-  @Get('clinical-cases/pending-approval')
-  @Roles([UserRole.SUPERVISOR])
-  @ApiOperation({
-    summary:
-      '[Supervisor] Get clinical cases pending approval for the supervisor',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'List of clinical cases pending approval for the supervisor',
-  })
-  public async getClinicalCasesPendingApproval(
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return await this.supervisorService.getClinicalCasesPendingReview(
-      user.userId,
-    );
-  }
   @Post()
   @Roles([UserRole.ADMIN])
   @ApiOperation({ summary: '[Admin] Create a new supervisor' })

@@ -6,9 +6,6 @@ export const ClinicalCaseStateMachine: Record<
 > = {
   [ClinicalCaseStatus.OPEN]: [ClinicalCaseStatus.ASSIGNED],
   [ClinicalCaseStatus.ASSIGNED]: [ClinicalCaseStatus.DIAGNOSIS_PENDING_REVIEW],
-  [ClinicalCaseStatus.PENDING_SUPERVISOR_APPROVAL]: [
-    ClinicalCaseStatus.TREATMENT_IN_PROGRESS,
-  ],
   [ClinicalCaseStatus.DIAGNOSIS_PENDING_REVIEW]: [
     ClinicalCaseStatus.TREATMENT_IN_PROGRESS,
     // The reviewing supervisor can move the case to another subject, which

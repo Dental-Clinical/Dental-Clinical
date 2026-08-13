@@ -6,6 +6,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -14,6 +15,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -300,6 +302,54 @@ export class TreatmentSessionsController {
     return await this.treatmentSessionsService.getAllTreatmentSessions(user);
   }
 
+  @Get('student')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary: '[Student] List all treatment sessions for a clinical case',
+  })
+  @ApiQuery({
+    name: 'clinicalCaseId',
+    type: Number,
+    description: 'Clinical case ID',
+  })
+  async getTreatmentSessionsForClinicalCase(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('clinicalCaseId', ParseIntPipe) clinicalCaseId: number,
+  ) {
+    return await this.treatmentSessionsService.getTreatmentSessionsForClinicalCase(
+      user.userId,
+      clinicalCaseId,
+    );
+  }
+
+  @Get('summary/:treatmentSessionId')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary: '[Student] Get a treatment session summary for a clinical case',
+  })
+  @ApiParam({
+    name: 'treatmentSessionId',
+    type: Number,
+    description: 'Treatment session ID',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Student or treatment session not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Treatment session does not belong to this student or is not active.',
+  })
+  async getTreatmentSessionSummary(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('treatmentSessionId', ParseIntPipe) treatmentSessionId: number,
+  ) {
+    return await this.treatmentSessionsService.treatmentSessionSummary(
+      user.userId,
+      treatmentSessionId,
+    );
+  }
   @Get(':treatmentSessionId')
   @Roles([UserRole.PATIENT])
   @ApiOperation({

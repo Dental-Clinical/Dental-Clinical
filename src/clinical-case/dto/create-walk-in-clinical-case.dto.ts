@@ -82,6 +82,7 @@ export class CreateWalkInClinicalCaseDto {
   })
   @ValidateNested()
   @Type(() => PatientInfoDto)
+  @IsNotEmpty()
   patient: PatientInfoDto;
 
   @ApiProperty({

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -7,6 +8,7 @@ import {
   Post,
   Query,
   UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ClinicalCaseService } from './clinical-case.service';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -34,6 +36,9 @@ import { PatientCaseDetailsDto } from './dto/patient-case-details.dto';
 import { PatientCasesSummaryDto } from './dto/patient-cases-summary.dto';
 import { SupervisorCaseDetailsDto } from './dto/supervisor-case-details.dto';
 import { CreateWalkInClinicalCaseDto } from './dto/create-walk-in-clinical-case.dto';
+import { FileUploadInterceptor } from 'src/common/interceptors/files.interceptor';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 @ApiTags('Clinical Cases')
 @ApiBearerAuth('JWT-auth')
@@ -210,12 +215,44 @@ export class ClinicalCaseController {
   }
   @Post('walk-in')
   @Roles([UserRole.STUDENT])
+  @UseInterceptors(
+    FileUploadInterceptor({
+      fieldName: 'images',
+      maxCount: 10,
+    }),
+  )
   async createWalkInClinicalCase(
     @Body('data') data: string,
     @CurrentUser() user: AuthenticatedUser,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
-    const dto: CreateWalkInClinicalCaseDto = JSON.parse(data);
+    let dto: CreateWalkInClinicalCaseDto;
+
+    if (!data) {
+      throw new BadRequestException('The data field is required.');
+    }
+
+    let parsedData: unknown;
+
+    try {
+      parsedData = JSON.parse(data);
+    } catch {
+      throw new BadRequestException('The data field must contain valid JSON.');
+    }
+
+    dto = plainToInstance(CreateWalkInClinicalCaseDto, parsedData);
+
+    const errors = await validate(dto, {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
+
+    if (errors.length > 0) {
+      const messages = errors.flatMap((error) =>
+        Object.values(error.constraints ?? {}),
+      );
+      throw new BadRequestException(messages);
+    }
     return await this.clinicalCaseService.createWalkInClinicalCase(
       user.userId,
       dto,

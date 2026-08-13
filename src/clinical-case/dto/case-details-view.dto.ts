@@ -183,25 +183,11 @@ export class CaseMediaDto {
   id: number;
 
   @ApiProperty({
-    description: 'The MIME type of the case media',
-    type: String,
-    example: 'image/jpeg',
-  })
-  type: string;
-
-  @ApiProperty({
     description: 'The URL of the case media',
     type: String,
     example: 'https://example.com/media/case1/image1.jpg',
   })
   url: string;
-
-  @ApiProperty({
-    description: 'The original file name of the case media',
-    type: String,
-    example: 'periapical-36.jpg',
-  })
-  fileName: string;
 
   @ApiProperty({
     description: 'The description of the case media',
@@ -213,7 +199,8 @@ export class CaseMediaDto {
 
   @ApiProperty({
     description: 'The date and time the case media was uploaded',
-    type: Date,
+    type: String,
+    format: 'date-time',
     example: '2023-10-15T10:00:00.000Z',
   })
   takenAt: Date;

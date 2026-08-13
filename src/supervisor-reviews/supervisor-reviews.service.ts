@@ -30,6 +30,34 @@ export class SupervisorReviewsService {
     private readonly dataSource: DataSource,
     private readonly cloudinaryService: CloudinaryService,
   ) {}
+  async getAllSubmissions(user: AuthenticatedUser) {
+    const supervisor = await this.getSupervisor(user);
+    const submissions = await this.dataSource
+      .getRepository(DiagnosisSubmission)
+      .find({
+        where: {
+          supervisor: { id: supervisor.id },
+        },
+        relations: {
+          clinicalCase: {
+            patient: true,
+          },
+          student: { user: true },
+          plannedProcedures: { subjectProcedure: true },
+        },
+      });
+    const result = submissions.map((submission) => ({
+      submissionId: submission.id,
+      status: submission.status,
+      clinicalCaseId: submission.clinicalCase.id,
+      patientName: submission.clinicalCase.patient.full_name,
+      studentName: submission.student.user.full_name,
+      procedureCount: submission.plannedProcedures.length,
+    }));
+    return {
+      submissions: result,
+    };
+  }
   async getPendingReviews(user: AuthenticatedUser) {
     const supervisor = await this.getSupervisor(user);
 
@@ -68,7 +96,6 @@ export class SupervisorReviewsService {
         where: {
           id: submissionId,
           supervisor: { id: supervisor.id },
-          status: DiagnosisSubmissionStatus.PENDING_REVIEW,
         },
         relations: {
           student: {
@@ -85,6 +112,7 @@ export class SupervisorReviewsService {
               question: true,
             },
           },
+          supervisorReview: true,
           images: true,
         },
       });
@@ -116,6 +144,7 @@ export class SupervisorReviewsService {
           }),
         };
       }),
+      myNotes: submission?.supervisorReview?.notes ?? null,
       images: submission.images.map((image) => ({
         id: image.id,
         url: image.fileUrl,

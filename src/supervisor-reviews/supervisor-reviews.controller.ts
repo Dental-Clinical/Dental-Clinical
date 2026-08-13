@@ -42,6 +42,36 @@ export class SupervisorReviewsController {
   @Get()
   @Roles([UserRole.SUPERVISOR])
   @ApiOperation({
+    summary: '[Supervisor] Get all diagnosis submissions for the supervisor',
+  })
+  @ApiOkResponse({
+    schema: {
+      type: 'object',
+      properties: {
+        submissions: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              submissionId: { type: 'number', example: 1 },
+              clinicalCaseId: { type: 'number', example: 1 },
+              patientName: { type: 'string', example: 'John Doe' },
+              studentName: { type: 'string', example: 'Jane Smith' },
+              status: { type: 'string', example: 'pending_review' },
+            },
+          },
+        },
+      },
+    },
+    description: 'Submissions retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Supervisor not found' })
+  public async getAllSubmissions(@CurrentUser() user: AuthenticatedUser) {
+    return await this.supervisorReviewService.getAllSubmissions(user);
+  }
+  @Get('pending')
+  @Roles([UserRole.SUPERVISOR])
+  @ApiOperation({
     summary:
       '[Supervisor] Get all pending diagnosis reviews for the supervisor',
   })

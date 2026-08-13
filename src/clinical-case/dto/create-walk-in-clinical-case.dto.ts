@@ -58,7 +58,7 @@ export class PatientInfoDto {
     description: 'Patient information for the walk-in clinical case',
     type: () => CreatePatientWalkinDto,
   })
-  @ValidateNested()
+  @ValidateNested({ each: true })
   @Type(() => CreatePatientWalkinDto)
   patientInfo: CreatePatientWalkinDto;
   @ApiProperty({
@@ -80,7 +80,7 @@ export class CreateWalkInClinicalCaseDto {
   @ApiProperty({
     type: () => PatientInfoDto,
   })
-  @ValidateNested()
+  @ValidateNested({ each: true })
   @Type(() => PatientInfoDto)
   @IsNotEmpty()
   patient: PatientInfoDto;
@@ -89,7 +89,7 @@ export class CreateWalkInClinicalCaseDto {
     type: () => CaseInformationDto,
   })
   @IsNotEmpty()
-  @ValidateNested()
+  @ValidateNested({ each: true })
   @Type(() => CaseInformationDto)
   caseInfo: CaseInformationDto;
 
@@ -97,7 +97,7 @@ export class CreateWalkInClinicalCaseDto {
     type: () => AppointmentDto,
   })
   @IsNotEmpty()
-  @ValidateNested()
+  @ValidateNested({ each: true })
   @Type(() => AppointmentDto)
   appointment: AppointmentDto;
 }

@@ -8,6 +8,7 @@ import { UserModule } from 'src/users/user.module';
 import { WhatsappService } from 'src/notifications/whatsapp.service';
 import { ConfigModule } from '@nestjs/config';
 import ultramsgConfig from 'src/config/ultramsg.config';
+import { ClinicalCaseModule } from 'src/clinical-case/clinical-case.module';
 
 @Module({
   controllers: [SupervisorController],
@@ -17,6 +18,7 @@ import ultramsgConfig from 'src/config/ultramsg.config';
     CommonModule,
     UserModule,
     ConfigModule.forFeature(ultramsgConfig),
+    ClinicalCaseModule,
   ],
   exports: [SupervisorService],
 })

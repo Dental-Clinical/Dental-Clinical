@@ -6,6 +6,7 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  UploadedFiles,
 } from '@nestjs/common';
 import { ClinicalCaseService } from './clinical-case.service';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -210,12 +211,15 @@ export class ClinicalCaseController {
   @Post('walk-in')
   @Roles([UserRole.STUDENT])
   async createWalkInClinicalCase(
+    @Body('data') data: string,
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CreateWalkInClinicalCaseDto,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
+    const dto: CreateWalkInClinicalCaseDto = JSON.parse(data);
     return await this.clinicalCaseService.createWalkInClinicalCase(
       user.userId,
       dto,
+      files,
     );
   }
 }

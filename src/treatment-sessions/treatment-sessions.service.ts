@@ -436,11 +436,11 @@ export class TreatmentSessionsService {
           'Treatment session can only be started within 15 minutes before the scheduled appointment.',
         );
       }
-      if (now > new Date(treatmentSession.clinicalAppointment.appointmentEnd)) {
-        throw new ConflictException(
-          'Treatment session cannot be started after the scheduled appointment end time.',
-        );
-      }
+      // if (now > new Date(treatmentSession.clinicalAppointment.appointmentEnd)) {
+      //   throw new ConflictException(
+      //     'Treatment session cannot be started after the scheduled appointment end time.',
+      //   );
+      // }
 
       const activeSessionExists = await manager
         .getRepository(TreatmentSession)

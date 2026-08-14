@@ -609,6 +609,7 @@ export class ClinicalCaseService {
         assignedStudent: { user: true },
         assignedSupervisor: { user: true },
         clinicalAppointments: true,
+        request: true,
         subject: true,
         media: true,
         plannedProcedures: {
@@ -673,6 +674,14 @@ export class ClinicalCaseService {
       timeline: this.buildTimeline(treatmentSessions),
       ...(policy.includeSupervisorNotes
         ? { supervisorNotes: this.buildSupervisorNotes(treatmentSessions) }
+        : {}),
+      ...(policy.includePatientInformation
+        ? {
+            patientInformation: this.buildPatientInformation(
+              clinicalCase.request,
+              clinicalCase.patient,
+            ),
+          }
         : {}),
     };
   }
@@ -836,6 +845,17 @@ export class ClinicalCaseService {
         createdAt: session.updatedAt,
         notes: session.supervisorNotes as string,
       }));
+  }
+  private buildPatientInformation(
+    request: ExaminationRequest,
+    patient: Patient,
+  ) {
+    return {
+      chiefComplaint: request.chief_complaint,
+      medicalHistory: patient.medical_history,
+      allergies: patient.allergies,
+      medications: patient.current_medications,
+    };
   }
   async findStudentCases(userId: number): Promise<StudentCasesSummaryDto> {
     // approved

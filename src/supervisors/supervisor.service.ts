@@ -115,8 +115,6 @@ export class SupervisorService {
       .getMany();
 
     const result = clinicalCases.map((clinicalCase) => {
-      console.log(clinicalCase.plannedProcedures);
-
       return {
         id: clinicalCase.id,
         patientName: clinicalCase.patient.full_name,

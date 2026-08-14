@@ -19,7 +19,7 @@ export class SubjectDiagnosisService {
     @InjectRepository(Subject)
     private readonly subjectRepository: Repository<Subject>,
     private readonly dataSource: DataSource,
-  ) { }
+  ) {}
   async createDiagnosisQuestions(
     dto: CreateSubjectDiagnosisQuestionDto,
     subjectId: number,
@@ -103,7 +103,6 @@ export class SubjectDiagnosisService {
       });
 
       const savedQuestion = await questionRepository.save(question);
-      console.log(savedQuestion);
 
       if (isChoiceQuestion) {
         const options = dto.options!.map((option) =>
@@ -128,14 +127,15 @@ export class SubjectDiagnosisService {
     const subjectExists = await this.subjectRepository.findOne({
       where: {
         id: subjectId,
-      }, relations: { subjectProcedures: true }
+      },
+      relations: { subjectProcedures: true },
     });
     if (!subjectExists) {
       throw new ConflictException(
         'The subject with the provided ID does not exist.',
       );
     }
-    const requiredProcedures = subjectExists.subjectProcedures
+    const requiredProcedures = subjectExists.subjectProcedures;
     const questions = await this.subjectDiagnosisQuestionRepository.find({
       where: {
         subject: { id: subjectExists.id },
@@ -166,10 +166,9 @@ export class SubjectDiagnosisService {
           id: answer.id,
           label: answer.label,
           value: answer.value,
-          displayOrder: answer.displayOrder
-        }))
-      }))
-
+          displayOrder: answer.displayOrder,
+        })),
+      })),
     };
   }
 }

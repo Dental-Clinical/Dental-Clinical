@@ -22,6 +22,7 @@ import { SubjectDiagnosisAnswer } from 'src/subject-diagnosis/subject-diagnosis-
 import { ClinicalAppointment } from 'src/clinical-appointments/clinical-appointments.entity';
 import { ClinicalAppointmentStatus } from 'src/clinical-appointments/enums/clinical-appointment.enum';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { DateTimeUtils } from 'src/utils/date-time.utils';
 
 @Injectable()
 export class SupervisorReviewsService {
@@ -166,6 +167,10 @@ export class SupervisorReviewsService {
           .setLock('pessimistic_write')
           .innerJoinAndSelect('submission.clinicalCase', 'clinicalCase')
           .innerJoinAndSelect('submission.supervisor', 'supervisor')
+          .innerJoinAndSelect(
+            'clinicalCase.clinicalAppointments',
+            'appointments',
+          )
           .where('submission.id = :id', { id: submissionId })
           .andWhere('submission.supervisor_id = :supervisorId', {
             supervisorId: supervisor.id,
@@ -175,22 +180,11 @@ export class SupervisorReviewsService {
           })
           .getOne();
       } catch (error) {
-        console.log(error);
         throw error;
       }
 
       if (!submission) {
         throw new NotFoundException('submission not found');
-      }
-
-      if (submission.supervisor.id !== supervisor.id) {
-        throw new ConflictException(
-          'You are not the supervisor of this submission.',
-        );
-      }
-
-      if (submission.status !== DiagnosisSubmissionStatus.PENDING_REVIEW) {
-        throw new ConflictException('This submission is not pending review.');
       }
 
       const reviewExist = await manager
@@ -208,6 +202,17 @@ export class SupervisorReviewsService {
       }
 
       const clinicalCase = submission.clinicalCase;
+      const appointment = submission.clinicalCase.clinicalAppointments.find(
+        (appointment) =>
+          appointment.status === ClinicalAppointmentStatus.SCHEDULED ||
+          appointment.status === ClinicalAppointmentStatus.COMPLETED,
+      );
+
+      if (!appointment) {
+        throw new NotFoundException(
+          'No scheduled appointment found for this clinical case.',
+        );
+      }
 
       if (!clinicalCase) {
         throw new NotFoundException('clinical case not found');
@@ -215,6 +220,20 @@ export class SupervisorReviewsService {
 
       if (clinicalCase.status !== ClinicalCaseStatus.DIAGNOSIS_PENDING_REVIEW) {
         throw new BadRequestException('Invalid clinical case status');
+      }
+      // Prevent approval before the appointment begins.
+      const appointmentDateTime = DateTimeUtils.combine(
+        appointment.appointmentDate,
+        appointment.appointmentStart,
+      );
+
+      if (
+        new Date() < appointmentDateTime &&
+        appointment.status === ClinicalAppointmentStatus.SCHEDULED
+      ) {
+        throw new ConflictException(
+          'Diagnosis cannot be approved before the scheduled appointment time.',
+        );
       }
 
       const review = manager.getRepository(SupervisorReview).create({
@@ -231,6 +250,13 @@ export class SupervisorReviewsService {
       await manager.getRepository(ClinicalCase).update(clinicalCase.id, {
         status: ClinicalCaseStatus.TREATMENT_IN_PROGRESS,
       });
+      await manager.getRepository(ClinicalAppointment).update(
+        {
+          clinicalCase: { id: clinicalCase.id },
+          status: ClinicalAppointmentStatus.SCHEDULED,
+        },
+        { status: ClinicalAppointmentStatus.COMPLETED },
+      );
 
       return {
         message: 'Diagnosis approved successfully.',

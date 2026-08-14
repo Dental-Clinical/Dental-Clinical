@@ -213,22 +213,25 @@ export class TreatmentSessionsService {
         );
       }
 
-      const duplicateAppointment = await manager
-        .getRepository(ClinicalAppointment)
-        .exists({
-          where: {
-            clinicalCase: { id: lockedClinicalCase.id },
-            appointmentDate: new Date(dto.appointmentDate!),
-            appointmentStart: dto.appointmentStart,
-            status: ClinicalAppointmentStatus.SCHEDULED,
-          },
-        });
+      if (dto.appointmentDate && dto.appointmentStart) {
+        const duplicateAppointment = await manager
+          .getRepository(ClinicalAppointment)
+          .exists({
+            where: {
+              clinicalCase: { id: lockedClinicalCase.id },
+              appointmentDate: new Date(dto.appointmentDate!),
+              appointmentStart: dto.appointmentStart,
+              status: ClinicalAppointmentStatus.SCHEDULED,
+            },
+          });
 
-      if (duplicateAppointment) {
-        throw new ConflictException(
-          'An appointment already exists for this date and time.',
-        );
+        if (duplicateAppointment) {
+          throw new ConflictException(
+            'An appointment already exists for this date and time.',
+          );
+        }
       }
+
       const existingSession = await manager
         .getRepository(TreatmentSession)
         .exists({
@@ -240,6 +243,7 @@ export class TreatmentSessionsService {
       const isFirstSession = !existingSession;
 
       let appointment: ClinicalAppointment | undefined;
+
       if (isFirstSession) {
         appointment = lockedClinicalCase.clinicalAppointments.find(
           (a) =>

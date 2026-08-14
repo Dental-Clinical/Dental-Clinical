@@ -45,6 +45,7 @@ import { SectionSubjectModule } from './section-subject/section-subject.module';
 import { StudentSubjectEnrollmentModule } from './student-subject-enrollment/student-subject-enrollment.module';
 import { MaterialsModule } from './materials/materials.module';
 import { SubjectDiagnosisModule } from './subject-diagnosis/subject-diagnosis.module';
+import { DentalAiModule } from './dental-ai/dental-ai.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -104,6 +105,7 @@ const ENV = process.env.NODE_ENV;
     StudentSubjectEnrollmentModule,
     MaterialsModule,
     SubjectDiagnosisModule,
+    DentalAiModule,
   ],
   controllers: [AppController],
   providers: [

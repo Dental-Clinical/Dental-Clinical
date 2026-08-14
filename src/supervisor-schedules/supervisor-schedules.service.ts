@@ -79,8 +79,9 @@ export class SupervisorScheduleService {
     schedules.sort((a, b) => dayOrder[a.day_of_week] - dayOrder[b.day_of_week]);
     return {
       message: 'Coordinator schedules retrieved successfully',
-      data: {
+      schedule: {
         workingDays: schedules.map((schedule) => ({
+          id: schedule.id,
           day: schedule.day_of_week,
           workingHours: schedule.start_time + ' - ' + schedule.end_time,
           isActive: schedule.is_active,

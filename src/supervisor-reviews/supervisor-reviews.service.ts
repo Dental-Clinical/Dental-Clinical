@@ -9,7 +9,7 @@ import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interf
 import { DiagnosisSubmission } from 'src/diagnosis-submission/diagnosis-submission.entity';
 import { DiagnosisSubmissionStatus } from 'src/diagnosis-submission/enums/diagnosis-submission-status.enum';
 import { SupervisorService } from 'src/supervisors/supervisor.service';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { ApproveReviewDto } from './dto/approve-review.dto';
 import { SupervisorReview } from './supervisor-reviews.entity';
 import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
@@ -358,25 +358,29 @@ export class SupervisorReviewsService {
           where: { diagnosisSubmission: { id: diagnosisSubmission.id } },
         });
 
-        const submissionRef = {
-          diagnosisSubmission: { id: diagnosisSubmission.id },
-          plannedProcedures: diagnosisSubmission.plannedProcedures.map(
-            (procedure) => ({
-              id: procedure.id,
-            }),
-          ),
-        };
-        for (const procedure of submissionRef.plannedProcedures) {
+        const casePlannedProcedures = await manager
+          .getRepository(PlannedProcedures)
+          .find({
+            where: { clinicalCase: { id: clinicalCase.id } },
+            select: { id: true },
+          });
+        const plannedProcedureIds = casePlannedProcedures.map(
+          (procedure) => procedure.id,
+        );
+
+        if (plannedProcedureIds.length) {
           await manager
             .getRepository(SubjectDiagnosisAnswer)
-            .delete({ plannedProcedure: { id: procedure.id } });
+            .delete({ plannedProcedure: In(plannedProcedureIds) });
+
+          await manager
+            .getRepository(PlannedProcedures)
+            .delete(plannedProcedureIds);
         }
-        await manager
-          .getRepository(PlannedProcedures)
-          .delete(submissionRef.diagnosisSubmission);
+
         await manager
           .getRepository(DiagnosisImages)
-          .delete(submissionRef.diagnosisSubmission);
+          .delete({ diagnosisSubmission: { id: diagnosisSubmission.id } });
         await manager
           .getRepository(DiagnosisSubmission)
           .delete(diagnosisSubmission.id);

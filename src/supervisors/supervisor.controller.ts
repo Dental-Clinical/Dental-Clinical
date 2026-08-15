@@ -25,6 +25,7 @@ import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 import { SupervisorCaseDetailsDto } from 'src/clinical-case/dto/supervisor-case-details.dto';
 import { SupervisorDashboardResponseDto } from './dto/supervisor-dashboard-response.dto';
+import { SupervisorAssignedCasesResponseDto } from './dto/supervisor-clinical-cases-response.dto';
 import { ClinicalCaseService } from 'src/clinical-case/clinical-case.service';
 
 @ApiTags('Supervisors')
@@ -68,10 +69,12 @@ export class SupervisorController {
   @ApiOperation({
     summary: '[Supervisor] Get all clinical cases assigned to the supervisor',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'List of clinical cases assigned to the supervisor',
+  @ApiOkResponse({
+    type: SupervisorAssignedCasesResponseDto,
+    description:
+      'Clinical cases assigned to the supervisor, with their final evaluation if graded',
   })
+  @ApiResponse({ status: 404, description: 'Supervisor not found' })
   public async getAssignedClinicalCases(
     @CurrentUser() user: AuthenticatedUser,
   ) {

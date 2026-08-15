@@ -35,8 +35,7 @@ export class SubjectsService {
     private readonly sectionSubjectRepository: Repository<SectionSubject>,
     @InjectRepository(Supervisor)
     private readonly supervisorRepository: Repository<Supervisor>,
-
-  ) { }
+  ) {}
 
   async getSubjects(dto: GetSubjectsQueryDto) {
     const qb = this.subjectRepository.createQueryBuilder('subject');

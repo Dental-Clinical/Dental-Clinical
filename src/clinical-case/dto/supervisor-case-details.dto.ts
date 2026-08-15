@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   CaseDetailsViewDto,
+  CaseEvaluationDto,
   CaseInfoDto,
   SupervisorNoteDto,
 } from './case-details-view.dto';
@@ -31,4 +32,12 @@ export class SupervisorCaseDetailsDto extends CaseDetailsViewDto {
     type: [SupervisorNoteDto],
   })
   declare supervisorNotes: SupervisorNoteDto[];
+
+  @ApiProperty({
+    description:
+      'The final evaluation, or null if the case has not been graded yet',
+    type: CaseEvaluationDto,
+    nullable: true,
+  })
+  declare evaluation: CaseEvaluationDto | null;
 }

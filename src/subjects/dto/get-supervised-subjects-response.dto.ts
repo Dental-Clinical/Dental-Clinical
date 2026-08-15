@@ -81,7 +81,8 @@ export class SupervisedSubjectItemDto {
   academicYear: SupervisedSubjectAcademicYearDto;
 
   @ApiProperty({
-    description: 'Sections of this subject supervised by the current supervisor',
+    description:
+      'Sections of this subject supervised by the current supervisor',
     type: [SupervisedSubjectSectionDto],
   })
   sections: SupervisedSubjectSectionDto[];

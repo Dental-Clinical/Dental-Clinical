@@ -146,7 +146,7 @@ export class InitialExaminationService {
       }
 
       const initialExamination = manager.create(InitialExamination, {
-        request: request!,
+        request: request,
         appointment: appointment || null,
         patient,
         subject,
@@ -165,12 +165,12 @@ export class InitialExaminationService {
           manager,
         );
 
-      request!.status = ExaminationRequestStatus.CONVERTED_TO_CASE;
+      request.status = ExaminationRequestStatus.CONVERTED_TO_CASE;
 
-      await requestRepository.save(request!);
+      await requestRepository.save(request);
       if (appointment) {
-        appointment!.status = ExaminationAppointmentStatus.COMPLETED;
-        await appointmentRepository.save(appointment!);
+        appointment.status = ExaminationAppointmentStatus.COMPLETED;
+        await appointmentRepository.save(appointment);
       }
 
       return {

@@ -26,6 +26,7 @@ import {
   DashboardSubjectDto,
   SupervisorDashboardResponseDto,
 } from './dto/supervisor-dashboard-response.dto';
+import { SupervisorAssignedCasesResponseDto } from './dto/supervisor-clinical-cases-response.dto';
 
 const CASE_STATUS_BUCKETS: Record<
   keyof DashboardCaseBucketsDto,
@@ -103,7 +104,9 @@ export class SupervisorService {
       };
     });
   }
-  async getAssignedClinicalCases(user: AuthenticatedUser) {
+  async getAssignedClinicalCases(
+    user: AuthenticatedUser,
+  ): Promise<SupervisorAssignedCasesResponseDto> {
     const supervisor = await this.findByUserId(user.userId);
     if (!supervisor) {
       throw new NotFoundException('Supervisor not found');
@@ -127,6 +130,9 @@ export class SupervisorService {
         'planned_procedures.subjectProcedure',
         'subject_procedure',
       )
+      // Left join: a case only gains an evaluation once the supervisor grades
+      // it, so an inner join would drop every case still under treatment.
+      .leftJoinAndSelect('clinical_case.evaluation', 'evaluation')
       .where('diagnosis_submission.supervisor_id = :supervisorId', {
         supervisorId: supervisor.id,
       })
@@ -149,6 +155,14 @@ export class SupervisorService {
           name: procedure.subjectProcedure.name,
           tooth: procedure.toothNumber,
         })),
+        evaluation: clinicalCase.evaluation
+          ? {
+              id: clinicalCase.evaluation.id,
+              grade: clinicalCase.evaluation.grade,
+              comment: clinicalCase.evaluation.comment ?? null,
+              createdAt: clinicalCase.evaluation.createdAt,
+            }
+          : null,
       };
     });
     return {

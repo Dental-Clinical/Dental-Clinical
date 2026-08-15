@@ -38,6 +38,16 @@ export class SupervisorController {
     private readonly clinicalCaseService: ClinicalCaseService,
   ) {}
 
+  @Get()
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get all supervisors' })
+  @ApiOkResponse({
+    description: 'List of all supervisors',
+    type: [SupervisorDetailsResponseDto],
+  })
+  public async getSupervisors() {
+    return await this.supervisorService.getSupervisors();
+  }
   @Post()
   @Roles([UserRole.ADMIN])
   @ApiOperation({ summary: '[Admin] Create a new supervisor' })

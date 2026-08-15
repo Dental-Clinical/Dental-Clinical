@@ -70,8 +70,8 @@ const ENV = process.env.NODE_ENV;
       useFactory: async (configService: ConfigService) => ({
         store: await redisStore({
           url: configService.get('redis.url'),
-          //host: configService.get('redis.host'),
-          //port: configService.get('redis.port'),
+          // host: configService.get('redis.host'),
+          // port: configService.get('redis.port'),
         }),
         ttl: configService.get('redis.ttl'),
         isGlobal: true,
@@ -129,4 +129,4 @@ const ENV = process.env.NODE_ENV;
     RedisHealthService,
   ],
 })
-export class AppModule { }
+export class AppModule {}

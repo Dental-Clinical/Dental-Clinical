@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { InitialExaminationService } from './initial-examination.service';
 import { InitialExaminationController } from './initial-examination.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -24,7 +24,7 @@ import { Patient } from 'src/patients/patient.entity';
       Subject,
       Patient,
     ]),
-    ClinicalCaseModule,
+    forwardRef(() => ClinicalCaseModule),
   ],
   exports: [InitialExaminationService],
 })

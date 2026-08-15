@@ -2,8 +2,10 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  forwardRef,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -75,6 +77,8 @@ import { DiagnosisImages } from 'src/diagnosis-images/diagnosis-images.entity';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { unlink } from 'fs/promises';
 import { UploadApiResponse } from 'cloudinary';
+import { CreateClinicalCaseForExistingPatientDto } from './dto/create-clinical-case-for-existing-patient.dto';
+import { InitialExaminationService } from 'src/initial-examination/initial-examination.service';
 
 @Injectable()
 export class ClinicalCaseService {
@@ -92,7 +96,55 @@ export class ClinicalCaseService {
     private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly dataSource: DataSource,
+    @Inject(forwardRef(() => InitialExaminationService))
+    private readonly initialExaminationService: InitialExaminationService,
   ) {}
+  public async createClinicalCaseForExistingPatient(
+    userId: number,
+    dto: CreateClinicalCaseForExistingPatientDto,
+  ) {
+    return await this.dataSource.transaction(async (manager) => {
+      const patient = await manager.findOne(Patient, {
+        where: {
+          id: dto.patientId,
+        },
+      });
+      if (!patient) {
+        throw new NotFoundException('Patient not found');
+      }
+
+      const subject = await manager.findOne(Subject, {
+        where: {
+          id: dto.subjectId,
+        },
+      });
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
+
+      const examinationRequest = manager
+        .getRepository(ExaminationRequest)
+        .create({
+          chief_complaint: dto.chiefComplaint,
+          symptoms: dto.symptoms,
+          patient,
+        });
+      await manager.getRepository(ExaminationRequest).save(examinationRequest);
+
+      const examination =
+        await this.initialExaminationService.createInitialExamination(
+          userId,
+          {
+            request_id: examinationRequest.id,
+            patient_id: patient.id,
+            subject_id: subject.id,
+            clinicalFindings: dto.clinicalFindings,
+            diagnosis: dto.diagnosis,
+          },
+          manager,
+        );
+    });
+  }
   public async createWalkInClinicalCase(
     userId: number,
     dto: CreateWalkInClinicalCaseDto,

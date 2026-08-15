@@ -56,7 +56,7 @@ export class ExaminationRequestDataDto {
 
   @ApiPropertyOptional({ type: [ExaminationRequestAttachmentDto] })
   attachments?: ExaminationRequestAttachmentDto[];
-  
+
   @ApiPropertyOptional({ type: ExaminationRequestAppointmentDto })
   appointment?: ExaminationRequestAppointmentDto;
 }

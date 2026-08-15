@@ -22,4 +22,4 @@ import { Section } from 'src/section/section.entity';
   controllers: [SectionSubjectController],
   exports: [SectionSubjectService],
 })
-export class SectionSubjectModule { }
+export class SectionSubjectModule {}

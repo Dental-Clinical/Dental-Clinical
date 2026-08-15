@@ -109,7 +109,7 @@ export class StudentService {
     private readonly studentProgressRepository: Repository<StudentProgress>,
     @InjectRepository(ClinicalCase)
     private readonly clinicalCaseRepository: Repository<ClinicalCase>,
-  ) { }
+  ) {}
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
       where: { university_id },
@@ -341,7 +341,7 @@ export class StudentService {
         father_name: fatherName,
         university_id: universityId,
         email,
-        study_year
+        study_year,
       });
     }
   }
@@ -404,10 +404,10 @@ export class StudentService {
         },
         studyYear: currentEnrollment
           ? {
-            id: currentEnrollment.studyYear.id,
-            name: currentEnrollment.studyYear.name,
-            level: currentEnrollment.studyYear.level,
-          }
+              id: currentEnrollment.studyYear.id,
+              name: currentEnrollment.studyYear.name,
+              level: currentEnrollment.studyYear.level,
+            }
           : null,
       };
     });
@@ -608,10 +608,10 @@ export class StudentService {
           },
           studyYear: currentEnrollment
             ? {
-              id: currentEnrollment.studyYear.id,
-              name: currentEnrollment.studyYear.name,
-              level: currentEnrollment.studyYear.level,
-            }
+                id: currentEnrollment.studyYear.id,
+                name: currentEnrollment.studyYear.name,
+                level: currentEnrollment.studyYear.level,
+              }
             : null,
           academicYear: {
             id: enrollment.academicYear.id,
@@ -800,10 +800,10 @@ export class StudentService {
       },
       studyYear: currentEnrollment
         ? {
-          id: currentEnrollment.studyYear.id,
-          name: currentEnrollment.studyYear.name,
-          level: currentEnrollment.studyYear.level,
-        }
+            id: currentEnrollment.studyYear.id,
+            name: currentEnrollment.studyYear.name,
+            level: currentEnrollment.studyYear.level,
+          }
         : null,
       academicYear: {
         id: enrollments[0].academicYear.id,

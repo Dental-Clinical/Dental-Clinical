@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { SupervisorScheduleController } from './supervisor-schedules.controller';
 import { SupervisorScheduleService } from './supervisor-schedules.service';
 import { SupervisorSchedule } from './supervisor-schedules.entity';
@@ -7,7 +7,10 @@ import { SupervisorService } from 'src/supervisors/supervisor.service';
 import { SupervisorModule } from 'src/supervisors/supervisor.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SupervisorSchedule]), SupervisorModule],
+  imports: [
+    TypeOrmModule.forFeature([SupervisorSchedule]),
+    forwardRef(() => SupervisorModule),
+  ],
   providers: [SupervisorScheduleService],
   controllers: [SupervisorScheduleController],
   exports: [SupervisorScheduleService],

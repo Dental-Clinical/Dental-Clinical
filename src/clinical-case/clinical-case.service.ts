@@ -431,6 +431,7 @@ export class ClinicalCaseService {
         ? {
             id: clinicalCase.assignedStudent.id,
             name: clinicalCase.assignedStudent.user.full_name,
+            phone: clinicalCase.assignedStudent.user.phone,
           }
         : null,
     }));

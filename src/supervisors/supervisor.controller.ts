@@ -24,6 +24,7 @@ import { CreateSupervisorResponseDto } from './dto/create-supervisor-response.dt
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 import { SupervisorCaseDetailsDto } from 'src/clinical-case/dto/supervisor-case-details.dto';
+import { SupervisorDashboardResponseDto } from './dto/supervisor-dashboard-response.dto';
 import { ClinicalCaseService } from 'src/clinical-case/clinical-case.service';
 
 @ApiTags('Supervisors')
@@ -48,6 +49,19 @@ export class SupervisorController {
     @Body() createSupervisorDto: CreateSupervisorDto,
   ) {
     return await this.supervisorService.createSupervisor(createSupervisorDto);
+  }
+  @Get('my/dashboard')
+  @Roles([UserRole.SUPERVISOR])
+  @ApiOperation({
+    summary: "[Supervisor] Get the current supervisor's dashboard",
+  })
+  @ApiOkResponse({
+    type: SupervisorDashboardResponseDto,
+    description: 'Supervisor dashboard statistics',
+  })
+  @ApiResponse({ status: 404, description: 'Supervisor not found' })
+  public async getDashboard(@CurrentUser() user: AuthenticatedUser) {
+    return await this.supervisorService.getDashboard(user);
   }
   @Get('my/clinical-cases')
   @Roles([UserRole.SUPERVISOR])

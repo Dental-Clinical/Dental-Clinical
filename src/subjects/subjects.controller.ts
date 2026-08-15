@@ -36,6 +36,9 @@ import {
 } from '@nestjs/swagger';
 import { GetSubjectMaterialsResponseDto } from './dto/get-subject-materials-response.dto';
 import { CreateSubjectMaterialsDto } from './dto/create-subject-materials.dto';
+import { GetSupervisedSubjectsResponseDto } from './dto/get-supervised-subjects-response.dto';
+import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
 
 @ApiTags('Subjects')
 @ApiBearerAuth('JWT-auth')
@@ -73,6 +76,21 @@ export class SubjectsController {
   })
   async getSubjects(@Query() dto: GetSubjectsQueryDto) {
     return await this.subjectsService.getSubjects(dto);
+  }
+
+  @Get('my/supervised')
+  @Roles([UserRole.SUPERVISOR])
+  @ApiOperation({
+    summary:
+      "[Supervisor] Get the current supervisor's subjects for the active academic year",
+  })
+  @ApiOkResponse({
+    type: GetSupervisedSubjectsResponseDto,
+    description: 'Supervised subjects retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Supervisor not found' })
+  async getSupervisedSubjects(@CurrentUser() user: AuthenticatedUser) {
+    return await this.subjectsService.getSupervisedSubjects(user.userId);
   }
 
   @Get('/:id/procedures')

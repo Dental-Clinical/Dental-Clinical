@@ -10,6 +10,7 @@ import { Student } from './student.entity';
 import {
   DataSource,
   EntityManager,
+  In,
   Repository,
   SelectQueryBuilder,
 } from 'typeorm';
@@ -32,6 +33,8 @@ import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interf
 import { Subject } from 'src/subjects/subjects.entity';
 import { StudyYear } from 'src/study-years/study-years.entity';
 import { AcademicYear } from 'src/academic-years/academic-years.entity';
+import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
+import { Patient } from 'src/patients/patient.entity';
 
 export interface SupervisedStudentSubject extends Pick<
   Subject,
@@ -65,8 +68,18 @@ export interface SupervisedStudentProcedure extends Pick<
   required: number;
 }
 
+export interface SupervisedStudentCase extends Pick<
+  ClinicalCase,
+  'id' | 'status'
+> {
+  patientName: Patient['full_name'];
+  sessionCount: number;
+  createdAt: Date;
+}
+
 export interface SupervisedStudentDetailSubject extends SupervisedStudentSubject {
   procedures: SupervisedStudentProcedure[];
+  cases: SupervisedStudentCase[];
 }
 
 export interface SupervisedStudentDetail extends Pick<Student, 'id'> {
@@ -94,6 +107,8 @@ export class StudentService {
     private readonly subjectProceduresRepository: Repository<SubjectProcedures>,
     @InjectRepository(StudentProgress)
     private readonly studentProgressRepository: Repository<StudentProgress>,
+    @InjectRepository(ClinicalCase)
+    private readonly clinicalCaseRepository: Repository<ClinicalCase>,
   ) { }
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
@@ -675,18 +690,40 @@ export class StudentService {
       ...new Set(enrollments.map((enrollment) => enrollment.subject.id)),
     ];
 
-    const subjectProcedures = await this.subjectProceduresRepository
-      .createQueryBuilder('subjectProcedure')
-      .leftJoinAndSelect(
-        'subjectProcedure.studentProgress',
-        'progress',
-        'progress.student_id = :studentId',
-        { studentId },
-      )
-      .where('subjectProcedure.subject_id IN (:...subjectIds)', { subjectIds })
-      .andWhere('subjectProcedure.is_active = true')
-      .orderBy('subjectProcedure.name', 'ASC')
-      .getMany();
+    const [subjectProcedures, clinicalCases] = await Promise.all([
+      this.subjectProceduresRepository
+        .createQueryBuilder('subjectProcedure')
+        .leftJoinAndSelect(
+          'subjectProcedure.studentProgress',
+          'progress',
+          'progress.student_id = :studentId',
+          { studentId },
+        )
+        .where('subjectProcedure.subject_id IN (:...subjectIds)', {
+          subjectIds,
+        })
+        .andWhere('subjectProcedure.is_active = true')
+        .orderBy('subjectProcedure.name', 'ASC')
+        .getMany(),
+      // The cases this student is treating under this supervisor. Scoping on
+      // assigned_supervisor_id matches the ownership rule the case detail route
+      // uses, and agrees with the enrollment-derived supervisor above: booking a
+      // clinical appointment sets both the student and sectionSubject.supervisor
+      // on the case in one step.
+      this.clinicalCaseRepository.find({
+        where: {
+          assignedStudent: { id: studentId },
+          assignedSupervisor: { user: { id: user.userId } },
+          subject: { id: In(subjectIds) },
+        },
+        relations: {
+          patient: true,
+          subject: true,
+          treatmentSessions: true,
+        },
+        order: { createdAt: 'DESC' },
+      }),
+    ]);
 
     const proceduresBySubject = new Map<number, SubjectProcedures[]>();
 
@@ -695,6 +732,20 @@ export class StudentService {
         proceduresBySubject.get(subjectProcedure.subject_id) ?? [];
       forSubject.push(subjectProcedure);
       proceduresBySubject.set(subjectProcedure.subject_id, forSubject);
+    }
+
+    const casesBySubject = new Map<number, SupervisedStudentCase[]>();
+
+    for (const clinicalCase of clinicalCases) {
+      const forSubject = casesBySubject.get(clinicalCase.subject.id) ?? [];
+      forSubject.push({
+        id: clinicalCase.id,
+        patientName: clinicalCase.patient.full_name,
+        status: clinicalCase.status,
+        sessionCount: clinicalCase.treatmentSessions.length,
+        createdAt: clinicalCase.createdAt,
+      });
+      casesBySubject.set(clinicalCase.subject.id, forSubject);
     }
 
     const student = enrollments[0].student;
@@ -737,6 +788,7 @@ export class StudentService {
             ? Math.round((completedProcedures / requiredProcedures) * 1000) / 10
             : 0,
         procedures,
+        cases: casesBySubject.get(enrollment.subject.id) ?? [],
       };
     });
 

@@ -39,33 +39,27 @@ export class SupervisorScheduleController {
     private readonly supervisorScheduleService: SupervisorScheduleService,
   ) {}
 
-  @Post()
-  @Roles([UserRole.SUPERVISOR])
-  @ApiOperation({ summary: '[Supervisor] Create a supervisor schedule' })
-  @ApiCreatedResponse({
-    type: CreateSupervisorScheduleResponseDto,
-    description: 'Schedule created successfully',
-  })
-  @ApiBody({ type: CreateSupervisorScheduleDto })
-  @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 404, description: 'Supervisor not found' })
-  @ApiResponse({
-    status: 409,
-    description: 'Schedule already exists for this day',
-  })
-  async createSchedule(
-    @CurrentUser() currentUser: AuthenticatedUser,
-    @Body() dto: CreateSupervisorScheduleDto,
-  ) {
-    return await this.supervisorScheduleService.createSchedule(
-      currentUser.userId,
-      dto,
-    );
-  }
+  // @Post()
+  // @Roles([UserRole.ADMIN])
+  // @ApiOperation({ summary: '[Supervisor] Create a supervisor schedule' })
+  // @ApiCreatedResponse({
+  //   type: CreateSupervisorScheduleResponseDto,
+  //   description: 'Schedule created successfully',
+  // })
+  // @ApiBody({ type: [CreateSupervisorScheduleDto] })
+  // @ApiResponse({ status: 400, description: 'Invalid input data' })
+  // @ApiResponse({ status: 404, description: 'Supervisor not found' })
+  // @ApiResponse({
+  //   status: 409,
+  //   description: 'Schedule already exists for this day',
+  // })
+  // async createSchedule(@Body() dto: CreateSupervisorScheduleDto[]) {
+  //   return await this.supervisorScheduleService.createSchedule(dto);
+  // }
 
   @Get()
-  @Roles([UserRole.SUPERVISOR])
-  @ApiOperation({ summary: '[Supervisor] Get supervisor weekly schedule' })
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get supervisor weekly schedule' })
   @ApiOkResponse({
     type: GetSupervisorScheduleResponseDto,
     description: 'Supervisor schedule retrieved successfully',
@@ -77,8 +71,33 @@ export class SupervisorScheduleController {
     );
   }
 
+  @Get('admin')
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get supervisor weekly schedule' })
+  @ApiOkResponse({
+    type: GetSupervisorScheduleResponseDto,
+    description: 'Supervisor schedule retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Supervisor not found' })
+  async getAllSupervisorsShcedules() {
+    return await this.supervisorScheduleService.getAllSchedules();
+  }
+
+  @Get(':id')
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({ summary: '[Admin] Get a supervisor schedule by ID' })
+  @ApiOkResponse({
+    type: GetSupervisorScheduleResponseDto,
+    description: 'Supervisor schedule retrieved successfully',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Schedule ID' })
+  @ApiResponse({ status: 404, description: 'Supervisor or schedule not found' })
+  async getScheduleById(@Param('id') scheduleId: number) {
+    return await this.supervisorScheduleService.getScheduleById(scheduleId);
+  }
+
   @Patch(':id')
-  @Roles([UserRole.SUPERVISOR])
+  @Roles([UserRole.ADMIN])
   @ApiOperation({ summary: '[Supervisor] Update a supervisor schedule' })
   @ApiOkResponse({
     type: UpdateSupervisorScheduleResponseDto,
@@ -96,19 +115,14 @@ export class SupervisorScheduleController {
     description: 'Schedule already exists for this day',
   })
   async updateSchedule(
-    @CurrentUser() currentUser: AuthenticatedUser,
     @Body() dto: UpdateSupervisorScheduleDto,
     @Param('id') scheduleId: number,
   ) {
-    return await this.supervisorScheduleService.updateSchedule(
-      currentUser.userId,
-      dto,
-      scheduleId,
-    );
+    return await this.supervisorScheduleService.updateSchedule(dto, scheduleId);
   }
 
   @Delete(':id')
-  @Roles([UserRole.SUPERVISOR])
+  @Roles([UserRole.ADMIN])
   @ApiOperation({ summary: '[Supervisor] Delete a supervisor schedule' })
   @ApiOkResponse({
     type: DeleteSupervisorScheduleResponseDto,

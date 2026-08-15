@@ -20,6 +20,7 @@ import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status.enum';
 import { ClinicalAppointmentStatus } from 'src/clinical-appointments/enums/clinical-appointment.enum';
 import { DiagnosisSubmissionStatus } from 'src/diagnosis-submission/enums/diagnosis-submission-status.enum';
+import { SupervisorScheduleService } from 'src/supervisor-schedules/supervisor-schedules.service';
 
 @Injectable()
 export class SupervisorService {
@@ -27,6 +28,7 @@ export class SupervisorService {
     private readonly passwordService: PasswordService,
     private readonly dataSource: DataSource,
     private readonly whatsappService: WhatsappService,
+    private readonly supervisorScheduleService: SupervisorScheduleService,
   ) {}
   async getSupervisors() {
     const supervisors = await this.dataSource.getRepository(Supervisor).find({
@@ -73,6 +75,13 @@ export class SupervisorService {
         user: savedUser,
       });
       const savedSupervisor = await manager.save(newSupervisor);
+
+      const supervisorSchedules =
+        await this.supervisorScheduleService.createSchedule(
+          savedSupervisor,
+          dto.schedules,
+          manager,
+        );
       return {
         supervisorId: savedSupervisor.id,
         tempPassword,

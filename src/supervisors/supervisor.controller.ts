@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
@@ -37,6 +38,7 @@ export class SupervisorController {
   @Post()
   @Roles([UserRole.ADMIN])
   @ApiOperation({ summary: '[Admin] Create a new supervisor' })
+  @ApiBody({ type: CreateSupervisorDto })
   @ApiCreatedResponse({
     type: CreateSupervisorResponseDto,
     description: 'Supervisor created',

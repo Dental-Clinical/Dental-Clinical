@@ -63,8 +63,6 @@ export class SessionsService {
       .where('userId = :userId', { userId })
       .execute();
 
-    console.log(result.affected);
-
     return {
       deletedCount: result.affected ?? 0,
     };

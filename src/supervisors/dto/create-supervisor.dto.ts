@@ -1,5 +1,6 @@
 import { IsEmail, IsNotEmpty, IsPhoneNumber, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { CreateSupervisorScheduleDto } from 'src/supervisor-schedules/dto/create-supervisor-schedule.dto';
 
 export class CreateSupervisorDto {
   @ApiProperty({
@@ -35,4 +36,11 @@ export class CreateSupervisorDto {
   @IsPhoneNumber('SY')
   @IsString()
   phone: string;
+
+  @ApiProperty({
+    description: 'Supervisor schedule',
+    type: [CreateSupervisorScheduleDto],
+  })
+  @IsNotEmpty()
+  schedules: CreateSupervisorScheduleDto[];
 }

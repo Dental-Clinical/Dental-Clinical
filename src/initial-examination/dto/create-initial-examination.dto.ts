@@ -1,18 +1,22 @@
-import { IsNumber, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsPositive, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateInitialExaminationDto {
   @ApiProperty({ example: 1, description: 'Examination request ID' })
   @IsNumber()
+  @IsPositive()
   request_id: number;
 
   @ApiProperty({ example: 1, description: 'Examination appointment ID' })
+  @IsOptional()
   @IsNumber()
-  appointment_id: number;
+  @IsPositive()
+  appointment_id?: number;
 
-  @ApiProperty({ example: 1, description: 'Coordinator ID' })
+  @ApiProperty({ example: 1, description: 'Patient ID' })
   @IsNumber()
-  coordinator_id: number;
+  @IsPositive()
+  patient_id: number;
 
   @ApiProperty({ example: 1, description: 'Subject ID' })
   @IsNumber()

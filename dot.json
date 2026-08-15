@@ -1,49 +1,65 @@
 {
-  "clinicalCaseId": 3,
-  "plannedProcedures": [
-    {
-      "subjectProcedureId": 1,
-      "toothNumber": 43,
-      "answers": [
-        {
-          "questionId": 1,
-          "answer": "5"
-        },
-        {
-          "questionId": 2,
-          "answer": "true"
-        },
-        {
-          "questionId": 3,
-          "optionIds": [3]
-        },
-        {
-          "questionId": 8,
-          "optionIds": [4, 5]
-        }
-      ]
-    },
-    {
-      "subjectProcedureId": 4,
-      "toothNumber": 21,
-      "answers": [
-        {
-          "questionId": 1,
-          "answer": "5"
-        },
-        {
-          "questionId": 2,
-          "answer": "true"
-        },
-        {
-          "questionId": 3,
-          "optionIds": [3]
-        },
-        {
-          "questionId": 8,
-          "optionIds": [4, 5]
-        }
-      ]
-    }
-  ]
+  "patient": {
+    "full_name": "John Doe",
+    "phone": "0933673475",
+    "dateOfBirth": "1990-01-01",
+    "gender": "Male",
+    "allergies": "Penicillin, Aspirin",
+    "medical_history": "No significant medical history",
+    "current_medications": "Metformin 500mg"
+  },
+  "caseInfo": {
+    "subjectId": 1,
+    "plannedProcedures": [
+      {
+        "subjectProcedureId": 1,
+        "toothNumber": 43,
+        "answers": [
+          {
+            "questionId": 1,
+            "answer": "5"
+          },
+          {
+            "questionId": 2,
+            "answer": "true"
+          },
+          {
+            "questionId": 3,
+            "optionIds": [3]
+          },
+          {
+            "questionId": 8,
+            "optionIds": [4, 5]
+          }
+        ],
+        "notes": "This is a note"
+      },
+      {
+        "subjectProcedureId": 4,
+        "toothNumber": 21,
+        "answers": [
+          {
+            "questionId": 1,
+            "answer": "5"
+          },
+          {
+            "questionId": 2,
+            "answer": "true"
+          },
+          {
+            "questionId": 3,
+            "optionIds": [3]
+          },
+          {
+            "questionId": 8,
+            "optionIds": [4, 5]
+          }
+        ]
+      }
+    ]
+  },
+  "appointment": {
+    "appointmentDate": "2026-08-16",
+    "appointmentStart": "11:00"
+  }
 }

@@ -33,12 +33,12 @@ export class SubjectDiagnosisAnswer {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => DiagnosisSubmission, (submission) => submission.answers, {
-    nullable: false,
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'diagnosis_submission_id' })
-  diagnosisSubmission: DiagnosisSubmission;
+  //@ManyToOne(() => DiagnosisSubmission, (submission) => submission.answers, {
+  //  nullable: false,
+  //  onDelete: 'CASCADE',
+  //})
+  //@JoinColumn({ name: 'diagnosis_submission_id' })
+  //diagnosisSubmission: DiagnosisSubmission;
 
   @ManyToOne(() => PlannedProcedures, {
     nullable: false,

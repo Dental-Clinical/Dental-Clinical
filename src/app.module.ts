@@ -50,6 +50,7 @@ import { MaterialsModule } from './materials/materials.module';
 import { SubjectDiagnosisModule } from './subject-diagnosis/subject-diagnosis.module';
 import { FcmTokensModule } from './fcm-tokens/fcm-tokens.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { DentalAiModule } from './dental-ai/dental-ai.module';
 
 const ENV = process.env.NODE_ENV;
 @Module({
@@ -113,6 +114,7 @@ const ENV = process.env.NODE_ENV;
     SubjectDiagnosisModule,
     FcmTokensModule,
     NotificationsModule,
+    DentalAiModule,
   ],
   controllers: [AppController],
   providers: [

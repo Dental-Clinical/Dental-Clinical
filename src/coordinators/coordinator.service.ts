@@ -27,7 +27,7 @@ export class CoordinatorService {
     private readonly coordinatorRepository: Repository<Coordinator>,
     @InjectRepository(ExaminationAppointment)
     private readonly examinationAppointmentRepository: Repository<ExaminationAppointment>,
-  ) { }
+  ) {}
   async createCoordinator(dto: CreateCoordinatorDto) {
     return await this.dataSource.transaction(async (manager) => {
       dto.email = dto.email.trim().toLowerCase();

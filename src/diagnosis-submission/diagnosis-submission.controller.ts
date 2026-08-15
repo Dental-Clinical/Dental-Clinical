@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -30,6 +31,8 @@ import {
   GetDiagnosisSubmissionResponseDto,
   SubmitDiagnosisResponseDto,
 } from './dto/diagnosis-submission-response.dto';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 @ApiTags('Diagnosis Submission')
 @ApiBearerAuth('JWT-auth')
@@ -124,10 +127,38 @@ export class DiagnosisSubmissionController {
     description: 'Clinical case is not ready for diagnosis submission',
   })
   async submitDiagnosis(
-    @Body() dto: CreateDiagnosisSubmissionDto,
+    @Body('data') data: string,
     @CurrentUser() user: AuthenticatedUser,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
+    let dto: CreateDiagnosisSubmissionDto;
+
+    if (!data) {
+      throw new BadRequestException('The data field is required.');
+    }
+
+    let parsedData: unknown;
+
+    try {
+      parsedData = JSON.parse(data);
+    } catch {
+      throw new BadRequestException('The data field must contain valid JSON.');
+    }
+
+    dto = plainToInstance(CreateDiagnosisSubmissionDto, parsedData);
+
+    const errors = await validate(dto, {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
+
+    if (errors.length > 0) {
+      const messages = errors.flatMap((error) =>
+        Object.values(error.constraints ?? {}),
+      );
+      throw new BadRequestException(messages);
+    }
+
     return await this.diagnosisSubmissionService.submitDiagnosis(
       dto,
       user,

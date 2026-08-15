@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { StudentStudyYearDto } from './student-response.dto';
+import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status.enum';
 
 class SupervisedStudentNameDto {
   @ApiProperty({ example: 1 })
@@ -42,6 +43,29 @@ class SupervisedStudentProcedureDto {
   required: number;
 }
 
+class SupervisedStudentCaseDto {
+  @ApiProperty({ example: 12 })
+  id: number;
+
+  @ApiProperty({ example: 'Layla Haddad' })
+  patientName: string;
+
+  @ApiProperty({
+    enum: ClinicalCaseStatus,
+    example: ClinicalCaseStatus.TREATMENT_IN_PROGRESS,
+  })
+  status: ClinicalCaseStatus;
+
+  @ApiProperty({
+    example: 3,
+    description: 'Treatment sessions recorded on this case',
+  })
+  sessionCount: number;
+
+  @ApiProperty({ description: 'Case creation timestamp' })
+  createdAt: Date;
+}
+
 class SupervisedStudentDetailSubjectDto {
   @ApiProperty({ example: 2 })
   id: number;
@@ -75,6 +99,13 @@ class SupervisedStudentDetailSubjectDto {
     description: 'Active procedures this subject requires',
   })
   procedures: SupervisedStudentProcedureDto[];
+
+  @ApiProperty({
+    type: [SupervisedStudentCaseDto],
+    description:
+      "The student's cases in this subject under this supervisor, newest first",
+  })
+  cases: SupervisedStudentCaseDto[];
 }
 
 export class SupervisedStudentDetailResponseDto {

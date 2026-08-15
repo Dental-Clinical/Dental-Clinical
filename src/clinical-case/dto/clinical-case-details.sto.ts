@@ -7,7 +7,6 @@ export enum Gender {
   FEMALE = 'female',
 }
 
-
 export function toGender(value: string | null | undefined): Gender | null {
   const normalized = value?.toLowerCase();
   return normalized === Gender.MALE || normalized === Gender.FEMALE
@@ -67,6 +66,9 @@ export class ClinicalCaseDetailsSubjectDto {
 
   @ApiProperty({ example: 'Operative Dentistry' })
   name: string;
+
+  @ApiProperty({ example: true })
+  requiresDentalChart: boolean;
 }
 
 export class ClinicalCaseDetailsDto {
@@ -116,8 +118,20 @@ export class AssignedClinicalCaseDetailsDto {
   @ApiProperty({ example: 'Ahmad Srour' })
   patient: string;
 
-  @ApiProperty({ example: 'Operative Dentistry' })
-  subject: string;
+  @ApiProperty({
+    description: 'The subject of the clinical case',
+    type: Object,
+    example: {
+      id: 1,
+      name: 'Endodontics',
+      requiresDentalChart: true,
+    },
+  })
+  subject: {
+    id: number;
+    name: string;
+    requiresDentalChart: boolean;
+  };
 
   @ApiProperty({
     example: 'Section A',

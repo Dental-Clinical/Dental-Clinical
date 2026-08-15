@@ -14,6 +14,9 @@ export interface CaseViewPolicy {
   includeTreatingStudent: boolean;
   /** the root supervisorNotes[] — internal feedback about the student */
   includeSupervisorNotes: boolean;
+  includePatientInformation: boolean; // patientInfo / patientMedicalHistory / patientDentalHistory
+  /** the root evaluation — the student's grade for the case */
+  includeEvaluation: boolean;
 }
 
 export const CASE_VIEW_POLICY: Record<CaseViewerRole, CaseViewPolicy> = {
@@ -21,15 +24,21 @@ export const CASE_VIEW_POLICY: Record<CaseViewerRole, CaseViewPolicy> = {
     includePatientIdentity: true,
     includeTreatingStudent: false,
     includeSupervisorNotes: true,
+    includePatientInformation: false,
+    includeEvaluation: true,
   },
   [UserRole.PATIENT]: {
     includePatientIdentity: false,
     includeTreatingStudent: true,
     includeSupervisorNotes: false,
+    includePatientInformation: false,
+    includeEvaluation: false,
   },
   [UserRole.SUPERVISOR]: {
     includePatientIdentity: true,
     includeTreatingStudent: true,
     includeSupervisorNotes: true,
+    includePatientInformation: true,
+    includeEvaluation: true,
   },
 };

@@ -13,6 +13,12 @@ import { UpdateSubjectDto } from './dto/update-subject.dto';
 import { GetSubjectsQueryDto } from './dto/get-subjects-query.dto';
 import { GetSubjectMaterialsResponseDto } from './dto/get-subject-materials-response.dto';
 import { Material } from 'src/materials/materials.entity';
+import { SectionSubject } from 'src/section-subject/section-subject.entity';
+import { Supervisor } from 'src/supervisors/supervisor.entity';
+import {
+  GetSupervisedSubjectsResponseDto,
+  SupervisedSubjectItemDto,
+} from './dto/get-supervised-subjects-response.dto';
 
 @Injectable()
 export class SubjectsService {
@@ -25,6 +31,10 @@ export class SubjectsService {
     private readonly clinicRepository: Repository<Clinic>,
     @InjectRepository(Material)
     private readonly materialRepository: Repository<Material>,
+    @InjectRepository(SectionSubject)
+    private readonly sectionSubjectRepository: Repository<SectionSubject>,
+    @InjectRepository(Supervisor)
+    private readonly supervisorRepository: Repository<Supervisor>,
   ) {}
 
   async getSubjects(dto: GetSubjectsQueryDto) {
@@ -343,5 +353,74 @@ export class SubjectsService {
         materialName: material.name,
       })),
     };
+  }
+
+  async getSupervisedSubjects(
+    userId: number,
+  ): Promise<GetSupervisedSubjectsResponseDto> {
+    const supervisor = await this.supervisorRepository.findOne({
+      where: { user: { id: userId } },
+    });
+
+    if (!supervisor) {
+      throw new NotFoundException('Supervisor not found');
+    }
+
+    const assignments = await this.sectionSubjectRepository.find({
+      where: {
+        supervisor: { id: supervisor.id },
+        subject: { is_active: true },
+        academicYear: { is_active: true },
+      },
+      relations: {
+        section: { clinic: true },
+        subject: { subjectProcedures: true },
+        academicYear: true,
+      },
+    });
+
+    const subjectsById = new Map<number, SupervisedSubjectItemDto>();
+
+    for (const assignment of assignments) {
+      const { subject, section, academicYear } = assignment;
+
+      let supervisedSubject = subjectsById.get(subject.id);
+      if (!supervisedSubject) {
+        supervisedSubject = {
+          subjectId: subject.id,
+          subjectName: subject.name,
+          shortName: subject.shortName,
+          requiresDentalChart: subject.requiresDentalChart,
+          academicYear: {
+            id: academicYear.id,
+            label: academicYear.label,
+          },
+          sections: [],
+          procedures: subject.subjectProcedures
+            .filter((procedure) => procedure.is_active)
+            .map((procedure) => ({
+              procedureId: procedure.id,
+              procedureName: procedure.name,
+              requiredCount: procedure.required_count,
+              description: procedure.description,
+            })),
+        };
+        subjectsById.set(subject.id, supervisedSubject);
+      }
+
+      if (
+        !supervisedSubject.sections.some(
+          (existing) => existing.sectionId === section.id,
+        )
+      ) {
+        supervisedSubject.sections.push({
+          sectionId: section.id,
+          sectionName: section.name,
+          clinic: { id: section.clinic.id, name: section.clinic.name },
+        });
+      }
+    }
+
+    return { subjects: [...subjectsById.values()] };
   }
 }

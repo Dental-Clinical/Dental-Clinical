@@ -59,6 +59,90 @@ export class TreatmentSessionsService {
     @InjectRepository(Material)
     private readonly materialRepository: Repository<Material>,
   ) {}
+  public async treatmentSessionSummary(
+    userId: number,
+    treatmentSessionId: number,
+  ) {
+    const student = await this.studentService.findByUserId(userId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    const treatmentSession = await this.treatmentSessionRepository.findOne({
+      where: { id: treatmentSessionId },
+      relations: {
+        clinicalCase: { assignedStudent: true },
+        clinicalAppointment: true,
+        sessionProcedures: { plannedProcedure: { subjectProcedure: true } },
+      },
+    });
+    if (!treatmentSession) {
+      throw new NotFoundException('Treatment session not found');
+    }
+    if (treatmentSession.clinicalCase.assignedStudent.id !== student.id) {
+      throw new ConflictException(
+        'Treatment session does not belong to this student',
+      );
+    }
+    return {
+      id: treatmentSession.id,
+      title: treatmentSession.title,
+      appointmentDate: treatmentSession.clinicalAppointment
+        ? DateTimeUtils.toDateString(
+            treatmentSession.clinicalAppointment.appointmentDate,
+          )
+        : null,
+      treatmentItems: treatmentSession.sessionProcedures.map((sp) => ({
+        procedureName: sp.plannedProcedure.subjectProcedure.name,
+        toothNumber: sp.plannedProcedure.toothNumber,
+        status: sp.plannedProcedure.status,
+      })),
+      notes: treatmentSession.studentNotes,
+    };
+  }
+  public async getTreatmentSessionsForClinicalCase(
+    userId: number,
+    clinicalCaseId: number,
+  ) {
+    const student = await this.studentService.findByUserId(userId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    const clinicalCase = await this.clinicalCaseRepository.findOne({
+      where: { id: clinicalCaseId, assignedStudent: { id: student.id } },
+      relations: {
+        assignedStudent: true,
+        treatmentSessions: {
+          clinicalAppointment: true,
+        },
+      },
+    });
+    if (!clinicalCase) {
+      throw new NotFoundException('Clinical case not found');
+    }
+
+    if (clinicalCase.assignedStudent.id !== student.id) {
+      throw new ConflictException(
+        'Clinical case does not belong to this student',
+      );
+    }
+    return clinicalCase.treatmentSessions.map((session) => {
+      return {
+        sessionId: session.id,
+
+        title: session.title,
+
+        status: session.status,
+        notes: session.studentNotes,
+        appointmentDate: session.clinicalAppointment
+          ? DateTimeUtils.toDateString(
+              session.clinicalAppointment.appointmentDate,
+            )
+          : null,
+
+        startTime: session.clinicalAppointment?.appointmentStart ?? null,
+      };
+    });
+  }
   public async createTreatmentSession(
     userId: number,
     dto: CreateTreatmentSessionDto,
@@ -129,22 +213,25 @@ export class TreatmentSessionsService {
         );
       }
 
-      const duplicateAppointment = await manager
-        .getRepository(ClinicalAppointment)
-        .exists({
-          where: {
-            clinicalCase: { id: lockedClinicalCase.id },
-            appointmentDate: new Date(dto.appointmentDate!),
-            appointmentStart: dto.appointmentStart,
-            status: ClinicalAppointmentStatus.SCHEDULED,
-          },
-        });
+      if (dto.appointmentDate && dto.appointmentStart) {
+        const duplicateAppointment = await manager
+          .getRepository(ClinicalAppointment)
+          .exists({
+            where: {
+              clinicalCase: { id: lockedClinicalCase.id },
+              appointmentDate: new Date(dto.appointmentDate),
+              appointmentStart: dto.appointmentStart,
+              status: ClinicalAppointmentStatus.SCHEDULED,
+            },
+          });
 
-      if (duplicateAppointment) {
-        throw new ConflictException(
-          'An appointment already exists for this date and time.',
-        );
+        if (duplicateAppointment) {
+          throw new ConflictException(
+            'An appointment already exists for this date and time.',
+          );
+        }
       }
+
       const existingSession = await manager
         .getRepository(TreatmentSession)
         .exists({
@@ -156,6 +243,7 @@ export class TreatmentSessionsService {
       const isFirstSession = !existingSession;
 
       let appointment: ClinicalAppointment | undefined;
+
       if (isFirstSession) {
         appointment = lockedClinicalCase.clinicalAppointments.find(
           (a) =>
@@ -348,11 +436,11 @@ export class TreatmentSessionsService {
           'Treatment session can only be started within 15 minutes before the scheduled appointment.',
         );
       }
-      if (now > new Date(treatmentSession.clinicalAppointment.appointmentEnd)) {
-        throw new ConflictException(
-          'Treatment session cannot be started after the scheduled appointment end time.',
-        );
-      }
+      // if (now > new Date(treatmentSession.clinicalAppointment.appointmentEnd)) {
+      //   throw new ConflictException(
+      //     'Treatment session cannot be started after the scheduled appointment end time.',
+      //   );
+      // }
 
       const activeSessionExists = await manager
         .getRepository(TreatmentSession)

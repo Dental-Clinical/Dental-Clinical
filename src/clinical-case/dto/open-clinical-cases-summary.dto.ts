@@ -9,8 +9,21 @@ export class OpenCaseDto {
   id: number;
   @ApiProperty({ example: 'Ahmad Srour' })
   patient: string;
-  @ApiProperty({ example: 'Operative Dentistry' })
-  subject: string;
+
+  @ApiProperty({
+    description: 'The subject of the clinical case',
+    type: Object,
+    example: {
+      id: 1,
+      name: 'Endodontics',
+      requiresDentalChart: true,
+    },
+  })
+  subject: {
+    id: number;
+    name: string;
+    requiresDentalChart: boolean;
+  };
   @ApiProperty({ example: 'Dr. John Doe' })
   coordinator: string;
   @ApiProperty({ example: 'Toothache' })

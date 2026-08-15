@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PlannedProceduresStatus } from 'src/planned-procedures/enum/planned-procedures-status.enum';
 import { TreatmentSessionStatus } from 'src/treatment-sessions/enums/treatment-session-status.enum';
+import { Grade } from 'src/clinical-case-evaluation/enums/grade.enum';
 import { ClinicalCaseStatus } from '../enums/clinical-case-status.enum';
 
 export class NextSessionDto {
@@ -46,10 +47,18 @@ export class CaseInfoDto {
 
   @ApiProperty({
     description: 'The subject of the clinical case',
-    type: String,
-    example: 'Endodontics',
+    type: Object,
+    example: {
+      id: 1,
+      name: 'Endodontics',
+      requiresDentalChart: true,
+    },
   })
-  subject: string;
+  subject: {
+    id: number;
+    name: string;
+    requiresDentalChart: boolean;
+  };
 
   @ApiProperty({
     description:
@@ -175,25 +184,11 @@ export class CaseMediaDto {
   id: number;
 
   @ApiProperty({
-    description: 'The MIME type of the case media',
-    type: String,
-    example: 'image/jpeg',
-  })
-  type: string;
-
-  @ApiProperty({
     description: 'The URL of the case media',
     type: String,
     example: 'https://example.com/media/case1/image1.jpg',
   })
   url: string;
-
-  @ApiProperty({
-    description: 'The original file name of the case media',
-    type: String,
-    example: 'periapical-36.jpg',
-  })
-  fileName: string;
 
   @ApiProperty({
     description: 'The description of the case media',
@@ -205,7 +200,8 @@ export class CaseMediaDto {
 
   @ApiProperty({
     description: 'The date and time the case media was uploaded',
-    type: Date,
+    type: String,
+    format: 'date-time',
     example: '2023-10-15T10:00:00.000Z',
   })
   takenAt: Date;
@@ -295,6 +291,35 @@ export class SupervisorNoteDto {
 }
 
 /**
+ * A case's final evaluation. `ClinicalCase.evaluation` is a one-to-one, so a
+ * case has at most one — and none at all until the supervisor grades it.
+ */
+export class CaseEvaluationDto {
+  @ApiProperty({ description: 'Evaluation ID', example: 1 })
+  id: number;
+
+  @ApiProperty({
+    enum: Grade,
+    description: 'Grade the supervisor awarded the case',
+    example: Grade.A_MINUS,
+  })
+  grade: Grade;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Supervisor comment, if any',
+    example: 'Very good diagnosis and treatment execution.',
+  })
+  comment: string | null;
+
+  @ApiProperty({
+    description: 'When the case was evaluated',
+    example: '2026-07-31T00:00:00.000Z',
+  })
+  createdAt: Date;
+}
+
+/**
  * The widest shape of the case details view. Each actor sees a subset of it,
  * governed by CASE_VIEW_POLICY — see the per-actor DTOs for the narrowed
  * contracts published on each route.
@@ -336,4 +361,12 @@ export class CaseDetailsViewDto {
     type: [SupervisorNoteDto],
   })
   supervisorNotes?: SupervisorNoteDto[];
+
+  @ApiPropertyOptional({
+    description:
+      'The final evaluation of the case, or null while it is ungraded. Omitted entirely from the patient view.',
+    type: CaseEvaluationDto,
+    nullable: true,
+  })
+  evaluation?: CaseEvaluationDto | null;
 }

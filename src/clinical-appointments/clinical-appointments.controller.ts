@@ -44,7 +44,6 @@ import {
 @Controller('clinical-appointments')
 export class ClinicalAppointmentsController {
   constructor(
-    private readonly supervisorAvailabilityService: SupervisorAvailabilityService,
     private readonly clinicalAppointmentService: ClinicalAppointmentsService,
   ) {}
 
@@ -70,7 +69,7 @@ export class ClinicalAppointmentsController {
     return await this.clinicalAppointmentService.getAvailableSlots(
       currentUser,
       new Date(dto.date),
-      dto.clinicalCaseId,
+      dto.subjectId,
     );
   }
 

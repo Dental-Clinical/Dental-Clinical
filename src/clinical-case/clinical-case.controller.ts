@@ -1,4 +1,15 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
 import { ClinicalCaseService } from './clinical-case.service';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/constants/user-roles';
@@ -24,12 +35,16 @@ import { StudentAssignedCaseDetailsDto } from './dto/student-assigned-case-detai
 import { PatientCaseDetailsDto } from './dto/patient-case-details.dto';
 import { PatientCasesSummaryDto } from './dto/patient-cases-summary.dto';
 import { SupervisorCaseDetailsDto } from './dto/supervisor-case-details.dto';
+import { CreateWalkInClinicalCaseDto } from './dto/create-walk-in-clinical-case.dto';
+import { FileUploadInterceptor } from 'src/common/interceptors/files.interceptor';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 
 @ApiTags('Clinical Cases')
 @ApiBearerAuth('JWT-auth')
 @Controller('clinical-cases')
 export class ClinicalCaseController {
-  constructor(private readonly clinicalCaseService: ClinicalCaseService) { }
+  constructor(private readonly clinicalCaseService: ClinicalCaseService) {}
   @Get()
   @ApiOperation({ summary: 'Get all clinical cases, optionally filtered' })
   @ApiOkResponse({
@@ -58,8 +73,7 @@ export class ClinicalCaseController {
   }
   @Get('assigned') // after being assigned
   @ApiOperation({
-    summary:
-      '[Student] Get assigned clinical cases for the student study year',
+    summary: '[Student] Get assigned clinical cases for the student study year',
   })
   @ApiOkResponse({
     type: OpenCasesSummary,
@@ -174,29 +188,73 @@ export class ClinicalCaseController {
       user.userId,
     );
   }
-  @Get('supervisor/:id')
-  @ApiOperation({
-    summary:
-      '[Supervisor] Get a clinical case supervised by the current supervisor',
-  })
-  @ApiParam({ name: 'id', type: Number, description: 'Clinical case ID' })
-  @ApiOkResponse({
-    type: SupervisorCaseDetailsDto,
-    description: 'Details of a clinical case',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Clinical Case is supervised by another supervisor',
-  })
-  @ApiResponse({ status: 404, description: 'Clinical Case not found' })
-  @Roles([UserRole.SUPERVISOR])
-  async getSupervisorClinicalCase(
-    @Param('id', ParseIntPipe) id: number,
+
+  @Post('walk-in')
+  @Roles([UserRole.STUDENT])
+  @UseInterceptors(
+    FileUploadInterceptor({
+      fieldName: 'images',
+      maxCount: 10,
+    }),
+  )
+  async createWalkInClinicalCase(
+    @Body('data') data: string,
     @CurrentUser() user: AuthenticatedUser,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
-    return await this.clinicalCaseService.findSupervisorCaseDetails(
-      id,
+    let dto: CreateWalkInClinicalCaseDto;
+
+    if (!data) {
+      throw new BadRequestException('The data field is required.');
+    }
+
+    let parsedData: unknown;
+
+    try {
+      parsedData = JSON.parse(data);
+    } catch {
+      throw new BadRequestException('The data field must contain valid JSON.');
+    }
+
+    dto = plainToInstance(CreateWalkInClinicalCaseDto, parsedData);
+
+    const errors = await validate(dto, {
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    });
+
+    if (errors.length > 0) {
+      const messages = this.extractValidationMessages(errors);
+
+      throw new BadRequestException(messages);
+    }
+    return await this.clinicalCaseService.createWalkInClinicalCase(
       user.userId,
+      dto,
+      files,
     );
+  }
+  private extractValidationMessages(errors: any[]): string[] {
+    const messages: any[] = [];
+
+    function traverse(error: any) {
+      // Check if current node has constraints
+      if (error.constraints) {
+        messages.push(...Object.values(error.constraints));
+      }
+
+      // Recursively traverse children
+      if (error.children && Array.isArray(error.children)) {
+        for (const child of error.children) {
+          traverse(child);
+        }
+      }
+    }
+
+    for (const error of errors) {
+      traverse(error);
+    }
+
+    return messages;
   }
 }

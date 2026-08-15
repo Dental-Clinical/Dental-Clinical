@@ -73,16 +73,6 @@ export class DiagnosisSubmission {
   )
   supervisorReview: SupervisorReview;
 
-  @ApiPropertyOptional({
-    type: () => [SubjectDiagnosisAnswer],
-    description: 'Answers to subject diagnosis questions',
-  })
-  @OneToMany(
-    () => SubjectDiagnosisAnswer,
-    (answer) => answer.diagnosisSubmission,
-  )
-  answers: SubjectDiagnosisAnswer[];
-
   @ApiProperty({
     description: 'Submission status',
     enum: DiagnosisSubmissionStatus,

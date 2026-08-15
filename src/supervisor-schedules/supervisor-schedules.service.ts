@@ -1,18 +1,22 @@
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateSupervisorScheduleDto } from './dto/create-supervisor-schedule.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SupervisorSchedule } from './supervisor-schedules.entity';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { DayOfWeek } from 'src/constants/day-of-week';
 import { UpdateSupervisorScheduleDto } from './dto/update-supervisor-schedule.dto';
 import { SupervisorService } from 'src/supervisors/supervisor.service';
+import { GetSupervisorScheduleResponseDto } from './dto/supervisor-schedule-response.dto';
+import { Supervisor } from 'src/supervisors/supervisor.entity';
 
 @Injectable()
 export class SupervisorScheduleService {
@@ -20,35 +24,38 @@ export class SupervisorScheduleService {
   constructor(
     @InjectRepository(SupervisorSchedule)
     private readonly supervisorScheduleRepository: Repository<SupervisorSchedule>,
+    @Inject(forwardRef(() => SupervisorService))
     private readonly supervisorService: SupervisorService,
   ) {}
-  async createSchedule(userId: number, dto: CreateSupervisorScheduleDto) {
-    dto.day_of_week = dto.day_of_week.toLowerCase();
+  async createSchedule(
+    supervisor: Supervisor,
+    dto: CreateSupervisorScheduleDto[],
+    manager: EntityManager,
+  ) {
+    for (const scheduleDto of dto) {
+      scheduleDto.day_of_week = scheduleDto.day_of_week.toLowerCase();
 
-    const supervisor = await this.supervisorService.findByUserId(userId);
-    if (!supervisor) {
-      throw new NotFoundException('Supervisor not found');
-    }
-
-    const schedule = this.supervisorScheduleRepository.create({
-      ...dto,
-      supervisor,
-    });
-
-    await this.validateSchedule(supervisor.id, schedule);
-
-    try {
-      const savedSchedule =
-        await this.supervisorScheduleRepository.save(schedule);
-      return {
-        message: 'Coordinator schedule created successfully',
-        data: savedSchedule,
-      };
-    } catch (error: any) {
-      if (error.code === '23505') {
-        throw new ConflictException('Schedule already exists');
+      if (!supervisor) {
+        throw new NotFoundException('Supervisor not found');
       }
-      throw error;
+
+      const schedule = this.supervisorScheduleRepository.create({
+        ...scheduleDto,
+        supervisor,
+      });
+
+      await this.validateSchedule(supervisor.id, schedule);
+
+      try {
+        const savedSchedule = await manager
+          .getRepository(SupervisorSchedule)
+          .save(schedule);
+      } catch (error: any) {
+        if (error.code === '23505') {
+          throw new ConflictException('Schedule already exists');
+        }
+        throw error;
+      }
     }
   }
   async getMySchedule(userId: number) {
@@ -79,8 +86,9 @@ export class SupervisorScheduleService {
     schedules.sort((a, b) => dayOrder[a.day_of_week] - dayOrder[b.day_of_week]);
     return {
       message: 'Coordinator schedules retrieved successfully',
-      data: {
+      schedule: {
         workingDays: schedules.map((schedule) => ({
+          id: schedule.id,
           day: schedule.day_of_week,
           workingHours: schedule.start_time + ' - ' + schedule.end_time,
           isActive: schedule.is_active,
@@ -88,26 +96,21 @@ export class SupervisorScheduleService {
       },
     };
   }
-  async updateSchedule(
-    userId: number,
-    dto: UpdateSupervisorScheduleDto,
-    scheduleId: number,
-  ) {
-    const supervisor = await this.supervisorService.findByUserId(userId);
-    if (!supervisor) {
-      throw new NotFoundException('Supervisor not found');
-    }
-
+  async updateSchedule(dto: UpdateSupervisorScheduleDto, scheduleId: number) {
     const schedule = await this.supervisorScheduleRepository.findOne({
       where: {
         id: scheduleId,
-        supervisor: { id: supervisor.id },
+      },
+      relations: {
+        supervisor: true,
       },
     });
 
     if (!schedule) {
       throw new NotFoundException('Schedule not found');
     }
+
+    const supervisor = schedule.supervisor;
 
     Object.assign(schedule, dto);
 
@@ -160,6 +163,7 @@ export class SupervisorScheduleService {
     supervisorId: number,
     schedule: SupervisorSchedule,
     excludeScheduleId?: number,
+    manager?: EntityManager,
   ) {
     const duration = this.calculateDuration(
       schedule.start_time,
@@ -173,14 +177,16 @@ export class SupervisorScheduleService {
     if (duration > this.MAX_WORKING_MINUTES) {
       throw new BadRequestException('Working period cannot exceed 12 hours');
     }
-    const query = this.supervisorScheduleRepository
-      .createQueryBuilder('schedule')
-      .where('schedule.supervisor_id = :supervisorId', {
-        supervisorId,
-      })
-      .andWhere('schedule.day_of_week = :day', {
-        day: schedule.day_of_week,
-      });
+    const query = manager
+      ? manager.getRepository(SupervisorSchedule).createQueryBuilder('schedule')
+      : this.supervisorScheduleRepository
+          .createQueryBuilder('schedule')
+          .where('schedule.supervisor_id = :supervisorId', {
+            supervisorId,
+          })
+          .andWhere('schedule.day_of_week = :day', {
+            day: schedule.day_of_week,
+          });
 
     if (excludeScheduleId) {
       query.andWhere('schedule.id != :scheduleId', {
@@ -211,5 +217,47 @@ export class SupervisorScheduleService {
         supervisor: true,
       },
     });
+  }
+  async getAllSchedules() {
+    const schedules = await this.supervisorScheduleRepository.find({
+      relations: {
+        supervisor: { user: true },
+      },
+    });
+    return schedules.map((schedule) => ({
+      id: schedule.id,
+      supervisor: {
+        id: schedule.supervisor.id,
+        full_name: schedule.supervisor.user.full_name,
+      },
+      day_of_week: schedule.day_of_week,
+      start_time: schedule.start_time,
+      end_time: schedule.end_time,
+      is_active: schedule.is_active,
+    }));
+  }
+  async getScheduleById(scheduleId: number) {
+    const schedule = await this.supervisorScheduleRepository.findOne({
+      where: { id: scheduleId },
+      relations: {
+        supervisor: true,
+      },
+    });
+
+    if (!schedule) {
+      throw new NotFoundException('Schedule not found');
+    }
+
+    return {
+      message: 'Supervisor schedule retrieved successfully',
+      schedule: {
+        id: schedule.id,
+        supervisor_id: schedule.supervisor.id,
+        day_of_week: schedule.day_of_week,
+        start_time: schedule.start_time,
+        end_time: schedule.end_time,
+        is_active: schedule.is_active,
+      },
+    };
   }
 }

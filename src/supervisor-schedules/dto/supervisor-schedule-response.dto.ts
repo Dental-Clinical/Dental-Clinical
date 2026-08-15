@@ -28,14 +28,13 @@ export class SupervisorScheduleResponseDto {
 }
 
 export class WorkingDayResponseDto {
+  @ApiProperty({ example: 1 })
+  id: number;
   @ApiProperty({ example: 'sunday' })
   day: string;
 
   @ApiProperty({ example: '08:00 - 12:00' })
   workingHours: string;
-
-  @ApiProperty({ example: 30 })
-  slotDuration: number;
 
   @ApiProperty({ example: true })
   isActive: boolean;

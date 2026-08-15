@@ -1176,4 +1176,38 @@ export class ClinicalCaseService {
       );
     }
   }
+
+  public async cancelClinicalCase(userId: number, id: number) {
+    const student = await this.studentService.findByUserId(userId);
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+
+    const clinicalCase = await this.clinicalCaseRepository.findOne({
+      where: { id },
+      relations: { assignedStudent: true },
+    });
+    if (!clinicalCase) {
+      throw new NotFoundException('Clinical case not found');
+    }
+
+    if (clinicalCase.status !== ClinicalCaseStatus.ASSIGNED) {
+      throw new ConflictException(
+        'Only an assigned clinical case can be cancelled',
+      );
+    }
+
+    if (clinicalCase.assignedStudent?.id !== student.id) {
+      throw new ForbiddenException("You're not authorized to cancel this case");
+    }
+
+    await this.clinicalCaseRepository.update(id, {
+      status: ClinicalCaseStatus.OPEN,
+      assignedStudent: () => 'NULL',
+    });
+
+    return {
+      message: 'Cancelled successfully',
+    };
+  }
 }

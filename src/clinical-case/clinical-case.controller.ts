@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
   UploadedFiles,
@@ -254,6 +255,36 @@ export class ClinicalCaseController {
       files,
     );
   }
+
+  @Patch('my/:id/cancel')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary: '[Student] Cancel an assigned clinical case',
+    description:
+      'Releases a case the current student picked up. The case returns to ' +
+      'open and unassigned so another student can take it.',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Clinical case ID' })
+  @ApiOkResponse({ description: 'Clinical case cancelled successfully' })
+  @ApiResponse({
+    status: 403,
+    description: 'Clinical case is assigned to another student',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Student or clinical case not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Clinical case is not in the assigned state',
+  })
+  async cancelClinicalCase(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.clinicalCaseService.cancelClinicalCase(user.userId, id);
+  }
+
   private extractValidationMessages(errors: any[]): string[] {
     const messages: any[] = [];
 

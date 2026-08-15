@@ -35,6 +35,7 @@ import { GetSupervisorStudentsQueryDto } from './dto/get-supervisor-students-que
 import { PaginatedSupervisorStudentsResponseDto } from './dto/supervisor-student-response.dto';
 import { GetSupervisedStudentQueryDto } from './dto/get-supervised-student-query.dto';
 import { SupervisedStudentDetailResponseDto } from './dto/supervised-student-detail-response.dto';
+import { StudentProfileResponseDto } from './dto/student-profile-response.dto';
 
 @ApiTags('Students')
 @ApiBearerAuth('JWT-auth')
@@ -51,6 +52,21 @@ export class StudentController {
   })
   async getAllStudents(@Query() query: GetStudentsQueryDto) {
     return await this.studentService.getAllStudents(query);
+  }
+
+  @Get('profile')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary:
+      "[Student] Get the current student's profile: identity, academic standing, enrolled subjects and progress stats",
+  })
+  @ApiOkResponse({
+    type: StudentProfileResponseDto,
+    description: 'Student Profile',
+  })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  async getStudentProfile(@CurrentUser() user: AuthenticatedUser) {
+    return await this.studentService.getStudentProfile(user.userId);
   }
 
   @Post()

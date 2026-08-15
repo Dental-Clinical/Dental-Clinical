@@ -11,6 +11,7 @@ import { StudentAcademicYear } from 'src/student-academic-years/student-academic
 import { SubjectProcedures } from 'src/subject-procedures/subject-procedures.entity';
 import { StudentProgress } from 'src/student-progress/student-progress.entity';
 import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
+import { ClinicalCaseEvaluation } from 'src/clinical-case-evaluation/clinical-case-evaluation.entity';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
       SubjectProcedures,
       StudentProgress,
       ClinicalCase,
+      ClinicalCaseEvaluation,
     ]),
     forwardRef(() => UserModule),
     CommonModule,

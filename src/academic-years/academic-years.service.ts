@@ -18,7 +18,7 @@ export class AcademicYearsService {
     @InjectRepository(AcademicYear)
     private readonly academicYearRepository: Repository<AcademicYear>,
     private readonly dataSource: DataSource,
-  ) { }
+  ) {}
 
   async getAcademicYears(dto: GetAcademicYearsQueryDto) {
     const qb = this.academicYearRepository.createQueryBuilder('academicYear');
@@ -257,15 +257,17 @@ export class AcademicYearsService {
     }
   }
   async getActiveAcademicYear() {
-    const academicYear = await this.academicYearRepository.findOneBy({ is_active: true })
+    const academicYear = await this.academicYearRepository.findOneBy({
+      is_active: true,
+    });
     if (!academicYear) {
-      throw new NotFoundException("No Active Academic Year Found")
+      throw new NotFoundException('No Active Academic Year Found');
     }
-    const start_date = academicYear.start_date
-    const end_date = academicYear.end_date
+    const start_date = academicYear.start_date;
+    const end_date = academicYear.end_date;
     const academicYearString = `${new Date(start_date).getFullYear()}-${new Date(end_date).getFullYear()}`;
     return {
-      academicYear: academicYearString
-    }
+      academicYear: academicYearString,
+    };
   }
 }

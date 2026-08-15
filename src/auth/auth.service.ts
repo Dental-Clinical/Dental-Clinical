@@ -51,7 +51,7 @@ export class AuthService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly dataSource: DataSource,
     private readonly academicYearService: AcademicYearsService,
-  ) { }
+  ) {}
   // register patient
   public async register(
     registerDto: RegisterDto,
@@ -295,12 +295,15 @@ export class AuthService {
     });
 
     if (user.role === UserRole.STUDENT) {
-      const academicYear = await this.academicYearService.getActiveAcademicYear()
+      const academicYear =
+        await this.academicYearService.getActiveAcademicYear();
       if (!academicYear) {
-        throw new ForbiddenException("You can't log in when no Academic Year is active")
+        throw new ForbiddenException(
+          "You can't log in when no Academic Year is active",
+        );
       }
 
-      const studyYear = await this.studentService.getCurrentStudyYear(user.id)
+      const studyYear = await this.studentService.getCurrentStudyYear(user.id);
 
       return {
         accessToken,
@@ -312,7 +315,7 @@ export class AuthService {
           academicYear: academicYear.academicYear,
           studyYear: studyYear.name,
         },
-      }
+      };
     }
 
     return {

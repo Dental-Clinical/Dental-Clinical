@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ClinicalCaseService } from './clinical-case.service';
 import { ClinicalCaseController } from './clinical-case.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -12,6 +12,7 @@ import { SessionMaterial } from 'src/session-materials/session-materials.entity'
 import { PatientsModule } from 'src/patients/patients.module';
 import { ClinicalAppointmentsModule } from 'src/clinical-appointments/clinical-appointments.module';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
+import { InitialExaminationModule } from 'src/initial-examination/initial-examination.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
     PatientsModule,
     ClinicalAppointmentsModule,
     CloudinaryModule,
+    forwardRef(() => InitialExaminationModule),
   ],
   providers: [ClinicalCaseService],
   controllers: [ClinicalCaseController],

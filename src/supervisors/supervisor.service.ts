@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { CreateSupervisorDto } from './dto/create-supervisor.dto';
 import { Supervisor } from './supervisor.entity';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { PasswordService } from 'src/common/services/password.service';
 import { User } from 'src/users/user.entity';
 import { randomBytes } from 'crypto';
@@ -27,6 +27,8 @@ import {
   SupervisorDashboardResponseDto,
 } from './dto/supervisor-dashboard-response.dto';
 import { SupervisorAssignedCasesResponseDto } from './dto/supervisor-clinical-cases-response.dto';
+import { SupervisorDetailsResponseDto } from './dto/supervisor-details-response.dto';
+import { InjectRepository } from '@nestjs/typeorm';
 
 const CASE_STATUS_BUCKETS: Record<
   keyof DashboardCaseBucketsDto,
@@ -45,7 +47,9 @@ export class SupervisorService {
     private readonly dataSource: DataSource,
     private readonly whatsappService: WhatsappService,
     private readonly supervisorScheduleService: SupervisorScheduleService,
-  ) {}
+    @InjectRepository(Supervisor)
+    private readonly supervisorRepository: Repository<Supervisor>,
+  ) { }
   async getSupervisors() {
     const supervisors = await this.dataSource.getRepository(Supervisor).find({
       relations: {
@@ -157,11 +161,11 @@ export class SupervisorService {
         })),
         evaluation: clinicalCase.evaluation
           ? {
-              id: clinicalCase.evaluation.id,
-              grade: clinicalCase.evaluation.grade,
-              comment: clinicalCase.evaluation.comment ?? null,
-              createdAt: clinicalCase.evaluation.createdAt,
-            }
+            id: clinicalCase.evaluation.id,
+            grade: clinicalCase.evaluation.grade,
+            comment: clinicalCase.evaluation.comment ?? null,
+            createdAt: clinicalCase.evaluation.createdAt,
+          }
           : null,
       };
     });
@@ -424,5 +428,21 @@ export class SupervisorService {
         schedules: true,
       },
     });
+  }
+
+  async getSupervisorDetails(
+    id: number,
+  ): Promise<SupervisorDetailsResponseDto> {
+    const supervisor = await this.findById(id);
+    if (!supervisor) {
+      throw new NotFoundException('Supervisor not found');
+    }
+    return {
+      id: supervisor.id,
+      full_name: supervisor.user.full_name,
+      // Both columns are nullable despite the entity typing them as `string`.
+      email: supervisor.user.email ?? null,
+      phone: supervisor.user.phone ?? null,
+    };
   }
 }

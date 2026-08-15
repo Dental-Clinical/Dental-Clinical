@@ -26,6 +26,7 @@ import type { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.i
 import { SupervisorCaseDetailsDto } from 'src/clinical-case/dto/supervisor-case-details.dto';
 import { SupervisorDashboardResponseDto } from './dto/supervisor-dashboard-response.dto';
 import { SupervisorAssignedCasesResponseDto } from './dto/supervisor-clinical-cases-response.dto';
+import { SupervisorDetailsResponseDto } from './dto/supervisor-details-response.dto';
 import { ClinicalCaseService } from 'src/clinical-case/clinical-case.service';
 
 @ApiTags('Supervisors')
@@ -104,5 +105,21 @@ export class SupervisorController {
       id,
       user.userId,
     );
+  }
+  // Declared last on purpose: Nest matches routes in declaration order, so a
+  // bare ':id' above the 'my/...' routes would swallow them.
+  @Get(':id')
+  @Roles([UserRole.ADMIN, UserRole.COORDINATOR])
+  @ApiOperation({
+    summary: "[Admin/Coordinator] Get a supervisor's contact details",
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Supervisor ID' })
+  @ApiOkResponse({
+    type: SupervisorDetailsResponseDto,
+    description: 'Supervisor contact details',
+  })
+  @ApiResponse({ status: 404, description: 'Supervisor not found' })
+  public async getSupervisorDetails(@Param('id', ParseIntPipe) id: number) {
+    return await this.supervisorService.getSupervisorDetails(id);
   }
 }

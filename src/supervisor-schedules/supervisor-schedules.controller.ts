@@ -37,7 +37,7 @@ import {
 export class SupervisorScheduleController {
   constructor(
     private readonly supervisorScheduleService: SupervisorScheduleService,
-  ) {}
+  ) { }
 
   // @Post()
   // @Roles([UserRole.ADMIN])
@@ -58,8 +58,8 @@ export class SupervisorScheduleController {
   // }
 
   @Get()
-  @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: '[Admin] Get supervisor weekly schedule' })
+  @Roles([UserRole.SUPERVISOR])
+  @ApiOperation({ summary: '[Supervisor] Get supervisor weekly schedule' })
   @ApiOkResponse({
     type: GetSupervisorScheduleResponseDto,
     description: 'Supervisor schedule retrieved successfully',

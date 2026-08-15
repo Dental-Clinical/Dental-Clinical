@@ -16,11 +16,14 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
+  // Note: createNestApplication() does not apply the global pipes/interceptors
+  // registered in main.ts, so this asserts the raw controller shape rather than
+  // the ResponseInterceptor envelope.
   it('/ (GET)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
+      .expect({ message: 'Hello World!' });
   });
 
   afterEach(async () => {

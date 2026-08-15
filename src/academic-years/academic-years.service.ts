@@ -18,7 +18,7 @@ export class AcademicYearsService {
     @InjectRepository(AcademicYear)
     private readonly academicYearRepository: Repository<AcademicYear>,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async getAcademicYears(dto: GetAcademicYearsQueryDto) {
     const qb = this.academicYearRepository.createQueryBuilder('academicYear');
@@ -254,6 +254,18 @@ export class AcademicYearsService {
   ) {
     if (new Date(end_date).getTime() <= new Date(start_date).getTime()) {
       throw new BadRequestException('end_date must be after start_date');
+    }
+  }
+  async getActiveAcademicYear() {
+    const academicYear = await this.academicYearRepository.findOneBy({ is_active: true })
+    if (!academicYear) {
+      throw new NotFoundException("No Active Academic Year Found")
+    }
+    const start_date = academicYear.start_date
+    const end_date = academicYear.end_date
+    const academicYearString = `${new Date(start_date).getFullYear()}-${new Date(end_date).getFullYear()}`;
+    return {
+      academicYear: academicYearString
     }
   }
 }

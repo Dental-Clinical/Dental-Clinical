@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Inject,
@@ -31,6 +32,7 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { DataSource } from 'typeorm';
 import { UploadApiResponse } from 'cloudinary';
 import { Patient } from 'src/patients/patient.entity';
+import { AcademicYearsService } from 'src/academic-years/academic-years.service';
 
 @Injectable()
 export class AuthService {
@@ -48,6 +50,7 @@ export class AuthService {
     private readonly studentService: StudentService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly dataSource: DataSource,
+    private readonly academicYearService: AcademicYearsService,
   ) { }
   // register patient
   public async register(
@@ -263,7 +266,6 @@ export class AuthService {
   public async staffLogin(dto: StaffLoginDto) {
     const user = await this.findStaffByEmail(dto.email);
 
-    console.log("mohee")
     if (!user || !user.password_hash) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -291,6 +293,27 @@ export class AuthService {
       role: user.role,
       jti,
     });
+
+    if (user.role === UserRole.STUDENT) {
+      const academicYear = await this.academicYearService.getActiveAcademicYear()
+      if (!academicYear) {
+        throw new ForbiddenException("You can't log in when no Academic Year is active")
+      }
+
+      const studyYear = await this.studentService.getCurrentStudyYear(user.id)
+
+      return {
+        accessToken,
+        user: {
+          id: user.id,
+          full_name: user.full_name,
+          role: user.role,
+          name: user.full_name,
+          academicYear: academicYear.academicYear,
+          studyYear: studyYear.name,
+        },
+      }
+    }
 
     return {
       accessToken,

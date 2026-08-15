@@ -117,6 +117,51 @@ export class GetUpcomingAppointmentsResponseDto {
   data: UpcomingAppointmentDto[];
 }
 
+export class StudentUpcomingAppointmentDto {
+  @ApiProperty({ example: 1 })
+  appointmentId: number;
+
+  @ApiProperty({ example: 7 })
+  clinicalCaseId: number;
+
+  @ApiProperty({ example: '2025-12-25' })
+  appointmentDate: Date;
+
+  @ApiProperty({ example: '09:00' })
+  appointmentStart: string;
+
+  @ApiProperty({ example: '11:00' })
+  appointmentEnd: string;
+
+  @ApiProperty({ example: 'Dr. Ahmed Hassan' })
+  supervisorName: string;
+
+  @ApiProperty({ example: 'Omar Khaled' })
+  patientName: string;
+
+  @ApiProperty({
+    example: 'scheduled',
+    enum: ['scheduled', 'completed', 'cancelled', 'no_show'],
+  })
+  status: string;
+}
+
+export class StudentUpcomingAppointmentsDataDto {
+  @ApiProperty({ type: [StudentUpcomingAppointmentDto] })
+  today: StudentUpcomingAppointmentDto[];
+
+  @ApiProperty({ type: [StudentUpcomingAppointmentDto] })
+  upcoming: StudentUpcomingAppointmentDto[];
+}
+
+export class GetStudentUpcomingAppointmentsResponseDto {
+  @ApiProperty({ example: 'Upcoming appointments retrieved successfully' })
+  message: string;
+
+  @ApiProperty({ type: StudentUpcomingAppointmentsDataDto })
+  data: StudentUpcomingAppointmentsDataDto;
+}
+
 export class PastAppointmentDto {
   @ApiProperty({ example: 1 })
   appointmentId: number;

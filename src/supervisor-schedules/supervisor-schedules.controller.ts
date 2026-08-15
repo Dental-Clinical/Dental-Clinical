@@ -37,7 +37,7 @@ import {
 export class SupervisorScheduleController {
   constructor(
     private readonly supervisorScheduleService: SupervisorScheduleService,
-  ) { }
+  ) {}
 
   // @Post()
   // @Roles([UserRole.ADMIN])

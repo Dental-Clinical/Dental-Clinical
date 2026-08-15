@@ -49,7 +49,7 @@ export class SupervisorService {
     private readonly supervisorScheduleService: SupervisorScheduleService,
     @InjectRepository(Supervisor)
     private readonly supervisorRepository: Repository<Supervisor>,
-  ) { }
+  ) {}
   async getSupervisors() {
     const supervisors = await this.dataSource.getRepository(Supervisor).find({
       relations: {
@@ -161,11 +161,11 @@ export class SupervisorService {
         })),
         evaluation: clinicalCase.evaluation
           ? {
-            id: clinicalCase.evaluation.id,
-            grade: clinicalCase.evaluation.grade,
-            comment: clinicalCase.evaluation.comment ?? null,
-            createdAt: clinicalCase.evaluation.createdAt,
-          }
+              id: clinicalCase.evaluation.id,
+              grade: clinicalCase.evaluation.grade,
+              comment: clinicalCase.evaluation.comment ?? null,
+              createdAt: clinicalCase.evaluation.createdAt,
+            }
           : null,
       };
     });

@@ -45,7 +45,7 @@ export class ClinicalAppointmentsService {
     private readonly studentService: StudentService,
     private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
     @InjectRepository(Patient) readonly patientRepository: Repository<Patient>,
-  ) { }
+  ) {}
 
   async createStudentClinicalAppointment(
     currentUser: AuthenticatedUser,
@@ -543,5 +543,4 @@ export class ClinicalAppointmentsService {
       },
     };
   }
-
 }

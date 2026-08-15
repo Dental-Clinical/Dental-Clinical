@@ -29,9 +29,9 @@ import { AcademicYearsModule } from 'src/academic-years/academic-years.module';
     SessionsModule,
     StudentModule,
     CloudinaryModule,
-    AcademicYearsModule
+    AcademicYearsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, OtpService, WhatsappService],
 })
-export class AuthModule { }
+export class AuthModule {}

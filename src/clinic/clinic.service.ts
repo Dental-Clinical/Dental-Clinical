@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Clinic } from './clinic.entity';
 import { Subject } from 'src/subjects/subjects.entity';
 import { Section } from 'src/section/section.entity';
@@ -21,6 +21,7 @@ export class ClinicService {
     private readonly subjectRepository: Repository<Subject>,
     @InjectRepository(Section)
     private readonly sectionRepository: Repository<Section>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async getClinics(dto: GetClinicsQueryDto) {
@@ -31,6 +32,8 @@ export class ClinicService {
         search: `%${dto.search}%`,
       });
     }
+
+    qb.leftJoinAndSelect('clinic.sections', 'section');
 
     qb.orderBy('clinic.id', 'DESC')
       .skip((dto.page - 1) * dto.limit)
@@ -44,6 +47,10 @@ export class ClinicService {
         id: clinic.id,
         name: clinic.name,
         description: clinic.description,
+        sections: clinic.sections.map((section) => ({
+          id: section.id,
+          name: section.name,
+        })),
       })),
       meta: {
         page: dto.page,
@@ -78,24 +85,24 @@ export class ClinicService {
     if (existing) {
       throw new ConflictException('A clinic with this name already exists');
     }
-
-    const clinic = this.clinicRepository.create({
-      name: dto.name,
-      description: dto.description,
-    });
-
-    try {
-      const saved = await this.clinicRepository.save(clinic);
+    return await this.dataSource.transaction(async (manager) => {
+      const clinic = this.clinicRepository.create({
+        name: dto.name,
+        description: dto.description,
+      });
+      const savedClinic = await manager.save(clinic);
+      const sections = dto.sections.map((sectionDto) =>
+        manager.getRepository(Section).create({
+          name: sectionDto.name,
+          clinic: savedClinic,
+        }),
+      );
+      await manager.save(sections);
       return {
         message: 'Clinic created successfully',
-        data: saved,
+        data: savedClinic,
       };
-    } catch (error: any) {
-      if (error.code === '23505') {
-        throw new ConflictException('A clinic with this name already exists');
-      }
-      throw error;
-    }
+    });
   }
 
   async updateClinic(id: number, dto: UpdateClinicDto) {

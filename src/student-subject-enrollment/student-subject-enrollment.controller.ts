@@ -17,6 +17,14 @@ export class StudentSubjectEnrollmentController {
   ) {}
   @Post()
   @Roles([UserRole.ADMIN])
+  // @ApiBody({
+  //   type: EnrollStudentInSubjectsDto,
+  //   description: 'Enroll a student in subjects',
+  // })
+  // @ApiOperation({ summary: '[Admin] Enroll a student in subjects' })
+  // @ApiOkResponse({
+  //   description: 'Student enrolled in subjects successfully',
+  // })
   async enrollStudentInSubjects(@Body() dto: EnrollStudentInSubjectsDto) {
     return await this.studentSubjectEnrollmentService.enrollStudentInSubjects(
       dto,

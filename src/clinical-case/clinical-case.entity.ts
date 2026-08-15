@@ -44,6 +44,7 @@ export class ClinicalCase {
   @OneToOne(() => ExaminationRequest, (request) => request.clinicalCase)
   @JoinColumn({ name: 'request_id' })
   request: ExaminationRequest;
+  1;
 
   @ApiProperty({
     type: () => InitialExamination,

@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+class SectionResponseDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+
+  @ApiProperty({ example: 'Section A' })
+  name: string;
+}
 export class ClinicResponseDto {
   @ApiProperty({ example: 1 })
   id: number;
@@ -9,6 +16,11 @@ export class ClinicResponseDto {
 
   @ApiPropertyOptional({ example: 'Main teaching clinic' })
   description?: string;
+
+  @ApiProperty({
+    type: [SectionResponseDto],
+  })
+  sections: SectionResponseDto[];
 }
 
 export class PaginationMetaDto {

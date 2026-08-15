@@ -1,12 +1,15 @@
 import {
+  IsArray,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsPositive,
   IsString,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { CreateSectionDto } from 'src/section/dto/create-section.dto';
 
 export class CreateClinicDto {
   @ApiProperty({
@@ -26,4 +29,9 @@ export class CreateClinicDto {
   @IsString()
   @MaxLength(255)
   description?: string;
+
+  @IsNotEmpty()
+  @IsArray()
+  @ValidateNested({ each: true })
+  sections: CreateSectionDto[];
 }

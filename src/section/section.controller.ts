@@ -39,23 +39,23 @@ import {
 export class SectionController {
   constructor(private readonly sectionService: SectionService) {}
 
-  @Post()
-  @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: '[Admin] Create a section' })
-  @ApiBody({ type: CreateSectionDto })
-  @ApiCreatedResponse({
-    type: CreateSectionResponseDto,
-    description: 'Section created successfully',
-  })
-  @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 404, description: 'Clinic not found' })
-  @ApiResponse({
-    status: 409,
-    description: 'Section name already exists for this clinic',
-  })
-  async createSection(@Body() dto: CreateSectionDto) {
-    return await this.sectionService.createSection(dto);
-  }
+  // @Post()
+  // @Roles([UserRole.ADMIN])
+  // @ApiOperation({ summary: '[Admin] Create a section' })
+  // @ApiBody({ type: CreateSectionDto })
+  // @ApiCreatedResponse({
+  //   type: CreateSectionResponseDto,
+  //   description: 'Section created successfully',
+  // })
+  // @ApiResponse({ status: 400, description: 'Invalid input data' })
+  // @ApiResponse({ status: 404, description: 'Clinic not found' })
+  // @ApiResponse({
+  //   status: 409,
+  //   description: 'Section name already exists for this clinic',
+  // })
+  // async createSection(@Body() dto: CreateSectionDto) {
+  //   return await this.sectionService.createSection(dto);
+  // }
 
   @Get()
   @Roles([UserRole.ADMIN])
@@ -81,27 +81,27 @@ export class SectionController {
     return await this.sectionService.getSectionById(id);
   }
 
-  @Patch(':id')
-  @Roles([UserRole.ADMIN])
-  @ApiOperation({ summary: '[Admin] Update a section' })
-  @ApiParam({ name: 'id', type: Number, description: 'Section ID' })
-  @ApiBody({ type: UpdateSectionDto })
-  @ApiOkResponse({
-    type: UpdateSectionResponseDto,
-    description: 'Section updated successfully',
-  })
-  @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 404, description: 'Section or clinic not found' })
-  @ApiResponse({
-    status: 409,
-    description: 'Section name already exists for this clinic',
-  })
-  async updateSection(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateSectionDto,
-  ) {
-    return await this.sectionService.updateSection(id, dto);
-  }
+  // @Patch(':id')
+  // @Roles([UserRole.ADMIN])
+  // @ApiOperation({ summary: '[Admin] Update a section' })
+  // @ApiParam({ name: 'id', type: Number, description: 'Section ID' })
+  // @ApiBody({ type: UpdateSectionDto })
+  // @ApiOkResponse({
+  //   type: UpdateSectionResponseDto,
+  //   description: 'Section updated successfully',
+  // })
+  // @ApiResponse({ status: 400, description: 'Invalid input data' })
+  // @ApiResponse({ status: 404, description: 'Section or clinic not found' })
+  // @ApiResponse({
+  //   status: 409,
+  //   description: 'Section name already exists for this clinic',
+  // })
+  // async updateSection(
+  //   @Param('id', ParseIntPipe) id: number,
+  //   @Body() dto: UpdateSectionDto,
+  // ) {
+  //   return await this.sectionService.updateSection(id, dto);
+  // }
 
   @Delete(':id')
   @Roles([UserRole.ADMIN])

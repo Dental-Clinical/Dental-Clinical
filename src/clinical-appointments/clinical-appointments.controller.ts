@@ -33,6 +33,7 @@ import {
   CreateClinicalAppointmentResponseDto,
   GetAvailableSupervisorSlotsResponseDto,
   GetPastAppointmentsResponseDto,
+  GetStudentUpcomingAppointmentsResponseDto,
   GetTodayAppointmentsResponseDto,
   GetUpcomingAppointmentsResponseDto,
   NoShowAppointmentResponseDto,
@@ -45,7 +46,7 @@ import {
 export class ClinicalAppointmentsController {
   constructor(
     private readonly clinicalAppointmentService: ClinicalAppointmentsService,
-  ) {}
+  ) { }
 
   @Get('/available')
   @Roles([UserRole.STUDENT])
@@ -102,6 +103,24 @@ export class ClinicalAppointmentsController {
   @ApiResponse({ status: 404, description: 'Patient not found' })
   async getUpcomingAppointments(@CurrentUser() currentUser: AuthenticatedUser) {
     return await this.clinicalAppointmentService.getUpcomingAppointments(
+      currentUser,
+    );
+  }
+  @Get('/student-upcoming')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary:
+      "[Student] Get the current Student's upcoming clinical appointments, split into today's and later ones",
+  })
+  @ApiOkResponse({
+    type: GetStudentUpcomingAppointmentsResponseDto,
+    description: 'Upcoming appointments retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Student not found' })
+  async getUpcomingAppointmentsForStudent(
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return await this.clinicalAppointmentService.getUpcomingAppointmentsForStudent(
       currentUser,
     );
   }
@@ -239,4 +258,5 @@ export class ClinicalAppointmentsController {
   ) {
     return await this.clinicalAppointmentService.cancelAppointment(id, user);
   }
+
 }

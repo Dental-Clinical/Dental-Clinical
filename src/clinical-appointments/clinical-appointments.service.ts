@@ -31,6 +31,7 @@ import { UpdateStudentClinicalAppointmentDto } from './dto/update-student-clinic
 import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status.enum';
 import { StudentService } from 'src/students/student.service';
 import { SupervisorService } from 'src/supervisors/supervisor.service';
+import { StudentUpcomingAppointmentDto } from './dto/clinical-appointment-response.dto';
 
 @Injectable()
 export class ClinicalAppointmentsService {
@@ -44,7 +45,7 @@ export class ClinicalAppointmentsService {
     private readonly studentService: StudentService,
     private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
     @InjectRepository(Patient) readonly patientRepository: Repository<Patient>,
-  ) {}
+  ) { }
 
   async createStudentClinicalAppointment(
     currentUser: AuthenticatedUser,
@@ -472,4 +473,75 @@ export class ClinicalAppointmentsService {
       data: past,
     };
   }
+  async getUpcomingAppointmentsForStudent(user: AuthenticatedUser) {
+    const student = await this.studentRepository.findOne({
+      where: { user: { id: user.userId } },
+    });
+    if (!student) {
+      throw new NotFoundException('Student Not Found');
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const appointments = await this.clinicalAppointmentRepository.find({
+      where: {
+        student: { id: student.id },
+        status: ClinicalAppointmentStatus.SCHEDULED,
+        appointmentDate: MoreThanOrEqual(today),
+      },
+      relations: {
+        clinicalCase: true,
+        patient: { user: true },
+        supervisor: { user: true },
+      },
+      order: {
+        appointmentDate: 'ASC',
+        appointmentStart: 'ASC',
+      },
+    });
+
+    const now = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayAppointments: StudentUpcomingAppointmentDto[] = [];
+    const upcomingAppointments: StudentUpcomingAppointmentDto[] = [];
+
+    for (const appointment of appointments) {
+      const start = this.combineDateAndTime(
+        appointment.appointmentDate,
+        appointment.appointmentStart,
+      );
+      if (start <= now) continue;
+
+      const mapped: StudentUpcomingAppointmentDto = {
+        appointmentId: appointment.id,
+        clinicalCaseId: appointment.clinicalCase?.id,
+        appointmentDate: appointment.appointmentDate,
+        appointmentStart: appointment.appointmentStart,
+        appointmentEnd: appointment.appointmentEnd,
+        supervisorName: appointment.supervisor?.user?.full_name,
+        patientName: appointment.patient?.full_name,
+        status: appointment.status,
+      };
+
+      const day = this.combineDateAndTime(appointment.appointmentDate, '00:00');
+
+      if (day < tomorrow) {
+        todayAppointments.push(mapped);
+      } else {
+        upcomingAppointments.push(mapped);
+      }
+    }
+
+    return {
+      message: 'Upcoming appointments retrieved successfully',
+      data: {
+        today: todayAppointments,
+        upcoming: upcomingAppointments,
+      },
+    };
+  }
+
 }

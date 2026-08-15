@@ -39,6 +39,7 @@ import { CreateWalkInClinicalCaseDto } from './dto/create-walk-in-clinical-case.
 import { FileUploadInterceptor } from 'src/common/interceptors/files.interceptor';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { CreateClinicalCaseForExistingPatientDto } from './dto/create-clinical-case-for-existing-patient.dto';
 
 @ApiTags('Clinical Cases')
 @ApiBearerAuth('JWT-auth')
@@ -189,6 +190,25 @@ export class ClinicalCaseController {
     );
   }
 
+  @Post('existing-patient')
+  @Roles([UserRole.COORDINATOR])
+  @ApiOperation({
+    summary: '[Coordinator] Create a new clinical case for an existing patient',
+  })
+  @ApiOkResponse({
+    type: ClinicalCaseDetailsDto,
+    description: 'The newly created clinical case',
+  })
+  @ApiResponse({ status: 404, description: 'Patient not found' })
+  async createClinicalCaseForExistingPatient(
+    @Body() dto: CreateClinicalCaseForExistingPatientDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.clinicalCaseService.createClinicalCaseForExistingPatient(
+      user.userId,
+      dto,
+    );
+  }
   @Post('walk-in')
   @Roles([UserRole.STUDENT])
   @UseInterceptors(

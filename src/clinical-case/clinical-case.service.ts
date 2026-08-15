@@ -52,6 +52,7 @@ import {
 } from './case-view.policy';
 import {
   CaseDetailsViewDto,
+  CaseEvaluationDto,
   CaseInfoDto,
   CaseMediaDto,
   SupervisorNoteDto,
@@ -613,6 +614,7 @@ export class ClinicalCaseService {
         request: true,
         subject: true,
         media: true,
+        evaluation: true,
         plannedProcedures: {
           subjectProcedure: true,
           answers: {
@@ -683,6 +685,9 @@ export class ClinicalCaseService {
               clinicalCase.patient,
             ),
           }
+        : {}),
+      ...(policy.includeEvaluation
+        ? { evaluation: this.buildEvaluation(clinicalCase) }
         : {}),
     };
   }
@@ -846,6 +851,24 @@ export class ClinicalCaseService {
         createdAt: session.updatedAt,
         notes: session.supervisorNotes as string,
       }));
+  }
+  /**
+   * A case is only evaluated once the supervisor grades it, so the relation is
+   * absent for every case still under treatment.
+   */
+  private buildEvaluation(
+    clinicalCase: ClinicalCase,
+  ): CaseEvaluationDto | null {
+    const evaluation = clinicalCase.evaluation;
+    if (!evaluation) {
+      return null;
+    }
+    return {
+      id: evaluation.id,
+      grade: evaluation.grade,
+      comment: evaluation.comment ?? null,
+      createdAt: evaluation.createdAt,
+    };
   }
   private buildPatientInformation(
     request: ExaminationRequest,

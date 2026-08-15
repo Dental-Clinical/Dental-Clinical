@@ -219,7 +219,7 @@ export class TreatmentSessionsService {
           .exists({
             where: {
               clinicalCase: { id: lockedClinicalCase.id },
-              appointmentDate: new Date(dto.appointmentDate!),
+              appointmentDate: new Date(dto.appointmentDate),
               appointmentStart: dto.appointmentStart,
               status: ClinicalAppointmentStatus.SCHEDULED,
             },

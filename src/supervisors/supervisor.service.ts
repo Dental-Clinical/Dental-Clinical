@@ -16,6 +16,7 @@ import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interf
 import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status.enum';
 import { DiagnosisSubmissionStatus } from 'src/diagnosis-submission/enums/diagnosis-submission-status.enum';
+import { SupervisorScheduleService } from 'src/supervisor-schedules/supervisor-schedules.service';
 import { SectionSubject } from 'src/section-subject/section-subject.entity';
 import { StudentSubjectEnrollment } from 'src/student-subject-enrollment/student-subject-enrollment.entity';
 import { SubjectProcedures } from 'src/subject-procedures/subject-procedures.entity';
@@ -42,6 +43,7 @@ export class SupervisorService {
     private readonly passwordService: PasswordService,
     private readonly dataSource: DataSource,
     private readonly whatsappService: WhatsappService,
+    private readonly supervisorScheduleService: SupervisorScheduleService,
   ) {}
   async getSupervisors() {
     const supervisors = await this.dataSource.getRepository(Supervisor).find({
@@ -88,6 +90,13 @@ export class SupervisorService {
         user: savedUser,
       });
       const savedSupervisor = await manager.save(newSupervisor);
+
+      const supervisorSchedules =
+        await this.supervisorScheduleService.createSchedule(
+          savedSupervisor,
+          dto.schedules,
+          manager,
+        );
       return {
         supervisorId: savedSupervisor.id,
         tempPassword,

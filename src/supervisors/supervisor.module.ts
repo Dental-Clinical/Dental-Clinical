@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { SupervisorController } from './supervisor.controller';
 import { SupervisorService } from './supervisor.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -9,6 +9,8 @@ import { WhatsappService } from 'src/notifications/whatsapp.service';
 import { ConfigModule } from '@nestjs/config';
 import ultramsgConfig from 'src/config/ultramsg.config';
 import { ClinicalCaseModule } from 'src/clinical-case/clinical-case.module';
+import { SupervisorSchedulesModule } from 'src/supervisor-schedules/supervisor-schedules.module';
+import { SupervisorScheduleService } from 'src/supervisor-schedules/supervisor-schedules.service';
 
 @Module({
   controllers: [SupervisorController],
@@ -19,6 +21,7 @@ import { ClinicalCaseModule } from 'src/clinical-case/clinical-case.module';
     UserModule,
     ConfigModule.forFeature(ultramsgConfig),
     ClinicalCaseModule,
+    forwardRef(() => SupervisorSchedulesModule),
   ],
   exports: [SupervisorService],
 })

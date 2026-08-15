@@ -46,7 +46,7 @@ import {
 export class ClinicalAppointmentsController {
   constructor(
     private readonly clinicalAppointmentService: ClinicalAppointmentsService,
-  ) { }
+  ) {}
 
   @Get('/available')
   @Roles([UserRole.STUDENT])
@@ -258,5 +258,4 @@ export class ClinicalAppointmentsController {
   ) {
     return await this.clinicalAppointmentService.cancelAppointment(id, user);
   }
-
 }

@@ -37,6 +37,12 @@ import { StudyYear } from 'src/study-years/study-years.entity';
 import { AcademicYear } from 'src/academic-years/academic-years.entity';
 import { ClinicalCase } from 'src/clinical-case/clinical-case.entity';
 import { Patient } from 'src/patients/patient.entity';
+import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status.enum';
+import { ClinicalCaseEvaluation } from 'src/clinical-case-evaluation/clinical-case-evaluation.entity';
+import {
+  Grade,
+  GRADE_POINTS,
+} from 'src/clinical-case-evaluation/enums/grade.enum';
 
 export interface SupervisedStudentSubject extends Pick<
   Subject,
@@ -91,6 +97,56 @@ export interface SupervisedStudentDetail extends Pick<Student, 'id'> {
   subjects: SupervisedStudentDetailSubject[];
 }
 
+export interface StudentProfileSubject extends Pick<
+  Subject,
+  'id' | 'name' | 'shortName'
+> {
+  section: Pick<Section, 'id' | 'name'>;
+  supervisor: User['full_name'] | null;
+  completedProcedures: number;
+  requiredProcedures: number;
+  completionPercentage: number;
+}
+
+export interface StudentProfileAverageGrade {
+  points: number;
+  letter: Grade;
+}
+
+export interface StudentProfileStats {
+  totalCases: number;
+  activeCases: number;
+  completedCases: number;
+  casesByStatus: Record<ClinicalCaseStatus, number>;
+  totalSessions: number;
+  completedProcedures: number;
+  requiredProcedures: number;
+  overallCompletionPercentage: number;
+  evaluations: {
+    count: number;
+    averageGrade: StudentProfileAverageGrade | null;
+    gradeDistribution: Record<Grade, number>;
+  };
+}
+
+export interface StudentProfile {
+  student: Pick<Student, 'id'> & {
+    universityId: Student['university_id'];
+    joinedAt: Student['created_at'];
+  };
+  user: Pick<User, 'id' | 'email' | 'phone' | 'is_active'> & {
+    fullName: User['full_name'];
+    fatherName: User['father_name'];
+    profileImage: User['profile_image'];
+  };
+  academic: {
+    studyYear: Pick<StudyYear, 'id' | 'name' | 'level'> | null;
+    academicYear: Pick<AcademicYear, 'id' | 'label'> | null;
+  };
+  subjects: StudentProfileSubject[];
+  stats: StudentProfileStats;
+}
+
 @Injectable()
 export class StudentService {
   constructor(
@@ -111,7 +167,9 @@ export class StudentService {
     private readonly studentProgressRepository: Repository<StudentProgress>,
     @InjectRepository(ClinicalCase)
     private readonly clinicalCaseRepository: Repository<ClinicalCase>,
-  ) {}
+    @InjectRepository(ClinicalCaseEvaluation)
+    private readonly evaluationRepository: Repository<ClinicalCaseEvaluation>,
+  ) { }
   public async findByUniversityId(university_id: string) {
     return await this.studentRepository.findOne({
       where: { university_id },
@@ -649,10 +707,10 @@ export class StudentService {
         },
         studyYear: currentEnrollment
           ? {
-              id: currentEnrollment.studyYear.id,
-              name: currentEnrollment.studyYear.name,
-              level: currentEnrollment.studyYear.level,
-            }
+            id: currentEnrollment.studyYear.id,
+            name: currentEnrollment.studyYear.name,
+            level: currentEnrollment.studyYear.level,
+          }
           : null,
       };
     });
@@ -853,10 +911,10 @@ export class StudentService {
           },
           studyYear: currentEnrollment
             ? {
-                id: currentEnrollment.studyYear.id,
-                name: currentEnrollment.studyYear.name,
-                level: currentEnrollment.studyYear.level,
-              }
+              id: currentEnrollment.studyYear.id,
+              name: currentEnrollment.studyYear.name,
+              level: currentEnrollment.studyYear.level,
+            }
             : null,
           academicYear: {
             id: enrollment.academicYear.id,
@@ -950,11 +1008,6 @@ export class StudentService {
         .andWhere('subjectProcedure.is_active = true')
         .orderBy('subjectProcedure.name', 'ASC')
         .getMany(),
-      // The cases this student is treating under this supervisor. Scoping on
-      // assigned_supervisor_id matches the ownership rule the case detail route
-      // uses, and agrees with the enrollment-derived supervisor above: booking a
-      // clinical appointment sets both the student and sectionSubject.supervisor
-      // on the case in one step.
       this.clinicalCaseRepository.find({
         where: {
           assignedStudent: { id: studentId },
@@ -1045,10 +1098,10 @@ export class StudentService {
       },
       studyYear: currentEnrollment
         ? {
-            id: currentEnrollment.studyYear.id,
-            name: currentEnrollment.studyYear.name,
-            level: currentEnrollment.studyYear.level,
-          }
+          id: currentEnrollment.studyYear.id,
+          name: currentEnrollment.studyYear.name,
+          level: currentEnrollment.studyYear.level,
+        }
         : null,
       academicYear: {
         id: enrollments[0].academicYear.id,
@@ -1056,5 +1109,211 @@ export class StudentService {
       },
       subjects,
     };
+  }
+
+  async getStudentProfile(userId: number): Promise<StudentProfile> {
+    const student = await this.studentRepository.findOne({
+      where: { user: { id: userId } },
+      relations: { user: true },
+    });
+
+    if (!student) {
+      throw new NotFoundException('Student Not Found');
+    }
+
+    const currentEnrollment = await this.studentAcademicYearRepository.findOne({
+      where: { student: { id: student.id }, isCurrent: true },
+      relations: { studyYear: true, academicYear: true },
+    });
+
+    const enrollments = await this.enrollmentRepository.find({
+      where: {
+        student: { id: student.id },
+        academicYear: { is_active: true },
+        subject: { is_active: true },
+      },
+      relations: {
+        subject: true,
+        section: {
+          sectionSubjects: {
+            subject: true,
+            supervisor: { user: true },
+          },
+        },
+      },
+    });
+
+    const subjectIds = [
+      ...new Set(enrollments.map((enrollment) => enrollment.subject.id)),
+    ];
+
+    const [
+      { requiredBySubject, completedByKey },
+      caseStatusRows,
+      sessionCountRow,
+      gradeRows,
+    ] = await Promise.all([
+      this.getProcedureCompletionTotals([student.id], subjectIds),
+      this.clinicalCaseRepository
+        .createQueryBuilder('clinicalCase')
+        .select('clinicalCase.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .where('clinicalCase.assigned_student_id = :studentId', {
+          studentId: student.id,
+        })
+        .groupBy('clinicalCase.status')
+        .getRawMany<{ status: ClinicalCaseStatus; count: string }>(),
+      // Counts the joined sessions, not the cases carrying them.
+      this.clinicalCaseRepository
+        .createQueryBuilder('clinicalCase')
+        .innerJoin('clinicalCase.treatmentSessions', 'session')
+        .select('COUNT(session.id)', 'count')
+        .where('clinicalCase.assigned_student_id = :studentId', {
+          studentId: student.id,
+        })
+        .getRawOne<{ count: string }>(),
+      this.evaluationRepository
+        .createQueryBuilder('evaluation')
+        .select('evaluation.grade', 'grade')
+        .addSelect('COUNT(*)', 'count')
+        .where('evaluation.student_id = :studentId', { studentId: student.id })
+        .groupBy('evaluation.grade')
+        .getRawMany<{ grade: Grade; count: string }>(),
+    ]);
+
+    const subjects = enrollments.map((enrollment) => {
+      const required = requiredBySubject.get(enrollment.subject.id) ?? 0;
+      const completed =
+        completedByKey.get(`${student.id}-${enrollment.subject.id}`) ?? 0;
+
+      return {
+        id: enrollment.subject.id,
+        name: enrollment.subject.name,
+        shortName: enrollment.subject.shortName,
+        section: {
+          id: enrollment.section.id,
+          name: enrollment.section.name,
+        },
+        supervisor:
+          enrollment.section.sectionSubjects.find(
+            (sectionSubject) =>
+              sectionSubject.subject.id === enrollment.subject.id,
+          )?.supervisor.user.full_name ?? null,
+        completedProcedures: completed,
+        requiredProcedures: required,
+        completionPercentage:
+          required > 0 ? Math.round((completed / required) * 1000) / 10 : 0,
+      };
+    });
+
+    const requiredProcedures = subjects.reduce(
+      (total, subject) => total + subject.requiredProcedures,
+      0,
+    );
+    const completedProcedures = subjects.reduce(
+      (total, subject) => total + subject.completedProcedures,
+      0,
+    );
+
+    const casesByStatus = Object.values(ClinicalCaseStatus).reduce(
+      (counts, status) => {
+        counts[status] = 0;
+        return counts;
+      },
+      {} as Record<ClinicalCaseStatus, number>,
+    );
+
+    for (const row of caseStatusRows) {
+      casesByStatus[row.status] = Number(row.count);
+    }
+
+    const totalCases = caseStatusRows.reduce(
+      (total, row) => total + Number(row.count),
+      0,
+    );
+    const completedCases = casesByStatus[ClinicalCaseStatus.COMPLETED];
+
+    const gradeDistribution = Object.values(Grade).reduce(
+      (counts, grade) => {
+        counts[grade] = 0;
+        return counts;
+      },
+      {} as Record<Grade, number>,
+    );
+
+    let evaluationCount = 0;
+    let gradePointsTotal = 0;
+
+    for (const row of gradeRows) {
+      const count = Number(row.count);
+      gradeDistribution[row.grade] = count;
+      evaluationCount += count;
+      gradePointsTotal += GRADE_POINTS[row.grade] * count;
+    }
+
+    return {
+      student: {
+        id: student.id,
+        universityId: student.university_id,
+        joinedAt: student.created_at,
+      },
+      user: {
+        id: student.user.id,
+        fullName: student.user.full_name,
+        fatherName: student.user.father_name,
+        email: student.user.email,
+        phone: student.user.phone,
+        profileImage: student.user.profile_image,
+        is_active: student.user.is_active,
+      },
+      academic: {
+        studyYear: currentEnrollment
+          ? {
+            id: currentEnrollment.studyYear.id,
+            name: currentEnrollment.studyYear.name,
+            level: currentEnrollment.studyYear.level,
+          }
+          : null,
+        academicYear: currentEnrollment
+          ? {
+            id: currentEnrollment.academicYear.id,
+            label: currentEnrollment.academicYear.label,
+          }
+          : null,
+      },
+      subjects,
+      stats: {
+        totalCases,
+        activeCases: totalCases - completedCases,
+        completedCases,
+        casesByStatus,
+        totalSessions: Number(sessionCountRow?.count ?? 0),
+        completedProcedures,
+        requiredProcedures,
+        overallCompletionPercentage:
+          requiredProcedures > 0
+            ? Math.round((completedProcedures / requiredProcedures) * 1000) / 10
+            : 0,
+        evaluations: {
+          count: evaluationCount,
+          averageGrade:
+            evaluationCount > 0
+              ? this.toAverageGrade(gradePointsTotal / evaluationCount)
+              : null,
+          gradeDistribution,
+        },
+      },
+    };
+  }
+
+  private toAverageGrade(points: number): StudentProfileAverageGrade {
+    const letter = (Object.values(Grade) as Grade[]).reduce((nearest, grade) =>
+      Math.abs(GRADE_POINTS[grade] - points) <
+        Math.abs(GRADE_POINTS[nearest] - points)
+        ? grade
+        : nearest,
+    );
+
+    return { points: Math.round(points * 100) / 100, letter };
   }
 }

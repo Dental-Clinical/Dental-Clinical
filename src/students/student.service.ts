@@ -1,4 +1,6 @@
 import {
+  BadRequestException,
+  ConflictException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -251,99 +253,342 @@ export class StudentService {
       })),
     };
   }
-  public async createStudent(student: CreateStudentDto) {
-    return await this.dataSource.transaction(async (manager) => {
-      const existingStudent = await manager.getRepository(Student).findOne({
-        where: { university_id: student.university_id },
+  public async createStudent(
+    student: CreateStudentDto,
+    manager?: EntityManager,
+  ): Promise<Student> {
+    if (manager) {
+      return this.createStudentWithManager(student, manager);
+    }
+
+    return this.dataSource.transaction((transactionManager) =>
+      this.createStudentWithManager(student, transactionManager),
+    );
+  }
+
+  private async createStudentWithManager(
+    student: CreateStudentDto,
+    manager: EntityManager,
+  ): Promise<Student> {
+    const studentRepository = manager.getRepository(Student);
+    const userRepository = manager.getRepository(User);
+    const studyYearRepository = manager.getRepository(StudyYear);
+    const academicYearRepository = manager.getRepository(AcademicYear);
+    const studentAcademicYearRepository =
+      manager.getRepository(StudentAcademicYear);
+
+    const existingStudent = await studentRepository.findOne({
+      where: {
+        university_id: student.university_id,
+      },
+    });
+
+    if (existingStudent) {
+      throw new ConflictException('Student already exists');
+    }
+
+    const studyYear = await studyYearRepository.findOne({
+      where: {
+        level: student.study_year,
+      },
+    });
+
+    if (!studyYear) {
+      throw new NotFoundException(
+        `No study year found for level ${student.study_year}`,
+      );
+    }
+
+    const academicYear = await academicYearRepository.findOne({
+      where: {
+        is_active: true,
+      },
+    });
+
+    if (!academicYear) {
+      throw new NotFoundException('No active academic year is configured');
+    }
+
+    const passwordHash = await this.passwordService.hash(student.university_id);
+
+    const user = userRepository.create({
+      full_name: student.full_name,
+      father_name: student.father_name,
+      email: student.email,
+      role: UserRole.STUDENT,
+      password_hash: passwordHash,
+    });
+
+    const savedUser = await userRepository.save(user);
+
+    const newStudent = studentRepository.create({
+      university_id: student.university_id,
+      user: savedUser,
+    });
+
+    const savedStudent = await studentRepository.save(newStudent);
+
+    const studentAcademicYear = studentAcademicYearRepository.create({
+      student: savedStudent,
+      academicYear,
+      studyYear,
+      isCurrent: true,
+    });
+
+    await studentAcademicYearRepository.save(studentAcademicYear);
+
+    const result = await studentRepository.findOne({
+      where: {
+        id: savedStudent.id,
+      },
+      relations: {
+        user: true,
+        studentAcademicYears: {
+          studyYear: true,
+          academicYear: true,
+        },
+      },
+    });
+
+    if (!result) {
+      throw new NotFoundException('Student not found after creation');
+    }
+
+    return result;
+  }
+  // async importStudents(file: Express.Multer.File) {
+  //   const workbook = xlsx.read(file.buffer, {
+  //     type: 'buffer',
+  //   });
+
+  //   const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+
+  //   const rows = xlsx.utils.sheet_to_json(worksheet, {
+  //     header: 1,
+  //   });
+
+  //   const students: any = rows.slice(1).filter((row: any) => row[1]);
+
+  //   for (const row of students) {
+  //     const fatherName = row[0];
+  //     const fullName = row[1];
+  //     const universityId = String(row[2]);
+  //     const email = String(row[3]);
+  //     const study_year = Number(row[4]);
+
+  //     await this.createStudent({
+  //       full_name: fullName,
+  //       father_name: fatherName,
+  //       university_id: universityId,
+  //       email,
+  //       study_year,
+  //     });
+  //   }
+  // }
+  async importStudents(file: Express.Multer.File) {
+    return this.dataSource.transaction(async (manager) => {
+      const studentRepository = manager.getRepository(Student);
+      const academicYearRepository = manager.getRepository(AcademicYear);
+      const studentAcademicYearRepository =
+        manager.getRepository(StudentAcademicYear);
+      const sectionSubjectRepository = manager.getRepository(SectionSubject);
+      const enrollmentRepository = manager.getRepository(
+        StudentSubjectEnrollment,
+      );
+
+      // 1. Parse Excel
+      const workbook = xlsx.read(file.buffer, {
+        type: 'buffer',
       });
 
-      if (existingStudent) {
-        throw new HttpException('Student already exists', HttpStatus.CONFLICT);
-      }
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-      const studyYear = await manager.getRepository(StudyYear).findOne({
-        where: { level: student.study_year },
+      const rows = xlsx.utils.sheet_to_json(worksheet, {
+        header: 1,
       });
 
-      if (!studyYear) {
-        throw new NotFoundException(
-          `No study year found for level ${student.study_year}`,
+      const studentsRows: any[] = rows.slice(1).filter((row: any) => row[1]);
+
+      if (studentsRows.length === 0) {
+        throw new BadRequestException(
+          'The uploaded file contains no students.',
         );
       }
 
-      const academicYear = await manager.getRepository(AcademicYear).findOne({
+      // 2. Resolve active academic year
+      const academicYear = await academicYearRepository.findOne({
         where: { is_active: true },
       });
 
       if (!academicYear) {
-        throw new NotFoundException('No active academic year is configured');
+        throw new NotFoundException('No active academic year found.');
       }
 
-      const passwordHash = await this.passwordService.hash(
-        student.university_id,
-      );
+      // 3. Import students
+      const importedStudents: Student[] = [];
+      const studentStudyYears = new Map<number, StudyYear>();
 
-      const user = manager.getRepository(User).create({
-        full_name: student.full_name,
-        father_name: student.father_name,
-        email: student.email,
-        role: UserRole.STUDENT,
-        password_hash: passwordHash,
-      });
+      for (const row of studentsRows) {
+        console.log(row[4]);
 
-      const savedUser = await manager.save(user);
-
-      const newStudent = manager.getRepository(Student).create({
-        university_id: student.university_id,
-        user: savedUser,
-      });
-
-      const savedStudent = await manager.save(newStudent);
-
-      const studentAcademicYear = manager
-        .getRepository(StudentAcademicYear)
-        .create({
-          student: savedStudent,
-          academicYear,
-          studyYear,
-          isCurrent: true,
+        const studyYear = await manager.getRepository(StudyYear).findOne({
+          where: {
+            level: row[4],
+          },
         });
 
-      await manager.save(studentAcademicYear);
+        if (!studyYear) {
+          throw new NotFoundException(`Study year ${row[4]} not found.`);
+        }
+        const student = await this.createStudent(
+          {
+            full_name: String(row[1]).trim(),
+            father_name: String(row[0] ?? '').trim(),
+            university_id: String(row[2]).trim(),
+            email: String(row[3]).trim(),
+            study_year: studyYear.level,
+          },
+          manager,
+        );
+        importedStudents.push(student);
+        studentStudyYears.set(student.id, studyYear);
+      }
+
+      // // 4. Create StudentAcademicYear records
+      // const studentAcademicYears: StudentAcademicYear[] = [];
+
+      // for (const student of importedStudents) {
+      //   const studyYear = studentStudyYears.get(student.id);
+
+      //   if (!studyYear) {
+      //     throw new NotFoundException(
+      //       `Study year not found for student ${student.university_id}.`,
+      //     );
+      //   }
+
+      //   const enrollment = studentAcademicYearRepository.create({
+      //     student,
+      //     academicYear,
+      //     studyYear,
+      //     isCurrent: true,
+      //   });
+
+      //   studentAcademicYears.push(enrollment);
+      // }
+
+      // await studentAcademicYearRepository.save(studentAcademicYears);
+
+      // 5. Group students by StudyYear
+      const studentsByStudyYear = new Map<number, Student[]>();
+
+      for (const student of importedStudents) {
+        const studyYearId = studentStudyYears.get(student.id)?.id;
+
+        if (!studentsByStudyYear.has(studyYearId!)) {
+          studentsByStudyYear.set(studyYearId!, []);
+        }
+
+        studentsByStudyYear.get(studyYearId!)!.push(student);
+      }
+
+      // 6. Get SectionSubject records for this academic year
+      const sectionSubjects = await sectionSubjectRepository.find({
+        where: {
+          academicYear: {
+            id: academicYear.id,
+          },
+          subject: {
+            is_active: true,
+          },
+        },
+        relations: {
+          subject: {
+            studyYear: true,
+          },
+          section: true,
+        },
+      });
+
+      // 7. Group SectionSubjects by StudyYear + Subject
+      const assignmentsByStudyYearAndSubject = new Map<
+        string,
+        SectionSubject[]
+      >();
+
+      for (const assignment of sectionSubjects) {
+        const studyYearId = assignment.subject.studyYear.id;
+        const subjectId = assignment.subject.id;
+
+        const key = `${studyYearId}:${subjectId}`;
+
+        if (!assignmentsByStudyYearAndSubject.has(key)) {
+          assignmentsByStudyYearAndSubject.set(key, []);
+        }
+
+        assignmentsByStudyYearAndSubject.get(key)!.push(assignment);
+      }
+
+      // 8. Create subject enrollments
+      const enrollments: StudentSubjectEnrollment[] = [];
+
+      for (const [studyYearId, studyYearStudents] of studentsByStudyYear) {
+        // Get all subjects belonging to this study year
+        const subjectAssignments = sectionSubjects.filter(
+          (assignment) => assignment.subject.studyYear.id === studyYearId,
+        );
+
+        const subjectIds = [
+          ...new Set(
+            subjectAssignments.map((assignment) => assignment.subject.id),
+          ),
+        ];
+
+        for (const subjectId of subjectIds) {
+          const assignments =
+            assignmentsByStudyYearAndSubject.get(
+              `${studyYearId}:${subjectId}`,
+            ) ?? [];
+
+          if (assignments.length === 0) {
+            throw new ConflictException(
+              `No sections are configured for subject ${subjectId} in the active academic year.`,
+            );
+          }
+
+          // Distribute students equally between sections
+          for (
+            let studentIndex = 0;
+            studentIndex < studyYearStudents.length;
+            studentIndex++
+          ) {
+            const student = studyYearStudents[studentIndex];
+
+            const assignment = assignments[studentIndex % assignments.length];
+
+            enrollments.push(
+              enrollmentRepository.create({
+                student,
+                subject: assignment.subject,
+                section: assignment.section,
+                academicYear,
+              }),
+            );
+          }
+        }
+      }
+
+      // 9. Save all enrollments in one batch
+      if (enrollments.length > 0) {
+        await enrollmentRepository.save(enrollments);
+      }
 
       return {
-        studentId: savedStudent.id,
+        message: 'Students imported and enrolled successfully.',
+        importedStudents: importedStudents.length,
+        // createdAcademicYearEnrollments: studentAcademicYears.length,
+        createdSubjectEnrollments: enrollments.length,
       };
     });
-  }
-  async importStudents(file: Express.Multer.File) {
-    const workbook = xlsx.read(file.buffer, {
-      type: 'buffer',
-    });
-
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-
-    const rows = xlsx.utils.sheet_to_json(worksheet, {
-      header: 1,
-    });
-
-    const students: any = rows.slice(1).filter((row: any) => row[1]);
-
-    for (const row of students) {
-      const fatherName = row[0];
-      const fullName = row[1];
-      const universityId = String(row[2]);
-      const email = String(row[3]);
-      const study_year = Number(row[4]);
-
-      await this.createStudent({
-        full_name: fullName,
-        father_name: fatherName,
-        university_id: universityId,
-        email,
-        study_year,
-      });
-    }
   }
 
   async getAllStudents(dto: GetStudentsQueryDto) {

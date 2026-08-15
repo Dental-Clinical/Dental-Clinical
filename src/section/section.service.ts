@@ -89,52 +89,52 @@ export class SectionService {
     };
   }
 
-  async createSection(dto: CreateSectionDto) {
-    const clinic = await this.resolveClinic(dto.clinic_id);
+  // async createSection(dto: CreateSectionDto) {
+  //   const clinic = await this.resolveClinic(dto.clinic_id);
 
-    await this.ensureNameIsAvailable(dto.name, dto.clinic_id);
+  //   await this.ensureNameIsAvailable(dto.name, dto.clinic_id);
 
-    const section = this.sectionRepository.create({
-      name: dto.name,
-      clinic,
-    });
+  //   const section = this.sectionRepository.create({
+  //     name: dto.name,
+  //     clinic,
+  //   });
 
-    const saved = await this.sectionRepository.save(section);
-    return {
-      message: 'Section created successfully',
-      data: saved,
-    };
-  }
+  //   const saved = await this.sectionRepository.save(section);
+  //   return {
+  //     message: 'Section created successfully',
+  //     data: saved,
+  //   };
+  // }
 
-  async updateSection(id: number, dto: UpdateSectionDto) {
-    const section = await this.sectionRepository.findOne({
-      where: { id },
-    });
+  // async updateSection(id: number, dto: UpdateSectionDto) {
+  //   const section = await this.sectionRepository.findOne({
+  //     where: { id },
+  //   });
 
-    if (!section) {
-      throw new NotFoundException('Section not found');
-    }
+  //   if (!section) {
+  //     throw new NotFoundException('Section not found');
+  //   }
 
-    const targetName = dto.name ?? section.name;
-    const targetClinicId = dto.clinic_id ?? section.clinic_id;
+  //   const targetName = dto.name ?? section.name;
+  //   const targetClinicId = dto.clinic_id ?? section.clinic_id;
 
-    if (targetName !== section.name || targetClinicId !== section.clinic_id) {
-      await this.ensureNameIsAvailable(targetName, targetClinicId, id);
-    }
+  //   if (targetName !== section.name || targetClinicId !== section.clinic_id) {
+  //     await this.ensureNameIsAvailable(targetName, targetClinicId, id);
+  //   }
 
-    if (dto.clinic_id !== undefined) {
-      section.clinic = await this.resolveClinic(dto.clinic_id);
-    }
-    if (dto.name !== undefined) {
-      section.name = dto.name;
-    }
+  //   if (dto.clinic_id !== undefined) {
+  //     section.clinic = await this.resolveClinic(dto.clinic_id);
+  //   }
+  //   if (dto.name !== undefined) {
+  //     section.name = dto.name;
+  //   }
 
-    const updated = await this.sectionRepository.save(section);
-    return {
-      message: 'Section updated successfully',
-      data: updated,
-    };
-  }
+  //   const updated = await this.sectionRepository.save(section);
+  //   return {
+  //     message: 'Section updated successfully',
+  //     data: updated,
+  //   };
+  // }
 
   async deleteSection(id: number) {
     const section = await this.sectionRepository.findOne({

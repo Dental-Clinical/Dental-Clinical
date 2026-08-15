@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { FcmTokensService } from '../fcm-tokens/fcm-tokens.service';
 import { FCMChannels } from '../fcm-tokens/enums/notification-channels.enum';
 import { PushPayload } from '../fcm-tokens/interfaces/push-payload.interface';
+import { Student } from '../students/student.entity';
 import { Notification } from './notification.entity';
 import { NotificationType } from './enums/notification-type.enum';
 import { GetNotificationsQueryDto } from './dto/get-notifications-query.dto';
@@ -15,6 +16,8 @@ export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private readonly notifications: Repository<Notification>,
+    @InjectRepository(Student)
+    private readonly students: Repository<Student>,
     private readonly fcmTokensService: FcmTokensService,
   ) {}
 
@@ -83,6 +86,41 @@ export class NotificationsService {
       created.push(await this.notifyUser(userId, payload, type, channel));
     }
     return created;
+  }
+
+  /**
+   * Fans a test notification out to every active student. Driven off the
+   * `students` table rather than `users.role`, so the domain definition of a
+   * student stays the source of truth.
+   */
+  async notifyAllStudents() {
+    const rows = await this.students
+      .createQueryBuilder('student')
+      .innerJoin('student.user', 'user')
+      .where('user.is_active = :active', { active: true })
+      .select('user.id', 'userId')
+      .getRawMany<{ userId: number }>();
+
+    const userIds = rows.map((row) => row.userId);
+
+    if (!userIds.length) {
+      return { message: 'No active students to notify', students: 0 };
+    }
+
+    await this.notifyUsers(
+      userIds,
+      {
+        title: 'Test notification',
+        body: 'Push delivery to students is working.',
+      },
+      NotificationType.TEST,
+      FCMChannels.APPOINTMENTS,
+    );
+
+    return {
+      message: 'Test notification sent to students',
+      students: userIds.length,
+    };
   }
 
   async getNotifications(userId: number, dto: GetNotificationsQueryDto) {

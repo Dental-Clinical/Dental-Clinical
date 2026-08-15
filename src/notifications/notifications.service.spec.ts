@@ -5,6 +5,7 @@ import type { UpdateResult } from 'typeorm';
 import { FcmTokensService } from '../fcm-tokens/fcm-tokens.service';
 import { FCMChannels } from '../fcm-tokens/enums/notification-channels.enum';
 import type { PushPayload } from '../fcm-tokens/interfaces/push-payload.interface';
+import { Student } from '../students/student.entity';
 import { Notification } from './notification.entity';
 import { NotificationType } from './enums/notification-type.enum';
 import { NotificationsService } from './notifications.service';
@@ -31,8 +32,17 @@ describe('NotificationsService', () => {
       [number, PushPayload, FCMChannels]
     >;
   };
+  let studentRows: { userId: number }[];
 
   const sentPayload = (): PushPayload => fcm.sendToUser.mock.calls[0][1];
+
+  /** Only the chain `notifyAllStudents` actually walks. */
+  const studentQueryBuilder = () => ({
+    innerJoin: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    getRawMany: jest.fn(() => Promise.resolve(studentRows)),
+  });
 
   beforeEach(async () => {
     notifications = {
@@ -56,10 +66,16 @@ describe('NotificationsService', () => {
         .mockResolvedValue({ sent: 1, failed: 0 }),
     };
 
+    studentRows = [{ userId: 10 }, { userId: 11 }];
+    const students = {
+      createQueryBuilder: jest.fn(() => studentQueryBuilder()),
+    };
+
     const moduleRef = await Test.createTestingModule({
       providers: [
         NotificationsService,
         { provide: getRepositoryToken(Notification), useValue: notifications },
+        { provide: getRepositoryToken(Student), useValue: students },
         { provide: FcmTokensService, useValue: fcm },
       ],
     }).compile();
@@ -155,6 +171,40 @@ describe('NotificationsService', () => {
 
       expect(created).toHaveLength(3);
       expect(fcm.sendToUser.mock.calls.map((c) => c[0])).toEqual([1, 2, 3]);
+    });
+  });
+
+  describe('notifyAllStudents', () => {
+    it('notifies exactly the active students it was given', async () => {
+      await expect(service.notifyAllStudents()).resolves.toEqual({
+        message: 'Test notification sent to students',
+        students: 2,
+      });
+
+      expect(fcm.sendToUser.mock.calls.map((c) => c[0])).toEqual([10, 11]);
+      expect(notifications.save).toHaveBeenCalledTimes(2);
+    });
+
+    it('records one test-typed row per student', async () => {
+      await service.notifyAllStudents();
+
+      expect(notifications.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 10,
+          type: NotificationType.TEST,
+        }),
+      );
+    });
+
+    it('short-circuits when there are no active students', async () => {
+      studentRows = [];
+
+      await expect(service.notifyAllStudents()).resolves.toEqual({
+        message: 'No active students to notify',
+        students: 0,
+      });
+      expect(fcm.sendToUser).not.toHaveBeenCalled();
+      expect(notifications.save).not.toHaveBeenCalled();
     });
   });
 

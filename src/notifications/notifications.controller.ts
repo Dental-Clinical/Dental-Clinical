@@ -85,6 +85,21 @@ export class NotificationsController {
     return await this.notificationsService.markAsRead(user.userId, id);
   }
 
+  @Get('test-students')
+  @Roles([UserRole.ADMIN])
+  @ApiOperation({
+    summary: 'Send a test notification to every active student',
+    description:
+      'Fans out one notification per active student, each with its own read ' +
+      'state. Exposed as a GET so an admin can trigger it by visiting the ' +
+      'URL; it writes rows, so keep it out of any prefetch or retry path.',
+  })
+  @ApiOkResponse({ description: 'Test notification sent to students' })
+  @ApiResponse({ status: 403, description: 'Caller is not an admin' })
+  async sendTestToStudents() {
+    return await this.notificationsService.notifyAllStudents();
+  }
+
   @Post('test')
   @Roles([UserRole.ADMIN])
   @ApiOperation({

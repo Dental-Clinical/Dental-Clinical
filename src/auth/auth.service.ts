@@ -48,7 +48,7 @@ export class AuthService {
     private readonly studentService: StudentService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
   // register patient
   public async register(
     registerDto: RegisterDto,
@@ -263,6 +263,7 @@ export class AuthService {
   public async staffLogin(dto: StaffLoginDto) {
     const user = await this.findStaffByEmail(dto.email);
 
+    console.log("mohee")
     if (!user || !user.password_hash) {
       throw new UnauthorizedException('Invalid credentials');
     }

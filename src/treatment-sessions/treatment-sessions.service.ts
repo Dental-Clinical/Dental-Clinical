@@ -3,8 +3,12 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { NotificationType } from 'src/notifications/enums/notification-type.enum';
+import { FCMChannels } from 'src/fcm-tokens/enums/notification-channels.enum';
 import { StudentService } from 'src/students/student.service';
 import { DataSource, EntityManager, In, Not, Repository } from 'typeorm';
 import { CreateTreatmentSessionDto } from './dto/create-treatment-sessions.dto';
@@ -41,6 +45,7 @@ export class TreatmentSessionsService {
   readonly MAX_START_DELAY = 30 * 60 * 1000; // 30 minutes
   readonly MIN_START_ADVANCE = 15 * 60 * 1000; // 15 minutes
   readonly MIN_UPDATE_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
+  private readonly logger = new Logger(TreatmentSessionsService.name);
   constructor(
     private readonly studentService: StudentService,
     private readonly supervisorService: SupervisorService,
@@ -58,6 +63,7 @@ export class TreatmentSessionsService {
     private readonly supervisorAvailabilityService: SupervisorAvailabilityService,
     @InjectRepository(Material)
     private readonly materialRepository: Repository<Material>,
+    private readonly notificationsService: NotificationsService,
   ) {}
   public async treatmentSessionSummary(
     userId: number,
@@ -669,7 +675,11 @@ export class TreatmentSessionsService {
     const treatmentSession = await this.treatmentSessionRepository.findOne({
       where: { id: treatmentSessionId },
       relations: {
-        clinicalCase: { assignedSupervisor: true },
+        clinicalCase: {
+          assignedSupervisor: true,
+          // The student is who the review notes are for.
+          assignedStudent: { user: true },
+        },
       },
     });
 
@@ -695,6 +705,32 @@ export class TreatmentSessionsService {
 
     treatmentSession.supervisorNotes = dto.supervisorNotes;
     await this.treatmentSessionRepository.save(treatmentSession);
+
+    // The supervisor is the actor; the student is the one waiting on feedback.
+    const studentUserId = treatmentSession.clinicalCase.assignedStudent?.user?.id;
+    if (studentUserId) {
+      try {
+        await this.notificationsService.notifyUser(
+          studentUserId,
+          {
+            title: 'Treatment session reviewed',
+            body: 'Your supervisor left notes on your completed session.',
+            data: {
+              treatmentSessionId: String(treatmentSession.id),
+              clinicalCaseId: String(treatmentSession.clinicalCase.id),
+            },
+          },
+          NotificationType.TREATMENT_SESSION_REVIEWED,
+          FCMChannels.CASES,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to notify student ${studentUserId} that treatment session ${treatmentSession.id} was reviewed`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    }
+
     return {
       message: 'Treatment session reviewed successfully.',
       treatmentSessionId: treatmentSession.id,

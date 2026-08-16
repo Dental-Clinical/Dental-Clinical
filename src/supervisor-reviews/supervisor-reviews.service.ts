@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { AuthenticatedUser } from 'src/auth/interfaces/authenticated-user.interface';
@@ -23,13 +24,19 @@ import { ClinicalAppointment } from 'src/clinical-appointments/clinical-appointm
 import { ClinicalAppointmentStatus } from 'src/clinical-appointments/enums/clinical-appointment.enum';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { DateTimeUtils } from 'src/utils/date-time.utils';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { NotificationType } from 'src/notifications/enums/notification-type.enum';
+import { FCMChannels } from 'src/fcm-tokens/enums/notification-channels.enum';
 
 @Injectable()
 export class SupervisorReviewsService {
+  private readonly logger = new Logger(SupervisorReviewsService.name);
+
   constructor(
     private readonly supervisorService: SupervisorService,
     private readonly dataSource: DataSource,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly notificationsService: NotificationsService,
   ) {}
   async getAllSubmissions(user: AuthenticatedUser) {
     const supervisor = await this.getSupervisor(user);
@@ -158,7 +165,7 @@ export class SupervisorReviewsService {
     dto: ApproveReviewDto,
   ) {
     const supervisor = await this.getSupervisor(user);
-    return await this.dataSource.transaction(async (manager) => {
+    const approved = await this.dataSource.transaction(async (manager) => {
       let submission: DiagnosisSubmission | null = null;
       try {
         submission = await manager
@@ -167,6 +174,10 @@ export class SupervisorReviewsService {
           .setLock('pessimistic_write')
           .innerJoinAndSelect('submission.clinicalCase', 'clinicalCase')
           .innerJoinAndSelect('submission.supervisor', 'supervisor')
+          // The student's user account is joined so the approval can be
+          // announced to them; they are blocked until it lands.
+          .innerJoinAndSelect('clinicalCase.assignedStudent', 'assignedStudent')
+          .innerJoinAndSelect('assignedStudent.user', 'assignedStudentUser')
           .innerJoinAndSelect(
             'clinicalCase.clinicalAppointments',
             'appointments',
@@ -260,8 +271,34 @@ export class SupervisorReviewsService {
 
       return {
         message: 'Diagnosis approved successfully.',
+        studentUserId: clinicalCase.assignedStudent?.user?.id,
+        clinicalCaseId: clinicalCase.id,
       };
     });
+
+    // Approval also flips the case to TREATMENT_IN_PROGRESS and completes the
+    // appointment, none of which the student can see until they are told.
+    if (approved.studentUserId) {
+      try {
+        await this.notificationsService.notifyUser(
+          approved.studentUserId,
+          {
+            title: 'Diagnosis approved',
+            body: 'Your diagnosis was approved. You can start treatment.',
+            data: { clinicalCaseId: String(approved.clinicalCaseId) },
+          },
+          NotificationType.DIAGNOSIS_APPROVED,
+          FCMChannels.CASES,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to notify student ${approved.studentUserId} that the diagnosis on case ${approved.clinicalCaseId} was approved`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    }
+
+    return { message: approved.message };
   }
   private async getSupervisor(user: AuthenticatedUser) {
     const supervisor = await this.supervisorService.findByUserId(user.userId);

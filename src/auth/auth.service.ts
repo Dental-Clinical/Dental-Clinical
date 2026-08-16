@@ -167,7 +167,7 @@ export class AuthService {
     }
     const otp = this.otpService.generateOtp();
 
-    // await this.whatsappService.sendOtp(otpDto.phone, otp);
+    await this.whatsappService.sendOtp(otpDto.phone, otp);
     console.log(`Sending OTP ${otp} to phone number ${otpDto.phone}`);
 
     await this.otpService.storeOtp(otpDto.phone, otp);
@@ -219,7 +219,7 @@ export class AuthService {
     }
     const otp = this.otpService.generateOtp();
 
-    // await this.whatsappService.sendOtp(otpDto.phone, otp);
+    await this.whatsappService.sendOtp(otpDto.phone, otp);
     console.log(`Sending OTP ${otp} to phone number ${otpDto.phone}`);
 
     await this.otpService.storeOtp(otpDto.phone, otp);

@@ -1053,7 +1053,8 @@ export class ClinicalCaseService {
           requiresDentalChart: clinicalCase.subject.requiresDentalChart,
         },
         clinic: clinicalCase.subject.clinic,
-        coordinator: clinicalCase.initialExamination.coordinator.user.full_name,
+        coordinator:
+          clinicalCase.initialExamination?.coordinator?.user?.full_name ?? null,
         chiefComplaint: clinicalCase.request.chief_complaint,
       };
     });
@@ -1183,31 +1184,93 @@ export class ClinicalCaseService {
       throw new NotFoundException('Student not found');
     }
 
-    const clinicalCase = await this.clinicalCaseRepository.findOne({
-      where: { id },
-      relations: { assignedStudent: true },
-    });
-    if (!clinicalCase) {
-      throw new NotFoundException('Clinical case not found');
-    }
+    return await this.dataSource.transaction(async (manager) => {
+      // const clinicalCase = await manager.getRepository(ClinicalCase).findOne({
+      //   where: { id },
+      //   relations: { assignedStudent: true },
+      // });
+      const lockedclinicalCase = await manager
+        .getRepository(ClinicalCase)
+        .createQueryBuilder('clinicalCase')
+        .setLock('pessimistic_write')
+        // .leftJoinAndSelect('clinicalCase.assignedStudent', 'student')
+        .where('clinicalCase.id = :id', { id })
+        .getOne();
 
-    if (clinicalCase.status !== ClinicalCaseStatus.ASSIGNED) {
-      throw new ConflictException(
-        'Only an assigned clinical case can be cancelled',
+      const clinicalCase = await manager.getRepository(ClinicalCase).findOne({
+        where: { id: lockedclinicalCase?.id },
+        relations: { assignedStudent: true },
+      });
+
+      if (!clinicalCase) {
+        throw new NotFoundException('Clinical case not found');
+      }
+
+      if (clinicalCase.status !== ClinicalCaseStatus.ASSIGNED) {
+        throw new ConflictException(
+          'Only an assigned clinical case can be cancelled',
+        );
+      }
+
+      if (clinicalCase.assignedStudent?.id !== student.id) {
+        throw new ForbiddenException(
+          "You're not authorized to cancel this case",
+        );
+      }
+      const appointment = await manager
+        .getRepository(ClinicalAppointment)
+        .createQueryBuilder('appointment')
+        .setLock('pessimistic_write')
+        .where('appointment.clinicalCaseId = :id', { id })
+        .andWhere('appointment.status = :status', {
+          status: ClinicalAppointmentStatus.SCHEDULED,
+        })
+        .getOne();
+      // const appointment = await manager
+      //   .getRepository(ClinicalAppointment)
+      //   .findOne({
+      //     where: {
+      //       clinicalCase: { id },
+      //       status: ClinicalAppointmentStatus.SCHEDULED,
+      //     },
+      //   });
+      if (!appointment) {
+        throw new ConflictException(
+          'No scheduled appointment found for this clinical case',
+        );
+      }
+      // const now = new Date();
+      // if (
+      //   appointment.appointmentDate.getTime() >
+      //   now.getTime() + 24 * 60 * 60 * 1000
+      // ) {
+      //   throw new ConflictException(
+      //     'Cannot cancel a clinical case with a scheduled appointment in the future',
+      //   );
+      // }
+      const now = new Date();
+      const appointmentDateTime = DateTimeUtils.combine(
+        appointment.appointmentDate,
+        appointment.appointmentStart,
       );
-    }
 
-    if (clinicalCase.assignedStudent?.id !== student.id) {
-      throw new ForbiddenException("You're not authorized to cancel this case");
-    }
+      if (now < appointmentDateTime) {
+        throw new ConflictException(
+          'The clinical case can only be cancelled after the scheduled appointment time.',
+        );
+      }
+      appointment.status = ClinicalAppointmentStatus.CANCELLED;
+      await manager.getRepository(ClinicalAppointment).save(appointment);
 
-    await this.clinicalCaseRepository.update(id, {
-      status: ClinicalCaseStatus.OPEN,
-      assignedStudent: () => 'NULL',
+      await manager.getRepository(ClinicalCase).update(id, {
+        status: ClinicalCaseStatus.OPEN,
+        assignedStudent: () => 'NULL',
+        assignedSupervisor: () => 'NULL',
+      });
+
+      return {
+        message: 'Cancelled successfully',
+      };
     });
-
-    return {
-      message: 'Cancelled successfully',
-    };
   }
 }

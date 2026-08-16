@@ -181,22 +181,53 @@ export class ClinicalAppointmentsService {
 
       const { patient } = loadedCase;
       const supervisor = sectionSubject.supervisor;
+      console.log(supervisor);
 
-      const { startTime, endTime } = await this.checkSupervisorAvailability(
-        dto.appointmentDate,
-        dto.appointmentStart,
-        supervisor.id,
-        manager,
-      );
+      const { startTime, endTime, appointmentDate } =
+        await this.checkSupervisorAvailability(
+          dto.appointmentDate,
+          dto.appointmentStart,
+          supervisor.id,
+          manager,
+        );
 
-      const existingAppointment = await manager.findOne(ClinicalAppointment, {
-        where: {
-          clinicalCase: { id: loadedCase.id },
+      // const existingAppointment = await manager.findOne(ClinicalAppointment, {
+      //   where: {
+      //     // clinicalCase: { id: loadedCase.id },
+      //     student: { id: student.id },
+      //     status: ClinicalAppointmentStatus.SCHEDULED,
+      //     appointmentStart: dto.appointmentStart,
+      //   },
+      // });
+      // if (existingAppointment) {
+      //   throw new ConflictException('A clinical appointment already exists');
+      // }
+      const existingAppointment = await manager
+        .getRepository(ClinicalAppointment)
+        .createQueryBuilder('appointment')
+        .where('appointment.studentId = :studentId', {
+          studentId: student.id,
+        })
+        .andWhere('appointment.status = :status', {
           status: ClinicalAppointmentStatus.SCHEDULED,
-        },
-      });
+        })
+        .andWhere('appointment.appointmentDate = :appointmentDate', {
+          appointmentDate,
+        })
+        .andWhere(
+          `appointment.appointmentStart < :newEnd
+     AND appointment.appointmentEnd > :newStart`,
+          {
+            newStart: startTime,
+            newEnd: endTime,
+          },
+        )
+        .getOne();
+
       if (existingAppointment) {
-        throw new ConflictException('A clinical appointment already exists');
+        throw new ConflictException(
+          'The student already has a clinical appointment during this time.',
+        );
       }
 
       const clinicalAppointment = manager

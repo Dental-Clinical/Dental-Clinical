@@ -27,6 +27,7 @@ import { CreatePlannedProcedureWithAnswersDto } from './dto/create-planned-proce
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { NotificationType } from 'src/notifications/enums/notification-type.enum';
 import { FCMChannels } from 'src/fcm-tokens/enums/notification-channels.enum';
+import { DateTimeUtils } from 'src/utils/date-time.utils';
 
 @Injectable()
 export class DiagnosisSubmissionService {
@@ -98,9 +99,16 @@ export class DiagnosisSubmissionService {
         'No scheduled appointment found for this clinical case',
       );
     }
-    if (clinicalCaseAppointment.appointmentDate > new Date()) {
+    const appointmentDateTime = DateTimeUtils.combine(
+      clinicalCaseAppointment.appointmentDate,
+      clinicalCaseAppointment.appointmentStart,
+    );
+
+    const now = new Date();
+
+    if (now < appointmentDateTime) {
       throw new ConflictException(
-        'Cannot submit diagnosis before the scheduled appointment date',
+        'Cannot submit diagnosis before the scheduled appointment time.',
       );
     }
 

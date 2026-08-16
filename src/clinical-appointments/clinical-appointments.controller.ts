@@ -37,8 +37,10 @@ import {
   GetTodayAppointmentsResponseDto,
   GetUpcomingAppointmentsResponseDto,
   NoShowAppointmentResponseDto,
+  RescheduleAppointmentResponseDto,
   UpdateClinicalAppointmentResponseDto,
 } from './dto/clinical-appointment-response.dto';
+import { UpdateAppointmentScheduleDto } from './dto/update-appointment-schedule.dto';
 
 @ApiTags('Clinical Appointments')
 @ApiBearerAuth('JWT-auth')
@@ -257,5 +259,51 @@ export class ClinicalAppointmentsController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return await this.clinicalAppointmentService.cancelAppointment(id, user);
+  }
+
+  @Patch('reschedule/:id')
+  @Roles([UserRole.STUDENT])
+  @ApiOperation({
+    summary:
+      '[Student] Reschedule a clinical appointment (only more than 24 hours before its start)',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Clinical appointment ID',
+  })
+  @ApiBody({ type: UpdateAppointmentScheduleDto })
+  @ApiOkResponse({
+    type: RescheduleAppointmentResponseDto,
+    description: 'Clinical appointment rescheduled successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Invalid or past slot, or outside the supervisor schedule for that day',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Appointment does not belong to this user',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Appointment or supervisor schedule not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Appointment is not scheduled, starts in less than 24 hours, or the supervisor is already booked',
+  })
+  async updateAppointmentSchedule(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateAppointmentScheduleDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return await this.clinicalAppointmentService.updateAppointmentSchedule(
+      id,
+      user,
+      dto,
+    );
   }
 }

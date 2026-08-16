@@ -12,6 +12,7 @@ import {
   IsNull,
   LessThanOrEqual,
   MoreThanOrEqual,
+  Not,
   Repository,
 } from 'typeorm';
 import { CreateStudentClinicalAppointmentDto } from './dto/create-student-clinical-appointment.dto';
@@ -32,6 +33,7 @@ import { ClinicalCaseStatus } from 'src/clinical-case/enums/clinical-case-status
 import { StudentService } from 'src/students/student.service';
 import { SupervisorService } from 'src/supervisors/supervisor.service';
 import { StudentUpcomingAppointmentDto } from './dto/clinical-appointment-response.dto';
+import { UpdateAppointmentScheduleDto } from './dto/update-appointment-schedule.dto';
 
 @Injectable()
 export class ClinicalAppointmentsService {
@@ -45,7 +47,7 @@ export class ClinicalAppointmentsService {
     private readonly studentService: StudentService,
     private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
     @InjectRepository(Patient) readonly patientRepository: Repository<Patient>,
-  ) {}
+  ) { }
 
   async createStudentClinicalAppointment(
     currentUser: AuthenticatedUser,
@@ -365,6 +367,96 @@ export class ClinicalAppointmentsService {
 
     appointment.status = ClinicalAppointmentStatus.CANCELLED;
     return appointment;
+  }
+
+  async updateAppointmentSchedule(
+    id: number,
+    user: AuthenticatedUser,
+    dto: UpdateAppointmentScheduleDto,
+  ) {
+    return await this.dataSource.transaction(async (manager) => {
+      const appointment = await manager.findOne(ClinicalAppointment, {
+        where: { id },
+        relations: {
+          student: { user: true },
+          supervisor: true,
+        },
+      });
+
+      if (!appointment) {
+        throw new NotFoundException('Appointment Not Found');
+      }
+      if (!appointment.student) {
+        throw new NotFoundException('Student Not Found');
+      }
+      if (!appointment.student.user) {
+        throw new NotFoundException('User Not Found');
+      }
+      if (appointment.student.user.id !== user.userId) {
+        throw new ForbiddenException('This appointment does not belong to you');
+      }
+
+      if (appointment.status !== ClinicalAppointmentStatus.SCHEDULED) {
+        throw new ConflictException(
+          'Only scheduled appointments can be rescheduled',
+        );
+      }
+
+      const currentStart = this.combineDateAndTime(
+        appointment.appointmentDate,
+        appointment.appointmentStart,
+      );
+      const cutoff = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      if (currentStart <= cutoff) {
+        throw new ConflictException(
+          'Appointments can only be rescheduled more than 24 hours before the start time',
+        );
+      }
+
+      const { startTime, endTime } = await this.checkSupervisorAvailability(
+        dto.appointmentDate,
+        dto.appointmentStart,
+        appointment.supervisor.id,
+        manager,
+      );
+
+      const conflictingAppointment = await manager.findOne(
+        ClinicalAppointment,
+        {
+          where: {
+            id: Not(appointment.id),
+            supervisor: { id: appointment.supervisor.id },
+            appointmentDate: dto.appointmentDate,
+            appointmentStart: startTime,
+            status: ClinicalAppointmentStatus.SCHEDULED,
+          },
+        },
+      );
+
+      if (conflictingAppointment) {
+        throw new ConflictException(
+          'The supervisor is already booked at this time',
+        );
+      }
+
+      appointment.appointmentDate = dto.appointmentDate;
+      appointment.appointmentStart = startTime;
+      appointment.appointmentEnd = endTime;
+
+      await manager.save(appointment);
+
+      return {
+        message: 'Appointment rescheduled successfully',
+        data: {
+          id: appointment.id,
+          appointmentDate: appointment.appointmentDate,
+          appointmentStart: appointment.appointmentStart,
+          appointmentEnd: appointment.appointmentEnd,
+          status: appointment.status,
+        },
+      };
+    });
   }
 
   async getUpcomingAppointments(user: AuthenticatedUser) {

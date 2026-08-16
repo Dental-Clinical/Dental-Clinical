@@ -214,3 +214,11 @@ export class CancelAppointmentResponseDto {
   @ApiProperty({ type: ClinicalAppointmentDataDto })
   data: ClinicalAppointmentDataDto;
 }
+
+export class RescheduleAppointmentResponseDto {
+  @ApiProperty({ example: 'Appointment rescheduled successfully' })
+  message: string;
+
+  @ApiProperty({ type: ClinicalAppointmentDataDto })
+  data: ClinicalAppointmentDataDto;
+}

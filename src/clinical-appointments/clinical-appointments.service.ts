@@ -2,6 +2,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -34,9 +35,15 @@ import { StudentService } from 'src/students/student.service';
 import { SupervisorService } from 'src/supervisors/supervisor.service';
 import { StudentUpcomingAppointmentDto } from './dto/clinical-appointment-response.dto';
 import { UpdateAppointmentScheduleDto } from './dto/update-appointment-schedule.dto';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { NotificationType } from 'src/notifications/enums/notification-type.enum';
+import { FCMChannels } from 'src/fcm-tokens/enums/notification-channels.enum';
+import { PushPayload } from 'src/fcm-tokens/interfaces/push-payload.interface';
 
 @Injectable()
 export class ClinicalAppointmentsService {
+  private readonly logger = new Logger(ClinicalAppointmentsService.name);
+
   constructor(
     @InjectRepository(ClinicalAppointment)
     readonly clinicalAppointmentRepository: Repository<ClinicalAppointment>,
@@ -47,13 +54,61 @@ export class ClinicalAppointmentsService {
     private readonly studentService: StudentService,
     private readonly supervisorAvailibilityService: SupervisorAvailabilityService,
     @InjectRepository(Patient) readonly patientRepository: Repository<Patient>,
+    private readonly notificationsService: NotificationsService,
   ) { }
+
+  /**
+   * Fans a notification out to the parties that did not perform the action.
+   *
+   * Always called after the surrounding work has committed, so a failure here
+   * is logged rather than thrown: a lost notification must never turn a
+   * successful booking into an error for the caller. Undefined ids are dropped
+   * because walk-in patients have no user account to notify.
+   */
+  private async notifyParties(
+    userIds: (number | undefined)[],
+    payload: PushPayload,
+    type: NotificationType,
+  ) {
+    const recipients = [...new Set(userIds)].filter(
+      (id): id is number => id !== undefined && id !== null,
+    );
+
+    if (!recipients.length) {
+      return;
+    }
+
+    try {
+      await this.notificationsService.notifyUsers(
+        recipients,
+        payload,
+        type,
+        FCMChannels.APPOINTMENTS,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to record a ${type} notification for users ${recipients.join(', ')}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
+  }
+
+  /** Renders a slot the way it reads in a push banner: "Aug 16, 2025 at 09:00". */
+  private formatSlot(date: Date, time: string): string {
+    const day = new Date(date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+    return `${day} at ${time.slice(0, 5)}`;
+  }
 
   async createStudentClinicalAppointment(
     currentUser: AuthenticatedUser,
     dto: CreateStudentClinicalAppointmentDto,
   ) {
-    return await this.dataSource.transaction(async (manager) => {
+    const booked = await this.dataSource.transaction(async (manager) => {
       const lockedCase = await manager
         .getRepository(ClinicalCase)
         .createQueryBuilder('clinicalCase')
@@ -69,7 +124,9 @@ export class ClinicalAppointmentsService {
         where: { id: dto.clinicalCaseId },
         relations: {
           subject: { studyYear: true },
-          patient: true,
+          // The patient's user account is what the booking notification is
+          // addressed to; it is absent for walk-in patients.
+          patient: { user: true },
           assignedStudent: true,
           assignedSupervisor: true,
         },
@@ -161,11 +218,37 @@ export class ClinicalAppointmentsService {
 
       await manager.save(loadedCase);
 
-      manager.save(clinicalAppointment);
+      await manager.save(clinicalAppointment);
+
+      // Handed back so the notification is sent only once the booking has
+      // actually committed.
       return {
-        message: 'Appointment created successfully',
+        appointmentId: clinicalAppointment.id,
+        clinicalCaseId: loadedCase.id,
+        slot: this.formatSlot(dto.appointmentDate, startTime),
+        patientUserId: patient?.user?.id,
+        supervisorUserId: supervisor?.user?.id,
+        studentName: student.user?.full_name,
       };
     });
+
+    // The student is the one booking, so only the other two parties are told.
+    await this.notifyParties(
+      [booked.patientUserId, booked.supervisorUserId],
+      {
+        title: 'New appointment booked',
+        body: `${booked.studentName ?? 'A student'} booked an appointment for ${booked.slot}.`,
+        data: {
+          appointmentId: String(booked.appointmentId),
+          clinicalCaseId: String(booked.clinicalCaseId),
+        },
+      },
+      NotificationType.APPOINTMENT_BOOKED,
+    );
+
+    return {
+      message: 'Appointment created successfully',
+    };
   }
 
   private async checkSupervisorAvailability(
@@ -366,6 +449,28 @@ export class ClinicalAppointmentsService {
     });
 
     appointment.status = ClinicalAppointmentStatus.CANCELLED;
+
+    // Any of the three can cancel, so the actor is excluded by id rather than
+    // by role: whoever pressed cancel already knows.
+    const slot = this.formatSlot(
+      appointment.appointmentDate,
+      appointment.appointmentStart,
+    );
+
+    await this.notifyParties(
+      [
+        appointment.student?.user?.id,
+        appointment.supervisor?.user?.id,
+        appointment.patient?.user?.id,
+      ].filter((recipientId) => recipientId !== user.userId),
+      {
+        title: 'Appointment cancelled',
+        body: `The appointment on ${slot} was cancelled.`,
+        data: { appointmentId: String(appointment.id) },
+      },
+      NotificationType.APPOINTMENT_CANCELLED,
+    );
+
     return appointment;
   }
 
@@ -374,12 +479,15 @@ export class ClinicalAppointmentsService {
     user: AuthenticatedUser,
     dto: UpdateAppointmentScheduleDto,
   ) {
-    return await this.dataSource.transaction(async (manager) => {
+    const rescheduled = await this.dataSource.transaction(async (manager) => {
       const appointment = await manager.findOne(ClinicalAppointment, {
         where: { id },
         relations: {
           student: { user: true },
-          supervisor: true,
+          // Both are loaded with their user account because they are the ones
+          // notified about the new slot.
+          supervisor: { user: true },
+          patient: { user: true },
         },
       });
 
@@ -455,8 +563,33 @@ export class ClinicalAppointmentsService {
           appointmentEnd: appointment.appointmentEnd,
           status: appointment.status,
         },
+        recipients: {
+          patientUserId: appointment.patient?.user?.id,
+          supervisorUserId: appointment.supervisor?.user?.id,
+        },
+        slot: this.formatSlot(dto.appointmentDate, startTime),
       };
     });
+
+    // Only after the new slot is committed, so a rolled-back reschedule never
+    // announces a time that was never taken. The student made the change.
+    await this.notifyParties(
+      [
+        rescheduled.recipients.patientUserId,
+        rescheduled.recipients.supervisorUserId,
+      ],
+      {
+        title: 'Appointment rescheduled',
+        body: `The appointment moved to ${rescheduled.slot}.`,
+        data: { appointmentId: String(rescheduled.data.id) },
+      },
+      NotificationType.APPOINTMENT_RESCHEDULED,
+    );
+
+    return {
+      message: rescheduled.message,
+      data: rescheduled.data,
+    };
   }
 
   async getUpcomingAppointments(user: AuthenticatedUser) {

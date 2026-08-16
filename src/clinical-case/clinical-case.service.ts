@@ -8,6 +8,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -79,9 +80,14 @@ import { unlink } from 'fs/promises';
 import { UploadApiResponse } from 'cloudinary';
 import { CreateClinicalCaseForExistingPatientDto } from './dto/create-clinical-case-for-existing-patient.dto';
 import { InitialExaminationService } from 'src/initial-examination/initial-examination.service';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { NotificationType } from 'src/notifications/enums/notification-type.enum';
+import { FCMChannels } from 'src/fcm-tokens/enums/notification-channels.enum';
 
 @Injectable()
 export class ClinicalCaseService {
+  private readonly logger = new Logger(ClinicalCaseService.name);
+
   constructor(
     @InjectRepository(ClinicalCase)
     private readonly clinicalCaseRepository: Repository<ClinicalCase>,
@@ -98,6 +104,7 @@ export class ClinicalCaseService {
     private readonly dataSource: DataSource,
     @Inject(forwardRef(() => InitialExaminationService))
     private readonly initialExaminationService: InitialExaminationService,
+    private readonly notificationsService: NotificationsService,
   ) {}
   public async createClinicalCaseForExistingPatient(
     userId: number,
@@ -1185,7 +1192,13 @@ export class ClinicalCaseService {
 
     const clinicalCase = await this.clinicalCaseRepository.findOne({
       where: { id },
-      relations: { assignedStudent: true },
+      relations: {
+        assignedStudent: true,
+        // Both are read before the update nulls the assignment, so the
+        // notification still knows who was involved.
+        assignedSupervisor: { user: true },
+        patient: { user: true },
+      },
     });
     if (!clinicalCase) {
       throw new NotFoundException('Clinical case not found');
@@ -1201,10 +1214,37 @@ export class ClinicalCaseService {
       throw new ForbiddenException("You're not authorized to cancel this case");
     }
 
+    const recipients = [
+      clinicalCase.assignedSupervisor?.user?.id,
+      clinicalCase.patient?.user?.id,
+    ].filter((recipientId): recipientId is number => !!recipientId);
+
     await this.clinicalCaseRepository.update(id, {
       status: ClinicalCaseStatus.OPEN,
       assignedStudent: () => 'NULL',
     });
+
+    // The student is the actor. The supervisor loses a case from their roster
+    // and the patient loses their assigned student, so both need telling.
+    if (recipients.length) {
+      try {
+        await this.notificationsService.notifyUsers(
+          recipients,
+          {
+            title: 'Clinical case released',
+            body: `${student.user?.full_name ?? 'The student'} cancelled their assignment; the case is open again.`,
+            data: { clinicalCaseId: String(clinicalCase.id) },
+          },
+          NotificationType.CASE_CANCELLED,
+          FCMChannels.CASES,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to notify users ${recipients.join(', ')} that clinical case ${clinicalCase.id} was cancelled`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    }
 
     return {
       message: 'Cancelled successfully',

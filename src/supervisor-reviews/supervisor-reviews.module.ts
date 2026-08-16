@@ -5,12 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SupervisorReview } from './supervisor-reviews.entity';
 import { SupervisorModule } from 'src/supervisors/supervisor.module';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([SupervisorReview]),
     SupervisorModule,
     CloudinaryModule,
+    NotificationsModule,
   ],
   providers: [SupervisorReviewsService],
   controllers: [SupervisorReviewsController],

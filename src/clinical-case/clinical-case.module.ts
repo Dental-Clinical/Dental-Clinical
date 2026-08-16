@@ -13,6 +13,7 @@ import { PatientsModule } from 'src/patients/patients.module';
 import { ClinicalAppointmentsModule } from 'src/clinical-appointments/clinical-appointments.module';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { InitialExaminationModule } from 'src/initial-examination/initial-examination.module';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { InitialExaminationModule } from 'src/initial-examination/initial-examin
     PatientsModule,
     ClinicalAppointmentsModule,
     CloudinaryModule,
+    NotificationsModule,
     forwardRef(() => InitialExaminationModule),
   ],
   providers: [ClinicalCaseService],

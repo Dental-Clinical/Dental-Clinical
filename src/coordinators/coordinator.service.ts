@@ -51,7 +51,7 @@ export class CoordinatorService {
         phone: dto.phone,
         password_hash: passwordHash,
       });
-      // this.whatsappService.sendPassword(tempPassword, dto.phone);
+      this.whatsappService.sendPassword(tempPassword, dto.phone);
       console.log(tempPassword);
 
       const savedUser = await manager.save(user);

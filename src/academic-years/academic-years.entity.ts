@@ -37,11 +37,11 @@ export class AcademicYear {
   is_active: boolean;
 
   @ApiProperty({ description: 'Creation timestamp' })
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
   @ApiProperty({ description: 'Last update timestamp' })
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
   @ApiPropertyOptional({

@@ -11,6 +11,7 @@ import { PlannedProcedures } from 'src/planned-procedures/planned-procedures.ent
 import { ClinicalAppointmentsModule } from 'src/clinical-appointments/clinical-appointments.module';
 import { Material } from 'src/materials/materials.entity';
 import { SupervisorModule } from 'src/supervisors/supervisor.module';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SupervisorModule } from 'src/supervisors/supervisor.module';
     StudentModule,
     SupervisorModule,
     ClinicalAppointmentsModule,
+    NotificationsModule,
   ],
   controllers: [TreatmentSessionsController],
   providers: [TreatmentSessionsService],

@@ -12,6 +12,7 @@ import { Supervisor } from 'src/supervisors/supervisor.entity';
 import { ExaminationRequest } from 'src/examination-requests/entities/examination-request.entity';
 import { InitialExamination } from 'src/initial-examination/initial-examination.entity';
 import { StudentModule } from 'src/students/student.module';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { StudentModule } from 'src/students/student.module';
       InitialExamination,
     ]),
     StudentModule,
+    NotificationsModule,
   ],
   providers: [SupervisorAvailabilityService, ClinicalAppointmentsService],
   controllers: [ClinicalAppointmentsController],

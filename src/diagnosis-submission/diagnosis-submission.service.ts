@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateDiagnosisSubmissionDto } from './dto/create-diagnosis-submission.dto';
@@ -23,14 +24,20 @@ import { SubjectDiagnosisAnswer } from 'src/subject-diagnosis/subject-diagnosis-
 import { QuestionType } from 'src/subject-diagnosis/enums/question-types.enum';
 import { CreatePlannedProcedureDto } from 'src/planned-procedures/dto/create-planned-procedure.dto';
 import { CreatePlannedProcedureWithAnswersDto } from './dto/create-planned-procedure-with-answers.dto';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { NotificationType } from 'src/notifications/enums/notification-type.enum';
+import { FCMChannels } from 'src/fcm-tokens/enums/notification-channels.enum';
 import { DateTimeUtils } from 'src/utils/date-time.utils';
 
 @Injectable()
 export class DiagnosisSubmissionService {
+  private readonly logger = new Logger(DiagnosisSubmissionService.name);
+
   constructor(
     private readonly studentService: StudentService,
     private readonly dataSource: EntityManager,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly notificationsService: NotificationsService,
   ) {}
   async submitDiagnosis(
     dto: CreateDiagnosisSubmissionDto,
@@ -168,8 +175,9 @@ export class DiagnosisSubmissionService {
       );
     }
 
+    let submitted: { message: string };
     try {
-      return await this.dataSource.transaction(async (manager) => {
+      submitted = await this.dataSource.transaction(async (manager) => {
         const submissionRepository = manager.getRepository(DiagnosisSubmission);
         const procedureRepository = manager.getRepository(PlannedProcedures);
         const answerRepository = manager.getRepository(SubjectDiagnosisAnswer);
@@ -262,6 +270,29 @@ export class DiagnosisSubmissionService {
 
       throw err;
     }
+
+    // The supervisor's pending-review queue is pull-only, so without this the
+    // submission sits there until they happen to look. Sent after the commit,
+    // and never allowed to fail the submission itself.
+    try {
+      await this.notificationsService.notifyUser(
+        clinicalCase.assignedSupervisor.user.id,
+        {
+          title: 'Diagnosis awaiting review',
+          body: `${student.user?.full_name ?? 'A student'} submitted a diagnosis for review.`,
+          data: { clinicalCaseId: String(clinicalCase.id) },
+        },
+        NotificationType.DIAGNOSIS_SUBMITTED,
+        FCMChannels.CASES,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to notify supervisor ${clinicalCase.assignedSupervisor.user.id} of a diagnosis submission on case ${clinicalCase.id}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
+
+    return submitted;
   }
   public static validateProcedureAnswers(
     procedure: CreatePlannedProcedureWithAnswersDto,

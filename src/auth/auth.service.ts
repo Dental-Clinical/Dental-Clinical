@@ -84,6 +84,7 @@ export class AuthService {
     });
     if (existingPatient) {
       await this.patientService.updatePatient(existingPatient.id, {
+        full_name: registerDto.full_name,
         userId: user.id,
         is_walkin: false,
       });

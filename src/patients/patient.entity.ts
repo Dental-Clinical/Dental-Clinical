@@ -19,6 +19,7 @@ export class Patient {
   @PrimaryGeneratedColumn()
   id: number;
 
+  // null for walk-in patients, but should not be null for registered patients
   @ApiPropertyOptional({
     type: () => User,
     description: 'Associated user account',

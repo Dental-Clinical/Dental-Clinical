@@ -133,6 +133,7 @@ export class ExaminationSeeder {
     );
 
     const examination = await insert(manager, InitialExamination, {
+      patient: params.request.patient,
       request: params.request,
       appointment: params.appointment,
       coordinator: params.coordinator,

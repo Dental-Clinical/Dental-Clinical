@@ -90,6 +90,7 @@ export class DiagnosisSeeder {
       );
 
       const row = await insert(manager, PlannedProcedures, {
+        clinicalCase,
         subjectProcedure,
         diagnosisSubmission: submission,
         toothNumber: planned.tooth,

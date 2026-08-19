@@ -29,10 +29,14 @@ export class PatientSeeder implements Seeder {
         ? undefined
         : await this.createPortalAccount(manager, blueprint, passwordHash);
 
+      const lookup = user
+        ? { user: { id: user.id } }
+        : { phone: blueprint.phone };
+
       const { entity, created } = await upsertBy(
         manager,
         Patient,
-        { phone: blueprint.phone },
+        lookup,
         () => ({
           user,
           full_name: blueprint.fullName,

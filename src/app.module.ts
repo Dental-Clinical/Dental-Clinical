@@ -64,19 +64,33 @@ const ENV = process.env.NODE_ENV;
     ScheduleModule.forRoot(),
     TypeOrmModule.forRoot(connectionSource.options),
     CacheModule.registerAsync({
-      isGlobal: true,
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        store: await redisStore({
-          url: configService.get('redis.url'),
-          // host: configService.get('redis.host'),
-          // port: configService.get('redis.port'),
-        }),
-        ttl: configService.get('redis.ttl'),
-        isGlobal: true,
-      }),
-    }),
+  isGlobal: true,
+  imports: [ConfigModule],
+  inject: [ConfigService],
+  useFactory: async (configService: ConfigService) => {
+    const ttl = configService.get<number>('redis.ttl');
+
+    try {
+      const store = await redisStore({
+        url: configService.get<string>('redis.url'),
+      });
+
+      console.log('Redis cache connected successfully');
+
+      return {
+        store,
+        ttl,
+      };
+    } catch (error) {
+      console.error('Redis unavailable. Falling back to in-memory cache.', error);
+
+      // No Redis store = use the default in-memory cache
+      return {
+        ttl,
+      };
+    }
+  },
+}),
     AuthModule,
     SessionsModule,
     UserModule,
